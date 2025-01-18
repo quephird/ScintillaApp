@@ -8,12 +8,12 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var fileContents: String = "This is a test"
+
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+            TextEditor(text: $fileContents)
+                .font(.system(size: 14, design: .monospaced))
         }
         .padding()
     }
