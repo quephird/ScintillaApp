@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var fileContents: String = "This is a test"
+    @Binding var fileContents: String
 
     var body: some View {
         VStack {
@@ -19,6 +19,6 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
-}
+//#Preview {
+//    ContentView(fileContents: "This is a test")
+//}
