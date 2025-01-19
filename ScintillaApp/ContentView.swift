@@ -8,17 +8,13 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Binding var fileContents: String
+    @Binding var document: ScintillaDocument
 
     var body: some View {
         VStack {
-            TextEditor(text: $fileContents)
+            TextEditor(text: $document.text)
                 .font(.system(size: 14, design: .monospaced))
         }
         .padding()
     }
 }
-
-//#Preview {
-//    ContentView(fileContents: "This is a test")
-//}
