@@ -9,7 +9,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 @main
-struct ScintillaAppApp: App {
+struct ScintillaApp: App {
     @State private var showOpenFileDialog = false
     @State private var showAlert = false
     @State private var errorMessage = ""
