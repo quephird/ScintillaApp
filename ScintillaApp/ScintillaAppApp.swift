@@ -29,7 +29,7 @@ struct ScintillaAppApp: App {
                 .keyboardShortcut("o", modifiers: .command)
                 .fileImporter(
                     isPresented: $showOpenFileDialog,
-                    allowedContentTypes: [UTType(filenameExtension: "scintilla")!],
+                    allowedContentTypes: [.scintillaDocument],
                     allowsMultipleSelection: false
                 ) { result in
                     do {
