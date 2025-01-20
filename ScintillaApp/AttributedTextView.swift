@@ -11,7 +11,7 @@ public class AttributedTextView: NSTextView {}
 
 extension AttributedTextView: AttributedTextViewRepresentable {
     public var attributedString: NSAttributedString {
-        get { attributedString() }
+        get { textStorage?.copy() as! NSAttributedString }
         set { textStorage?.setAttributedString(newValue) }
     }
 }

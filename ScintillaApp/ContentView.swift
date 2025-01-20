@@ -9,11 +9,10 @@ import SwiftUI
 
 struct ContentView: View {
     @Binding var document: ScintillaDocument
-    @State var text: NSAttributedString = NSAttributedString(string: "This is a test")
 
     var body: some View {
         VStack {
-            AttributedTextEditor(text: $text)
+            CodeEditor(code: $document.text)
         }
         .padding()
     }
