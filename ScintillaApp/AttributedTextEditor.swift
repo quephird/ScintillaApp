@@ -46,7 +46,9 @@ struct AttributedTextEditor: NSViewRepresentable {
 
     public func updateNSView(_ view: NSView, context: Context) {
         let view = (view as! NSScrollView).documentView as! AttributedTextView
+        let currentCursorRange = view.selectedRanges
         view.attributedString = attributedStringWithDefaults
+        view.selectedRanges = currentCursorRange
     }
 
     private func addSyntaxHighlighting(attributedString: inout NSMutableAttributedString) {
