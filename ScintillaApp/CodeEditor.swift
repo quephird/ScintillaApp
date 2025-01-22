@@ -20,12 +20,12 @@ struct CodeEditor: View {
     }
 
     var body: some View {
-        AttributedTextEditor(text: $attributedCode, highlighter: highlighteCode)
+        AttributedTextEditor(text: $attributedCode, highlighter: highlightCode)
     }
 }
 
 extension CodeEditor {
-    public func highlighteCode(textStorage: NSTextStorage) {
+    public func highlightCode(textStorage: NSTextStorage) {
         let highlighters: [(NSTextStorage) -> Void] = [
             self.highlightKeywords,
             self.highlightParameterNames,
