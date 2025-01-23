@@ -11,18 +11,18 @@ enum TokenType: Equatable {
     case rightParen
     case leftBrace
     case rightBrace
-    case comma
-    case dot
-    case semicolon
     case leftBracket
     case rightBracket
-    case modulus
+    case comma
+    case dot
     case colon
+    case semicolon
     case equal
-    case minus
     case plus
-    case slash
+    case minus
     case star
+    case slash
+    case modulus
 
     // Literals
     case identifier

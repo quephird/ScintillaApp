@@ -107,11 +107,13 @@ struct Tokenizer {
             "]": .rightBracket,
             ",": .comma,
             ".": .dot,
-            ";": .semicolon,
-            "%": .modulus,
             ":": .colon,
+            ";": .semicolon,
             "=": .equal,
-            "-": .minus
+            "+": .plus,
+            "-": .minus,
+            "*": .star,
+            "%": .modulus,
         ]) {
             return handleSingleCharacterLexeme(type: type)
         }
