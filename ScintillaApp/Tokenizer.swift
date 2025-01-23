@@ -11,8 +11,6 @@ struct Tokenizer {
 
     private var startIndex: String.Index
     private var currentIndex: String.Index
-    private var line = 1
-    private var column = 1
 
     let keywords: [String: TokenType] = [
         "and": .let,
@@ -30,14 +28,14 @@ struct Tokenizer {
             try scanToken()
         }
 
-        let newToken = Token(type: .eof, lexeme: "", line: line, column: column)
+        let newToken = Token(type: .eof, lexeme: source[currentIndex..<currentIndex])
         tokens.append(newToken)
 
         return tokens
     }
 
-    private var scannedToken: String {
-        String(source[startIndex..<currentIndex])
+    private var scannedToken: Substring {
+        source[startIndex..<currentIndex]
     }
 
     mutating private func tryScan(where predicate: (Character) -> Bool) -> Bool {
@@ -46,7 +44,6 @@ struct Tokenizer {
         }
 
         currentIndex = source.index(after: currentIndex)
-        column += 1
         return true
     }
 
@@ -62,11 +59,9 @@ struct Tokenizer {
 
         for char in string {
             guard currentIndex < self.source.endIndex else {
-                throw TokenizerError.unterminatedComment(self.line, self.column)
-            }
-
-            if self.source[self.currentIndex] == "\n" {
-                self.line += 1
+                let badToken = Token(type: .unknown,
+                                     lexeme: scannedToken)
+                throw TokenizerError.unterminatedComment(badToken)
             }
 
             if !tryScan(char) {
@@ -130,12 +125,7 @@ struct Tokenizer {
         }
 
         if tryScan("\n") {
-            line += 1
             return
-        }
-
-        if tryScan("\"") {
-            return try handleString()
         }
 
         if tryScan(where: \.isLoxDigit) {
@@ -146,7 +136,9 @@ struct Tokenizer {
             return try handleIdentifier()
         }
 
-        throw TokenizerError.unexpectedCharacter(self.line, self.column, self.source[self.currentIndex])
+        let badToken = Token(type: .unknown,
+                             lexeme: self.source[self.currentIndex...self.currentIndex])
+        throw TokenizerError.unexpectedCharacter(badToken)
     }
 
     mutating private func handleSingleCharacterLexeme(type: TokenType) {
@@ -167,16 +159,6 @@ struct Tokenizer {
         }
     }
 
-    mutating private func handleString() throws {
-        try repeatedly { tryNotScan("\"") }
-
-        guard tryScan("\"") else {
-            throw TokenizerError.unterminatedString(self.line, self.column)
-        }
-
-        addToken(type: .string)
-    }
-
     mutating private func handleNumber() throws {
         try repeatedly { tryScan(where: \.isLoxDigit) }
 
@@ -193,7 +175,7 @@ struct Tokenizer {
     mutating private func handleIdentifier() throws {
         try repeatedly { tryScan(where: { $0.isLetter || $0.isNumber || $0 == "_" }) }
 
-        if let type = keywords[scannedToken] {
+        if let type = keywords[String(scannedToken)] {
             addToken(type: type)
         } else {
             addToken(type: .identifier)
@@ -201,8 +183,7 @@ struct Tokenizer {
     }
 
     mutating private func addToken(type: TokenType) {
-        let text = scannedToken
-        let newToken = Token(type: type, lexeme: text, line: line, column: column)
+        let newToken = Token(type: type, lexeme: scannedToken)
         tokens.append(newToken)
     }
 }

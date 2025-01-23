@@ -8,18 +8,15 @@
 import Foundation
 
 enum TokenizerError: CustomStringConvertible, Equatable, LocalizedError {
-    case unterminatedString(Int, Int)
-    case unexpectedCharacter(Int, Int, Character)
-    case unterminatedComment(Int, Int)
+    case unexpectedCharacter(Token)
+    case unterminatedComment(Token)
 
     var description: String {
         switch self {
-        case .unterminatedString(let line, let column):
-            return "[(\(line), \(column))] Error: unterminated string"
-        case .unexpectedCharacter(let line, let column, let character):
-            return "[(\(line), \(column))] Error: unexpected character, \"\(character)\""
-        case .unterminatedComment(let line, let column):
-            return "[(\(line), \(column))] Error: unterminated comment"
+        case .unexpectedCharacter(let token):
+            return "[()] Error: unexpected character, \"\(token.lexeme)\""
+        case .unterminatedComment(let token):
+            return "[()] Error: unterminated comment"
         }
     }
 }

@@ -26,12 +26,14 @@ enum TokenType: Equatable {
 
     // Literals
     case identifier
-    case string
     case double
     case int
 
     // Keywords
     case `let`
+
+    // Used for bad tokens
+    case unknown
 
     case eof
 }
