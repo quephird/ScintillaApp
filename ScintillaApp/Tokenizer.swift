@@ -189,9 +189,3 @@ struct Tokenizer {
         tokens.append(newToken)
     }
 }
-
-extension Character {
-    var isLoxDigit: Bool {
-        return self.isASCII && self.isNumber
-    }
-}
