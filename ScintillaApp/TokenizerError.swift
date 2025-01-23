@@ -14,9 +14,9 @@ enum TokenizerError: CustomStringConvertible, Equatable, LocalizedError {
     var description: String {
         switch self {
         case .unexpectedCharacter(let token):
-            return "[()] Error: unexpected character, \"\(token.lexeme)\""
+            return "[\(token.location)] Error: unexpected character, \"\(token.lexeme)\""
         case .unterminatedComment(let token):
-            return "[()] Error: unterminated comment"
+            return "[\(token.location)] Error: unterminated comment"
         }
     }
 }
