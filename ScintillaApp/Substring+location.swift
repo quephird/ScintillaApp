@@ -5,8 +5,6 @@
 //  Created by Danielle Kefford on 1/22/25.
 //
 
-public typealias Location = (line: Int, column: Int)
-
 extension Substring {
     public func location() -> Location {
         var line: Int = 1
@@ -21,6 +19,6 @@ extension Substring {
             }
         }
 
-        return (line: line, column: column)
+        return Location(line: line, column: column)
     }
 }
