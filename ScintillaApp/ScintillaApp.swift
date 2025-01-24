@@ -1,5 +1,5 @@
 //
-//  ScintillaAppApp.swift
+//  ScintillaApp.swift
 //  ScintillaApp
 //
 //  Created by Danielle Kefford on 1/17/25.
@@ -10,9 +10,37 @@ import UniformTypeIdentifiers
 
 @main
 struct ScintillaApp: App {
+    @FocusedBinding(\.document) var document: ScintillaDocument?
+
     var body: some Scene {
         DocumentGroup(newDocument: ScintillaDocument()) { file in
             ContentView(document: file.$document)
+                .focusedSceneValue(\.document, file.$document)
+        }
+        .commands {
+            CommandGroup(after: .saveItem) {
+                Divider()
+                Button("Render Scene") {
+                    self.renderScene()
+                }
+                .disabled(document == nil)
+                .keyboardShortcut("R")
+            }
+        }
+    }
+
+    private func renderScene() {
+        print("Rendering scene...")
+        if let document {
+            var tokenizer = Tokenizer(source: document.text)
+            do {
+                let tokens = try tokenizer.scanTokens()
+                for token in tokens {
+                    print(token)
+                }
+            } catch {
+                print(error)
+            }
         }
     }
 }
