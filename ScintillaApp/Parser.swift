@@ -70,7 +70,7 @@ extension Parser {
     //    program        → statement* EOF ;
     //    statement      → letDecl
     //                   | expression ;
-    //    letDecl        → "let" IDENTIFIER ( "=" expression )? ;
+    //    letDecl        → "let" IDENTIFIER "=" expression ;
     //    expression     → term ;
     //    term           → factor ( ( "-" | "+" ) factor )* ;
     //    factor         → unary ( ( "/" | "*" | "%" ) unary )* ;
