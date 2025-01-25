@@ -13,7 +13,7 @@ struct Tokenizer {
     private var currentIndex: String.Index
 
     let keywords: [String: TokenType] = [
-        "and": .let,
+        "let": .let,
     ]
 
     init(source: String) {
@@ -164,7 +164,7 @@ struct Tokenizer {
     mutating private func handleNumber() throws {
         try repeatedly { tryScan(where: \.isLoxDigit) }
 
-        var tokenType: TokenType = .int
+        var tokenType: TokenType = .double
         if tryScan(".") {
             tokenType = .double
 

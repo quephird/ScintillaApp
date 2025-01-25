@@ -27,7 +27,6 @@ enum TokenType: Equatable {
     // Literals
     case identifier
     case double
-    case int
 
     // Keywords
     case `let`
