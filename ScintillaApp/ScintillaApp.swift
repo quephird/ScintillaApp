@@ -35,8 +35,10 @@ struct ScintillaApp: App {
             var tokenizer = Tokenizer(source: document.text)
             do {
                 let tokens = try tokenizer.scanTokens()
-                for token in tokens {
-                    print(token)
+                var parser = Parser(tokens: tokens)
+                let statements = try parser.parse()
+                for statement in statements {
+                    print(statement)
                 }
             } catch {
                 print(error)
