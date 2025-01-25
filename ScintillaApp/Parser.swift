@@ -161,7 +161,6 @@ extension Parser {
         return expr
     }
 
-    // TODO: Think of a better name for this... maybe constructor
     mutating private func parseConstructor(expr: Expression<UnresolvedDepth>) throws -> Expression<UnresolvedDepth>? {
         guard let leftParen = consumeToken(type: .leftParen) else {
             return nil
