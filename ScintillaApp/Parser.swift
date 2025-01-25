@@ -71,11 +71,18 @@ extension Parser {
     //    statement      → letDecl
     //                   | expression ;
     //    letDecl        → "let" IDENTIFIER ( "=" expression )? ;
-    //    expression     → number
-    //                   | object
-    //                   | variable
-    //                   | tuple
-    //                   | list ;
+    //    expression     → term ;
+    //    term           → factor ( ( "-" | "+" ) factor )* ;
+    //    factor         → unary ( ( "/" | "*" | "%" ) unary )* ;
+    //    unary          → ( "!" | "-" | "*" ) unary
+    //                   | postfix ;
+    //    postfix        → primary
+    //                   | constructor
+    //    constructor    → IDENTIFIER ( (IDENTIFIER : expression)* ) ;
+    //    primary        → tuple
+    //                   | list
+    //                   | double
+    //                   | IDENTIFIER ;
 
     mutating func parseStatement() throws -> Statement<UnresolvedDepth> {
         if let letDecl = try parseLetDeclaration() {
@@ -105,27 +112,34 @@ extension Parser {
     }
 
     mutating private func parseExpression() throws -> Expression<UnresolvedDepth> {
-        if let number = consumeToken(type: .double) {
-            let value = Double(number.lexeme)!
-            return .literal(previousToken, .double(value))
-        }
-
-        if let expr = try parseUnary() {
-            return expr
-        }
-
-        if let tuple = try parseTuple() {
-            return tuple
-        }
-
-        if let list = try parseList() {
-            return list
-        }
-
-        throw ParseError.expectedExpression(currentToken)
+        return try parseTerm()
     }
 
-    mutating private func parseUnary() throws -> Expression<UnresolvedDepth>? {
+    mutating private func parseTerm() throws -> Expression<UnresolvedDepth> {
+        var expr = try parseFactor()
+
+        while currentTokenMatchesAny(types: [.plus, .minus]) {
+            let oper = previousToken
+            let rightExpr = try parseFactor()
+            expr = .binary(expr, oper, rightExpr)
+        }
+
+        return expr
+    }
+
+    mutating private func parseFactor() throws -> Expression<UnresolvedDepth> {
+        var expr = try parseUnary()
+
+        while currentTokenMatchesAny(types: [.slash, .star, .modulus]) {
+            let oper = previousToken
+            let rightExpr = try parseUnary()
+            expr = .binary(expr, oper, rightExpr)
+        }
+
+        return expr
+    }
+
+    mutating private func parseUnary() throws -> Expression<UnresolvedDepth> {
         // NOTA BENE: For the time being, the onky unary expression allowed is
         // one that involves a single minus sign.
         if currentTokenMatchesAny(types: [.minus]) {
@@ -137,20 +151,18 @@ extension Parser {
         return try parsePostfix()
     }
 
-    mutating private func parsePostfix() throws -> Expression<UnresolvedDepth>? {
-        guard let varName = consumeToken(type: .identifier) else {
-            return nil
-        }
-        var expr:Expression<UnresolvedDepth> = .variable(varName, UnresolvedDepth())
+    mutating private func parsePostfix() throws -> Expression<UnresolvedDepth> {
+        var expr = try parsePrimary()
 
-        if let object = try parseObject(expr: expr) {
+        if let object = try parseConstructor(expr: expr) {
             expr = object
         }
 
         return expr
     }
 
-    mutating private func parseObject(expr: Expression<UnresolvedDepth>) throws -> Expression<UnresolvedDepth>? {
+    // TODO: Think of a better name for this... maybe constructor
+    mutating private func parseConstructor(expr: Expression<UnresolvedDepth>) throws -> Expression<UnresolvedDepth>? {
         guard let leftParen = consumeToken(type: .leftParen) else {
             return nil
         }
@@ -176,7 +188,28 @@ extension Parser {
             throw ParseError.missingRightParen(currentToken)
         }
 
-        return .object(expr, leftParen, argList)
+        return .constructor(expr, leftParen, argList)
+    }
+
+    mutating private func parsePrimary() throws -> Expression<UnresolvedDepth> {
+        if let tuple = try parseTuple() {
+            return tuple
+        }
+
+        if let list = try parseList() {
+            return list
+        }
+
+        if let number = consumeToken(type: .double) {
+            let value = Double(number.lexeme)!
+            return .literal(previousToken, .double(value))
+        }
+
+        if let varName = consumeToken(type: .identifier) {
+            return .variable(varName, UnresolvedDepth())
+        }
+
+        throw ParseError.expectedExpression(currentToken)
     }
 
     mutating private func parseTuple() throws -> Expression<UnresolvedDepth>? {
