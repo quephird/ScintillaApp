@@ -110,7 +110,7 @@ extension Parser {
             return .literal(previousToken, .double(value))
         }
 
-        if let expr = try parsePostfix() {
+        if let expr = try parseUnary() {
             return expr
         }
 
@@ -123,6 +123,18 @@ extension Parser {
         }
 
         throw ParseError.expectedExpression(currentToken)
+    }
+
+    mutating private func parseUnary() throws -> Expression<UnresolvedDepth>? {
+        // NOTA BENE: For the time being, the onky unary expression allowed is
+        // one that involves a single minus sign.
+        if currentTokenMatchesAny(types: [.minus]) {
+            let oper = previousToken
+            let expr = try parseExpression()
+            return .unary(oper, expr)
+        }
+
+        return try parsePostfix()
     }
 
     mutating private func parsePostfix() throws -> Expression<UnresolvedDepth>? {

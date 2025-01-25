@@ -11,6 +11,7 @@ indirect enum Expression<Depth: Equatable>: Equatable {
         public var value: Expression<Depth>
     }
 
+    case unary(Token, Expression)
     case literal(Token, ScintillaValue)
     case variable(Token, Depth)
     case list(Token, [Expression])
@@ -19,6 +20,8 @@ indirect enum Expression<Depth: Equatable>: Equatable {
 
     var locationToken: Token {
         switch self {
+        case .unary(let locToken, _):
+            return locToken
         case .literal(let valueToken, _):
             return valueToken
         case .variable(let nameToken, _):
