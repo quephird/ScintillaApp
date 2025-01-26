@@ -243,6 +243,6 @@ extension Parser {
             throw ParseError.missingRightParen(currentToken)
         }
 
-        return .constructor(name, argList, UnresolvedDepth())
+        return .function(name, argList, UnresolvedDepth())
     }
 }
