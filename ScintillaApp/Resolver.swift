@@ -13,13 +13,13 @@ struct Resolver {
         case tupleInitializer
     }
 
-    private var scopeStack: [[VariableName: Bool]] = [
+    private var scopeStack: [[ObjectName: Bool]] = [
         [
-            VariableName(baseName: "PI", argumentNames: nil): true,
-            VariableName(baseName: "Sphere", argumentNames: []): true,
-            VariableName(baseName: "PointLight", argumentNames: ["position"]): true,
-            VariableName(baseName: "Camera", argumentNames: ["width", "height", "viewAngle", "from", "to", "up"]): true,
-            VariableName(baseName: "World", argumentNames: ["camera", "lights", "shapes"]): true,
+            .variableName("PI"): true,
+            .functionName("Sphere", []): true,
+            .functionName("PointLight", ["position"]): true,
+            .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up"]): true,
+            .functionName("World", ["camera", "lights", "shapes"]): true,
         ]
     ]
     private var currentArgumentListType: ArgumentListType = .none
@@ -44,7 +44,7 @@ extension Resolver {
             return
         }
 
-        let name = VariableName(baseName: variableToken.lexeme, argumentNames: nil)
+        let name: ObjectName = .variableName(variableToken.lexeme)
         if scopeStack.lastMutable.keys.contains(name) {
             throw ResolverError.variableAlreadyDefined(variableToken)
         }
@@ -61,11 +61,11 @@ extension Resolver {
             return
         }
 
-        let name = VariableName(baseName: variableToken.lexeme, argumentNames: nil)
+        let name: ObjectName = .variableName(variableToken.lexeme)
         scopeStack.lastMutable[name] = true
     }
 
-    private func getDepth(name: VariableName, nameToken: Token) throws -> Int {
+    private func getDepth(name: ObjectName, nameToken: Token) throws -> Int {
         var i = scopeStack.count - 1
         while i >= 0 {
             if let _ = scopeStack[i][name] {
@@ -75,17 +75,23 @@ extension Resolver {
             i = i - 1
         }
 
-        if name.argumentNames == nil {
+        switch name {
+        case .variableName:
             throw ResolverError.undefinedVariable(nameToken)
-        }
-
-        for scope in scopeStack {
-            if scope.keys.contains(where: { $0.baseName == name.baseName }) {
-                throw ResolverError.incorrectArgumentsForFunction(nameToken)
+        case .functionName(let inboundBaseName, _):
+            for scope in scopeStack {
+                if scope.keys.contains(where: {
+                    if case .functionName(let baseName, _) = $0, baseName == inboundBaseName {
+                        return true
+                    }
+                    return false
+                }) {
+                    throw ResolverError.incorrectArgumentsForFunction(nameToken)
+                }
             }
-        }
 
-        throw ResolverError.undefinedFunction(nameToken)
+            throw ResolverError.undefinedFunction(nameToken)
+        }
     }
 }
 
@@ -150,7 +156,7 @@ extension Resolver {
     }
 
     mutating private func handleVariable(nameToken: Token) throws -> Expression<Int> {
-        let name = VariableName(baseName: nameToken.lexeme, argumentNames: nil)
+        let name: ObjectName = .variableName(nameToken.lexeme)
         if !scopeStack.isEmpty && scopeStack.lastMutable[name] == false {
             throw ResolverError.variableAccessedBeforeInitialization(nameToken)
         }
@@ -217,7 +223,7 @@ extension Resolver {
 
         let baseName = calleeToken.lexeme
         let argumentNames = arguments.map { $0.name.lexeme }
-        let name = VariableName(baseName: baseName, argumentNames: argumentNames)
+        let name: ObjectName = .functionName(baseName, argumentNames)
         let depth = try getDepth(name: name, nameToken: calleeToken)
 
         let resolvedArgs = try arguments.map { argument in
