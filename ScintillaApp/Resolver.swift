@@ -134,9 +134,8 @@ extension Resolver {
                                    expr0: expr0,
                                    expr1: expr1,
                                    expr2: expr2)
-        case .constructor(let objectName, let leftParenToken, let arguments):
-            return try handleConstructor(calleeExpr: objectName,
-                                         leftParenToken: leftParenToken,
+        case .constructor(let calleeName, let arguments, _):
+            return try handleConstructor(calleeName: calleeName,
                                          arguments: arguments)
         }
     }
@@ -198,8 +197,7 @@ extension Resolver {
         return .tuple(leftParenToken, resolvedExpr0, resolvedExpr1, resolvedExpr2)
     }
 
-    mutating private func handleConstructor(calleeExpr: Expression<UnresolvedDepth>,
-                                            leftParenToken: Token,
+    mutating private func handleConstructor(calleeName: Token,
                                             arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
         let previousArgumentListType = currentArgumentListType
         currentArgumentListType = .constructorCall
@@ -207,13 +205,13 @@ extension Resolver {
             currentArgumentListType = previousArgumentListType
         }
 
-        let resolvedCalleeExpr = try resolve(expression: calleeExpr)
+        let depth = try getDepth(nameToken: calleeName)
 
         let resolvedArgs = try arguments.map { argument in
             let resolvedValue = try resolve(expression: argument.value)
             return Expression.Argument(name: argument.name, value: resolvedValue)
         }
 
-        return .constructor(resolvedCalleeExpr, leftParenToken, resolvedArgs)
+        return .constructor(calleeName, resolvedArgs, depth)
     }
 }
