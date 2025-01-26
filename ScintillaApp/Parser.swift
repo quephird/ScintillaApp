@@ -75,14 +75,13 @@ extension Parser {
     //    term           → factor ( ( "-" | "+" ) factor )* ;
     //    factor         → unary ( ( "/" | "*" | "%" ) unary )* ;
     //    unary          → ( "!" | "-" | "*" ) unary
-    //                   | postfix ;
-    //    postfix        → primary
-    //                   | constructor
-    //    constructor    → IDENTIFIER ( (IDENTIFIER : expression)* ) ;
+    //                   | primary ;
     //    primary        → tuple
     //                   | list
     //                   | double
-    //                   | IDENTIFIER ;
+    //                   | IDENTIFIER
+    //                   | constructor ;
+    //    constructor    → IDENTIFIER ( (IDENTIFIER : expression)* ) ;
 
     mutating func parseStatement() throws -> Statement<UnresolvedDepth> {
         if let letDecl = try parseLetDeclaration() {
@@ -148,46 +147,7 @@ extension Parser {
             return .unary(oper, expr)
         }
 
-        return try parsePostfix()
-    }
-
-    mutating private func parsePostfix() throws -> Expression<UnresolvedDepth> {
-        var expr = try parsePrimary()
-
-        if let object = try parseConstructor(expr: expr) {
-            expr = object
-        }
-
-        return expr
-    }
-
-    mutating private func parseConstructor(expr: Expression<UnresolvedDepth>) throws -> Expression<UnresolvedDepth>? {
-        guard let leftParen = consumeToken(type: .leftParen) else {
-            return nil
-        }
-
-        var argList: [Expression<UnresolvedDepth>.Argument] = []
-        if currentToken.type != .rightParen {
-            repeat {
-                guard let argName = consumeToken(type: .identifier) else {
-                    throw ParseError.missingIdentifier(currentToken)
-                }
-
-                guard currentTokenMatchesAny(types: [.colon]) else {
-                    throw ParseError.missingColon(currentToken)
-                }
-
-                let argValue = try parseExpression()
-                let newArg = Expression<UnresolvedDepth>.Argument(name: argName, value: argValue)
-                argList.append(newArg)
-            } while currentTokenMatchesAny(types: [.comma])
-        }
-
-        guard currentTokenMatchesAny(types: [.rightParen]) else {
-            throw ParseError.missingRightParen(currentToken)
-        }
-
-        return .constructor(expr, leftParen, argList)
+        return try parsePrimary()
     }
 
     mutating private func parsePrimary() throws -> Expression<UnresolvedDepth> {
@@ -205,6 +165,10 @@ extension Parser {
         }
 
         if let varName = consumeToken(type: .identifier) {
+            if let object = try parseConstructor(name: varName) {
+                return object
+            }
+
             return .variable(varName, UnresolvedDepth())
         }
 
@@ -251,5 +215,34 @@ extension Parser {
         }
 
         return .list(leftBracket, exprList)
+    }
+
+    mutating private func parseConstructor(name: Token) throws -> Expression<UnresolvedDepth>? {
+        guard currentTokenMatchesAny(types: [.leftParen]) else {
+            return nil
+        }
+
+        var argList: [Expression<UnresolvedDepth>.Argument] = []
+        if currentToken.type != .rightParen {
+            repeat {
+                guard let argName = consumeToken(type: .identifier) else {
+                    throw ParseError.missingIdentifier(currentToken)
+                }
+
+                guard currentTokenMatchesAny(types: [.colon]) else {
+                    throw ParseError.missingColon(currentToken)
+                }
+
+                let argValue = try parseExpression()
+                let newArg = Expression<UnresolvedDepth>.Argument(name: argName, value: argValue)
+                argList.append(newArg)
+            } while currentTokenMatchesAny(types: [.comma])
+        }
+
+        guard currentTokenMatchesAny(types: [.rightParen]) else {
+            throw ParseError.missingRightParen(currentToken)
+        }
+
+        return .function(name, argList, UnresolvedDepth())
     }
 }

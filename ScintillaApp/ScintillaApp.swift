@@ -37,6 +37,8 @@ struct ScintillaApp: App {
                 let tokens = try tokenizer.scanTokens()
                 var parser = Parser(tokens: tokens)
                 let statements = try parser.parse()
+                var resolver = Resolver()
+                let resolvedStatements = try resolver.resolve(statements: statements)
             } catch {
                 // TODO: Need to expose error in app somehow
                 print(error)
