@@ -32,13 +32,9 @@ struct ScintillaApp: App {
     private func renderScene() {
         print("Rendering scene...")
         if let document {
-            var tokenizer = Tokenizer(source: document.text)
             do {
-                let tokens = try tokenizer.scanTokens()
-                var parser = Parser(tokens: tokens)
-                let statements = try parser.parse()
-                var resolver = Resolver()
-                let resolvedStatements = try resolver.resolve(statements: statements)
+                let evaluator = Evaluator()
+                try evaluator.interpret(source: document.text)
             } catch {
                 // TODO: Need to expose error in app somehow
                 print(error)

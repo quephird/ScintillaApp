@@ -6,7 +6,7 @@
 //
 
 enum Statement<Depth: Equatable>: Equatable {
-    case letDeclaration(Token, Expression<Depth>?)
+    case letDeclaration(Token, Expression<Depth>)
     case expression(Expression<Depth>)
 
     var locationToken: Token {
