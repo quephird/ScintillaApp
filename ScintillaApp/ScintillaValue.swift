@@ -5,11 +5,17 @@
 //  Created by Danielle Kefford on 1/23/25.
 //
 
+import ScintillaLib
+
 enum ScintillaValue: Equatable, CustomStringConvertible {
     case double(Double)
     case list([ScintillaValue])
     indirect case tuple((ScintillaValue, ScintillaValue, ScintillaValue))
     case function(ScintillaBuiltin)
+    case shape(Shape)
+    case camera(Camera)
+    case light(Light)
+    case world(World)
 
     static func == (lhs: ScintillaValue, rhs: ScintillaValue) -> Bool {
         switch (lhs, rhs) {
@@ -21,6 +27,16 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return l == r
         case (.function(let l), .function(let r)):
             return l == r
+        case (.shape(let l), .shape(let r)):
+            return l === r
+        case (.camera(let l), .camera(let r)):
+            // TODO: Need to fix this!!!
+            return true
+        case (.light(let l), .light(let r)):
+            // TODO: Need to fix this!!!
+            return true
+        case (.world(let l), .world(let r)):
+            return l === r
         default:
             return false
         }
@@ -36,6 +52,14 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "(\(values.0), \(values.1), \(values.2))"
         case .function(let builtin):
             return "\(builtin.objectName)"
+        case .shape(let shape):
+            return "\(shape)"
+        case .camera(let camera):
+            return "\(camera)"
+        case .light(let light):
+            return "\(light)"
+        case .world(let world):
+            return "\(world)"
         }
     }
 }

@@ -65,11 +65,10 @@ extension Parser {
         return statements
     }
 
-    // Statements are parsed in the following order:
+    // Scintilla programs are parsed in the following order:
     //
-    //    program        → statement* EOF ;
-    //    statement      → letDecl
-    //                   | expression ;
+    //    program        → statement* expression EOF ;
+    //    statement      → letDecl ;
     //    letDecl        → "let" IDENTIFIER "=" expression ;
     //    expression     → term ;
     //    term           → factor ( ( "-" | "+" ) factor )* ;

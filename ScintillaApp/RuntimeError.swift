@@ -15,6 +15,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case unsupportedBinaryOperator(Location, Substring)
     case binaryOperandsMustBeNumbers(Location, Substring)
     case notAFunction(Location, Substring)
+    case incorrectArgument
 
     var description: String {
         switch self {
@@ -32,6 +33,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[\(location)] Error: binary operands must be numbers, \(badOperator)"
         case .notAFunction(let location, let badFunction):
             return "[\(location)] Error: not a function, \(badFunction)"
+        case .incorrectArgument:
+            return "[] Error: bad argument"
         }
     }
 }

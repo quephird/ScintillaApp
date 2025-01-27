@@ -153,6 +153,8 @@ class Evaluator {
             throw RuntimeError.notAFunction(calleeToken.location, calleeToken.lexeme)
         }
 
+        // TODO: Need to package up arguments such that names, locations, _and_ values
+        // are all accessible within the call() function.
         return try callee.call(argumentValues: argumentValues)
     }
 }
