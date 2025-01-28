@@ -12,7 +12,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     case list([ScintillaValue])
     indirect case tuple((ScintillaValue, ScintillaValue, ScintillaValue))
     case function(ScintillaBuiltin)
-    case shape(Shape)
+    case shape(any Shape)
     case camera(Camera)
     case light(Light)
     case world(World)
@@ -28,13 +28,17 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
         case (.function(let l), .function(let r)):
             return l == r
         case (.shape(let l), .shape(let r)):
-            return l === r
+            return l == r
         case (.camera(let l), .camera(let r)):
-            // TODO: Need to update Camera and Light conformers to be Equatable...
-            // but that requires changes to ScintillaLib and cutting a new release
-            return true
+            return l == r
         case (.light(let l), .light(let r)):
-            return true
+            if let l = l as? PointLight, let r = r as? PointLight {
+                return l == r
+            } else if let l = l as? AreaLight, let r = r as? AreaLight {
+                return l == r
+            } else {
+                return false
+            }
         case (.world(let l), .world(let r)):
             return l === r
         default:
