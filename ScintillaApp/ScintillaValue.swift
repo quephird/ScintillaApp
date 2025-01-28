@@ -30,10 +30,10 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
         case (.shape(let l), .shape(let r)):
             return l === r
         case (.camera(let l), .camera(let r)):
-            // TODO: Need to fix this!!!
+            // TODO: Need to update Camera and Light conformers to be Equatable...
+            // but that requires changes to ScintillaLib and cutting a new release
             return true
         case (.light(let l), .light(let r)):
-            // TODO: Need to fix this!!!
             return true
         case (.world(let l), .world(let r)):
             return l === r

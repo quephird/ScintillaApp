@@ -12,6 +12,9 @@ import UniformTypeIdentifiers
 struct ScintillaApp: App {
     @FocusedBinding(\.document) var document: ScintillaDocument?
 
+    @State var percentRendered: Double = 0.0
+    @State var elapsedTime: Range<Date> = Date()..<Date()
+
     var body: some Scene {
         DocumentGroup(newDocument: ScintillaDocument()) { file in
             ContentView(document: file.$document)
@@ -21,7 +24,9 @@ struct ScintillaApp: App {
             CommandGroup(after: .saveItem) {
                 Divider()
                 Button("Render Scene") {
-                    self.renderScene()
+                    Task {
+                        await self.renderScene()
+                    }
                 }
                 .disabled(document == nil)
                 .keyboardShortcut("R")
@@ -29,16 +34,42 @@ struct ScintillaApp: App {
         }
     }
 
-    private func renderScene() {
+    private func renderScene() async {
         print("Rendering scene...")
         if let document {
             do {
                 let evaluator = Evaluator()
-                try evaluator.interpret(source: document.text)
+                let world = try evaluator.interpret(source: document.text)
+                let canvas = await world.render(updateClosure: updateProgress)
+
+                // TODO: This is tooooooootally temporary code just to verify
+                // that I can generate any sort of image whatsoever and be able
+                // to view it
+                let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+                let newFileUrl = downloadsDir.appending(path: "test.png")
+                FileManager.default.createFile(atPath: newFileUrl.path(), contents: nil, attributes: nil)
+                canvas.save(to: newFileUrl.path())
+
+                let cgImage = canvas.toCGImage()
+                let ciContext = CIContext()
+                let ciImage = CIImage(cgImage: cgImage)
+
+                try ciContext.writePNGRepresentation(
+                    of: ciImage,
+                    to: newFileUrl,
+                    format: .RGBA8,
+                    colorSpace: ciImage.colorSpace!)
             } catch {
                 // TODO: Need to expose error in app somehow
                 print(error)
             }
         }
+    }
+
+    // TODO: Need to figure out what the closure passed to World.render()
+    // should look like
+    private func updateProgress(_ newPercentRendered: Double, newElapsedTime: Range<Date>) {
+        self.percentRendered = newPercentRendered
+        self.elapsedTime = newElapsedTime
     }
 }

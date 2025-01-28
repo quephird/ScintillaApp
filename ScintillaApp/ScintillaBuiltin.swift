@@ -27,20 +27,16 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     }
 
     public func call(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
-        let result: ScintillaValue = switch self {
+        switch self {
         case .camera:
-            try makeCamera(argumentValues: argumentValues)
+            return try makeCamera(argumentValues: argumentValues)
         case .pointLight:
-            try makePointLight(argumentValues: argumentValues)
+            return try makePointLight(argumentValues: argumentValues)
         case .sphere:
-            .shape(Sphere())
+            return .shape(Sphere())
         case .world:
-            try makeWorld(argumentValues: argumentValues)
+            return try makeWorld(argumentValues: argumentValues)
         }
-
-        print(result)
-
-        return result
     }
 
     private func makeWorld(argumentValues: [ScintillaValue]) throws -> ScintillaValue {

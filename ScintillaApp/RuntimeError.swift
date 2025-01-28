@@ -15,7 +15,10 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case unsupportedBinaryOperator(Location, Substring)
     case binaryOperandsMustBeNumbers(Location, Substring)
     case notAFunction(Location, Substring)
+    // TODO: Need to capture location and lexemes for the following three error cases
     case incorrectArgument
+    case missingLastExpression
+    case lastExpressionNeedsToBeWorld
 
     var description: String {
         switch self {
@@ -35,6 +38,10 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[\(location)] Error: not a function, \(badFunction)"
         case .incorrectArgument:
             return "[] Error: bad argument"
+        case .missingLastExpression:
+            return "[] Error: missing last expression"
+        case .lastExpressionNeedsToBeWorld:
+            return "[] Error: last expression needs to be world"
         }
     }
 }

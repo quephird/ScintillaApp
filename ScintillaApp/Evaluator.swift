@@ -7,6 +7,8 @@
 
 import Foundation
 
+import ScintillaLib
+
 class Evaluator {
     var environment: Environment
 
@@ -32,12 +34,25 @@ class Evaluator {
         return try resolver.resolve(statements: statements)
     }
 
-    func interpret(source: String) throws {
+    func interpret(source: String) throws -> World {
         let statements = try prepareCode(source: source)
 
-        for statement in statements {
-            try execute(statement: statement)
+        // TODO: Need to introduce the concept of a Program with
+        // multiple statements and a single terminal World expression
+        for (i, statement) in statements.enumerated() {
+            if i == statements.endIndex-1, case .expression(let expr) = statement {
+                let finalExpr = try evaluate(expr: expr)
+                guard case .world(let world) = finalExpr else {
+                    throw RuntimeError.lastExpressionNeedsToBeWorld
+                }
+
+                return world
+            } else {
+                try execute(statement: statement)
+            }
         }
+
+        throw RuntimeError.missingLastExpression
     }
 
     func execute(statement: Statement<Int>) throws {
