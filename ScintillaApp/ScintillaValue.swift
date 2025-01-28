@@ -5,6 +5,61 @@
 //  Created by Danielle Kefford on 1/23/25.
 //
 
-enum ScintillaValue: Equatable {
+import ScintillaLib
+
+enum ScintillaValue: Equatable, CustomStringConvertible {
     case double(Double)
+    case list([ScintillaValue])
+    indirect case tuple((ScintillaValue, ScintillaValue, ScintillaValue))
+    case function(ScintillaBuiltin)
+    case shape(Shape)
+    case camera(Camera)
+    case light(Light)
+    case world(World)
+
+    static func == (lhs: ScintillaValue, rhs: ScintillaValue) -> Bool {
+        switch (lhs, rhs) {
+        case (.double(let l), .double(let r)):
+            return l == r
+        case (.list(let l), .list(let r)):
+            return l == r
+        case (.tuple(let l), .tuple(let r)):
+            return l == r
+        case (.function(let l), .function(let r)):
+            return l == r
+        case (.shape(let l), .shape(let r)):
+            return l === r
+        case (.camera(let l), .camera(let r)):
+            // TODO: Need to update Camera and Light conformers to be Equatable...
+            // but that requires changes to ScintillaLib and cutting a new release
+            return true
+        case (.light(let l), .light(let r)):
+            return true
+        case (.world(let l), .world(let r)):
+            return l === r
+        default:
+            return false
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .double(let value):
+            return "\(value)"
+        case .list(let values):
+            return values.map { "\($0)" }.joined(separator: ", ")
+        case .tuple(let values):
+            return "(\(values.0), \(values.1), \(values.2))"
+        case .function(let builtin):
+            return "\(builtin.objectName)"
+        case .shape(let shape):
+            return "\(shape)"
+        case .camera(let camera):
+            return "\(camera)"
+        case .light(let light):
+            return "\(light)"
+        case .world(let world):
+            return "\(world)"
+        }
+    }
 }

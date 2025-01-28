@@ -13,16 +13,17 @@ struct Resolver {
         case tupleInitializer
     }
 
-    private var scopeStack: [[ObjectName: Bool]] = [
-        [
-            .variableName("PI"): true,
-            .functionName("Sphere", []): true,
-            .functionName("PointLight", ["position"]): true,
-            .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up"]): true,
-            .functionName("World", ["camera", "lights", "shapes"]): true,
-        ]
-    ]
+    private var scopeStack: [[ObjectName: Bool]]
     private var currentArgumentListType: ArgumentListType = .none
+
+    init() {
+        var builtins = ScintillaBuiltin.allCases.map{ builtin in
+            (builtin.objectName, true)
+        }
+        builtins.append((.variableName("PI"), true))
+
+        self.scopeStack = [Dictionary(uniqueKeysWithValues: builtins)]
+    }
 }
 
 extension Resolver {
@@ -114,13 +115,10 @@ extension Resolver {
     }
 
     mutating private func handleLetDeclaration(nameToken: Token,
-                                               initializeExpr: Expression<UnresolvedDepth>?) throws -> Statement<Int> {
+                                               initializeExpr: Expression<UnresolvedDepth>) throws -> Statement<Int> {
         try declareVariable(variableToken: nameToken)
 
-        var resolvedInitializerExpr: Expression<Int>? = nil
-        if let initializeExpr {
-            resolvedInitializerExpr = try resolve(expression: initializeExpr)
-        }
+        let resolvedInitializerExpr = try resolve(expression: initializeExpr)
 
         defineVariable(variableToken: nameToken)
         return .letDeclaration(nameToken, resolvedInitializerExpr)
@@ -150,8 +148,8 @@ extension Resolver {
                                    expr1: expr1,
                                    expr2: expr2)
         case .function(let calleeName, let arguments, _):
-            return try handleConstructor(calleeToken: calleeName,
-                                         arguments: arguments)
+            return try handleFunction(calleeToken: calleeName,
+                                      arguments: arguments)
         }
     }
 
@@ -213,8 +211,8 @@ extension Resolver {
         return .tuple(leftParenToken, resolvedExpr0, resolvedExpr1, resolvedExpr2)
     }
 
-    mutating private func handleConstructor(calleeToken: Token,
-                                            arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
+    mutating private func handleFunction(calleeToken: Token,
+                                         arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
         let previousArgumentListType = currentArgumentListType
         currentArgumentListType = .constructorCall
         defer {

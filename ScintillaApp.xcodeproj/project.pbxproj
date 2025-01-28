@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		877AE8332D4773F1006B9F54 /* ScintillaLib in Frameworks */ = {isa = PBXBuildFile; productRef = 877AE8322D4773F1006B9F54 /* ScintillaLib */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		877AE7822D3B7144006B9F54 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +69,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				877AE8332D4773F1006B9F54 /* ScintillaLib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +130,7 @@
 			);
 			name = ScintillaApp;
 			packageProductDependencies = (
+				877AE8322D4773F1006B9F54 /* ScintillaLib */,
 			);
 			productName = ScintillaApp;
 			productReference = 877AE7702D3B7143006B9F54 /* ScintillaApp.app */;
@@ -208,6 +214,9 @@
 			);
 			mainGroup = 877AE7672D3B7143006B9F54;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				877AE8312D4773F1006B9F54 /* XCRemoteSwiftPackageReference "ScintillaLib" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 877AE7712D3B7143006B9F54 /* Products */;
 			projectDirPath = "";
@@ -410,6 +419,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ScintillaApp/Preview Content\"";
+				DEVELOPMENT_TEAM = GARV9392W2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ScintillaApp/Info.plist;
@@ -436,6 +446,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"ScintillaApp/Preview Content\"";
+				DEVELOPMENT_TEAM = GARV9392W2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ScintillaApp/Info.plist;
@@ -556,6 +567,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		877AE8312D4773F1006B9F54 /* XCRemoteSwiftPackageReference "ScintillaLib" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/quephird/ScintillaLib";
+			requirement = {
+				kind = exactVersion;
+				version = 0.0.10;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		877AE8322D4773F1006B9F54 /* ScintillaLib */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 877AE8312D4773F1006B9F54 /* XCRemoteSwiftPackageReference "ScintillaLib" */;
+			productName = ScintillaLib;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 877AE7682D3B7143006B9F54 /* Project object */;
 }
