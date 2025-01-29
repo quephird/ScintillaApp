@@ -9,23 +9,22 @@ import SwiftUI
 
 struct ContentView: View {
     @Binding var document: ScintillaDocument
-    @State var renderedImage: CGImage?
+    @ObservedObject var viewModel: ViewModel
 
     var body: some View {
         VStack {
             CodeEditor(code: $document.text)
         }
-        .sheet(item: $renderedImage) { renderedImage in
+        .sheet(item: $viewModel.renderedImage) { renderedImage in
             let size = NSSize(width: renderedImage.width, height: renderedImage.height)
             VStack {
                 Image(nsImage: NSImage(cgImage: renderedImage, size: size))
                 Button("Dismiss") {
-                    self.renderedImage = nil
+                    self.viewModel.renderedImage = nil
                 }
             }
         }
         .padding()
-        .focusedSceneValue(\.renderedImage, $renderedImage)
     }
 }
 
