@@ -11,6 +11,7 @@ import UniformTypeIdentifiers
 @main
 struct ScintillaApp: App {
     @FocusedBinding(\.document) var document: ScintillaDocument?
+    @FocusedBinding(\.renderedImage) var renderedImage: CGImage??
 
     @State var percentRendered: Double = 0.0
     @State var elapsedTime: Range<Date> = Date()..<Date()
@@ -49,14 +50,15 @@ struct ScintillaApp: App {
                 canvas.save(to: newFileUrl.path())
 
                 let cgImage = canvas.toCGImage()
-                let ciContext = CIContext()
-                let ciImage = CIImage(cgImage: cgImage)
-
-                try ciContext.writePNGRepresentation(
-                    of: ciImage,
-                    to: newFileUrl,
-                    format: .RGBA8,
-                    colorSpace: ciImage.colorSpace!)
+                self.renderedImage = cgImage
+//                let ciContext = CIContext()
+//                let ciImage = CIImage(cgImage: cgImage)
+//
+//                try ciContext.writePNGRepresentation(
+//                    of: ciImage,
+//                    to: newFileUrl,
+//                    format: .RGBA8,
+//                    colorSpace: ciImage.colorSpace!)
             } catch {
                 // TODO: Need to expose error in app somehow
                 print(error)
