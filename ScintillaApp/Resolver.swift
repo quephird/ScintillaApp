@@ -98,11 +98,14 @@ extension Resolver {
 
 extension Resolver {
     // Main point of entry
-    mutating func resolve(statements: [Statement<UnresolvedDepth>]) throws -> [Statement<Int>] {
-        let resolvedStatements = try statements.map { statement in
+    mutating func resolve(program: Program<UnresolvedDepth>) throws -> Program<Int> {
+        let resolvedStatements = try program.statements.map { statement in
             return try resolve(statement: statement)
         }
-        return resolvedStatements
+
+        let resolvedFinalExpression = try resolve(expression: program.finalExpression)
+
+        return Program(statements: resolvedStatements, finalExpression: resolvedFinalExpression)
     }
 
     private mutating func resolve(statement: Statement<UnresolvedDepth>) throws -> Statement<Int> {
