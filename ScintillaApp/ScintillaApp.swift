@@ -35,7 +35,6 @@ struct ScintillaApp: App {
     }
 
     private func renderScene() async {
-        print("Rendering scene...")
         if let document {
             do {
                 let evaluator = Evaluator()
@@ -47,7 +46,6 @@ struct ScintillaApp: App {
                 // to view it
                 let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
                 let newFileUrl = downloadsDir.appending(path: "test.png")
-                FileManager.default.createFile(atPath: newFileUrl.path(), contents: nil, attributes: nil)
                 canvas.save(to: newFileUrl.path())
 
                 let cgImage = canvas.toCGImage()

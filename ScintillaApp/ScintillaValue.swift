@@ -32,6 +32,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
         case (.camera(let l), .camera(let r)):
             return l == r
         case (.light(let l), .light(let r)):
+            // TODO: Move this into a standalone function in ScintillaLib
             if let l = l as? PointLight, let r = r as? PointLight {
                 return l == r
             } else if let l = l as? AreaLight, let r = r as? AreaLight {

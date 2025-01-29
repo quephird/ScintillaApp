@@ -55,14 +55,15 @@ extension Parser {
 }
 
 extension Parser {
-    mutating func parse() throws -> [Statement<UnresolvedDepth>] {
+    mutating func parse() throws -> Program<UnresolvedDepth> {
         var statements: [Statement<UnresolvedDepth>] = []
-        while currentToken.type != .eof {
-            let statement = try parseStatement()
+        while let statement = try parseStatement() {
             statements.append(statement)
         }
 
-        return statements
+        let finalExpression = try parseExpression()
+
+        return Program(statements: statements, finalExpression: finalExpression)
     }
 
     // Scintilla programs are parsed in the following order:
@@ -82,13 +83,12 @@ extension Parser {
     //                   | constructor ;
     //    constructor    → IDENTIFIER ( (IDENTIFIER : expression)* ) ;
 
-    mutating func parseStatement() throws -> Statement<UnresolvedDepth> {
+    mutating func parseStatement() throws -> Statement<UnresolvedDepth>? {
         if let letDecl = try parseLetDeclaration() {
             return letDecl
         }
 
-        let expression = try parseExpression()
-        return .expression(expression)
+        return nil
     }
 
     mutating private func parseLetDeclaration() throws -> Statement<UnresolvedDepth>? {
