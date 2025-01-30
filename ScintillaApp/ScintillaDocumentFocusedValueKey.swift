@@ -7,18 +7,6 @@
 
 import SwiftUI
 
-struct ScintillaDocumentFocusedValueKey: FocusedValueKey {
-    typealias Value = Binding<ScintillaDocument>
-}
-
 extension FocusedValues {
-    var document: ScintillaDocumentFocusedValueKey.Value? {
-        get {
-            return self[ScintillaDocumentFocusedValueKey.self]
-        }
-
-        set {
-            self[ScintillaDocumentFocusedValueKey.self] = newValue
-        }
-    }
+    @Entry var document: Binding<ScintillaDocument>? = nil
 }
