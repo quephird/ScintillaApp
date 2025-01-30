@@ -27,9 +27,3 @@ struct ContentView: View {
         .padding()
     }
 }
-
-extension CGImage: @retroactive Identifiable {
-    public var id: ObjectIdentifier {
-        ObjectIdentifier(self)
-    }
-}
