@@ -13,6 +13,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case camera
     case pointLight
     case colorRgb
+    case colorHsl
+    case translate
 
     var objectName: ObjectName {
         switch self {
@@ -26,6 +28,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("PointLight", ["position"])
         case .colorRgb:
             return .methodName(.shape, "color", ["rgb"])
+        case .colorHsl:
+            return .methodName(.shape, "color", ["hsl"])
+        case .translate:
+            return .methodName(.shape, "translate", ["by"])
         }
     }
 
@@ -44,25 +50,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
-    public func callMethod(callee: ScintillaValue, argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    public func callMethod(object: ScintillaValue, argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
         case .colorRgb:
-            switch callee {
-            case .shape(let shape):
-                let firstArgumentValue = argumentValues[0]
-                guard case .tuple(let color) = firstArgumentValue else {
-                    throw RuntimeError.incorrectArgument
-                }
-
-                guard case (.double(let r), .double(let g), .double(let b)) = color else {
-                    throw RuntimeError.incorrectArgument
-                }
-
-                let solidColor: Material = .solidColor(r, g, b)
-                return .shape(shape.material(solidColor))
-            default:
-                throw RuntimeError.incorrectArgument
-            }
+            return try makeColorRgb(object: object, argumentValues: argumentValues)
+        case .colorHsl:
+            return try makeColorHsl(object: object, argumentValues: argumentValues)
+        case .translate:
+            return try makeTranslate(object: object, argumentValues: argumentValues)
         default:
             fatalError("Internal error: only method calls should ever get here")
         }
@@ -161,5 +156,57 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
         let point = Point(x, y, z)
         return .light(PointLight(position: point))
+    }
+
+    private func makeColorRgb(object: ScintillaValue,
+                              argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        return try makeColorFunctionCall(object: object,
+                                         argumentValues: argumentValues,
+                                         colorSpace: .rgb)
+    }
+
+    private func makeColorHsl(object: ScintillaValue,
+                              argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        return try makeColorFunctionCall(object: object,
+                                         argumentValues: argumentValues,
+                                         colorSpace: .hsl)
+    }
+
+    private func makeColorFunctionCall(object: ScintillaValue,
+                                       argumentValues: [ScintillaValue],
+                                       colorSpace: ColorSpace) throws -> ScintillaValue {
+        guard case .shape(let shape) = object else {
+            throw RuntimeError.incorrectObject
+        }
+
+        let firstArgumentValue = argumentValues[0]
+        guard case .tuple(let color) = firstArgumentValue else {
+            throw RuntimeError.incorrectArgument
+        }
+
+        guard case (.double(let h), .double(let s), .double(let l)) = color else {
+            fatalError("Tuple should only ever have three double values")
+        }
+
+        let solidColor: Material = .solidColor(h, s, l, colorSpace)
+        return .shape(shape.material(solidColor))
+    }
+
+    private func makeTranslate(object: ScintillaValue,
+                               argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        guard case .shape(let shape) = object else {
+            throw RuntimeError.incorrectObject
+        }
+
+        let firstArgumentValue = argumentValues[0]
+        guard case .tuple(let position) = firstArgumentValue else {
+            throw RuntimeError.incorrectArgument
+        }
+
+        guard case (.double(let x), .double(let y), .double(let z)) = position else {
+            fatalError("Tuple should only ever have three double values")
+        }
+
+        return .shape(shape.translate(x, y, z))
     }
 }

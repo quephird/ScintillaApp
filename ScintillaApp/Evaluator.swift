@@ -189,6 +189,6 @@ class Evaluator {
 
         // TODO: Need to package up arguments such that names, locations, _and_ values
         // are all accessible within the call() function.
-        return try method.callMethod(callee: object, argumentValues: argumentValues)
+        return try method.callMethod(object: object, argumentValues: argumentValues)
     }
 }

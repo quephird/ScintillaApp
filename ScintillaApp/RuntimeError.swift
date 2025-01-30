@@ -18,6 +18,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case notAFunction(Location, Substring)
     // TODO: Need to capture location and lexemes for the following three error cases
     case incorrectArgument
+    case incorrectObject
     case missingLastExpression
     case lastExpressionNeedsToBeWorld
 
@@ -41,6 +42,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[\(location)] Error: not a function, \(badFunction)"
         case .incorrectArgument:
             return "[] Error: bad argument"
+        case .incorrectObject:
+            return "[] Error: method does not exist on object"
         case .missingLastExpression:
             return "[] Error: missing last expression"
         case .lastExpressionNeedsToBeWorld:
