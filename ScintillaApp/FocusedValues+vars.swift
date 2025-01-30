@@ -1,5 +1,5 @@
 //
-//  ScintillaDocumentFocusedValueKey.swift
+//  FocusedValues+vars.swift
 //  ScintillaApp
 //
 //  Created by Danielle Kefford on 1/22/25.
