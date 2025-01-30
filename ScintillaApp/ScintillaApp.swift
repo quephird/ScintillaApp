@@ -13,9 +13,6 @@ struct ScintillaApp: App {
     @FocusedBinding(\.document) var document: ScintillaDocument?
     @StateObject var viewModel = ViewModel()
 
-    @State var percentRendered: Double = 0.0
-    @State var elapsedTime: Range<Date> = Date()..<Date()
-
     var body: some Scene {
         DocumentGroup(newDocument: ScintillaDocument()) { file in
             ContentView(document: file.$document, viewModel: viewModel)
@@ -38,6 +35,7 @@ struct ScintillaApp: App {
                     do {
                         try viewModel.saveImage()
                     } catch {
+                        // TODO: Need to surface error in the UI somehow
                         print(error)
                     }
                 }
