@@ -27,6 +27,7 @@ struct ScintillaApp: App {
                 Button("Render Scene") {
                     if let document {
                         Task {
+                            viewModel.showSheet = true
                             try await viewModel.renderImage(source: document.text)
                         }
                     }

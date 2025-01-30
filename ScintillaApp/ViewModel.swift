@@ -11,7 +11,11 @@ import ScintillaLib
 
 @MainActor
 class ViewModel: ObservableObject {
+    @Published var showSheet: Bool = false
     @Published var renderedImage: CGImage?
+
+    @Published var percentRendered: Double = 0.0
+    @Published var elapsedTime: Range<Date> = Date()..<Date()
 
     public func renderImage(source: String) async throws {
         let evaluator = Evaluator()
@@ -21,7 +25,8 @@ class ViewModel: ObservableObject {
     }
 
     private func updateProgress(_ percentRendered: Double, elapsedTime: Range<Date>) {
-        // TODO: Need to implement this!!!
+        self.percentRendered = percentRendered
+        self.elapsedTime = elapsedTime
     }
 
     // TODO: This is tooooooootally temporary code just to verify that

@@ -12,3 +12,9 @@ extension CGImage: @retroactive Identifiable {
         ObjectIdentifier(self)
     }
 }
+
+extension CGImage {
+    public var nsSize: NSSize {
+        NSSize(width: self.width, height: self.height)
+    }
+}

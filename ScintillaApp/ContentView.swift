@@ -15,13 +15,37 @@ struct ContentView: View {
         VStack {
             CodeEditor(code: $document.text)
         }
-        .sheet(item: $viewModel.renderedImage) { renderedImage in
-            let size = NSSize(width: renderedImage.width, height: renderedImage.height)
-            VStack {
-                Image(nsImage: NSImage(cgImage: renderedImage, size: size))
-                Button("Dismiss") {
-                    self.viewModel.renderedImage = nil
+        .sheet(isPresented: $viewModel.showSheet) {
+            if let renderedImage = viewModel.renderedImage {
+                VStack {
+                    Image(nsImage: NSImage(cgImage: renderedImage, size: renderedImage.nsSize))
+                    Button("Dismiss") {
+                        self.viewModel.showSheet = false
+                        self.viewModel.renderedImage = nil
+                    }
                 }
+            } else {
+                VStack {
+                    Spacer()
+                    ProgressView(value: viewModel.percentRendered) {
+                        Text("Rendering…")
+                    } currentValueLabel: {
+                        Text(
+                            viewModel.percentRendered
+                                .formatted(
+                                    .percent.precision(
+                                        .integerAndFractionLength(integerLimits: 1...3,
+                                                                  fractionLimits: 0...0))))
+                    }
+                        .progressViewStyle(.circular)
+                    Spacer()
+                }
+            }
+            HStack {
+                Text("Elapsed time: \(viewModel.elapsedTime.formatted(.components(style: .condensedAbbreviated)))")
+                    .padding(.leading, 5)
+                    .padding(.bottom, 5)
+                Spacer()
             }
         }
         .padding()
