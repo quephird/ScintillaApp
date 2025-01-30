@@ -24,10 +24,17 @@ class ViewModel: ObservableObject {
         // TODO: Need to implement this!!!
     }
 
-    public func saveImage(fileUrl: URL) throws {
+    // TODO: This is tooooooootally temporary code just to verify that
+    // it is possible to save the displayed image to the file system.
+    // Until I figure out how to wire up a file dialog box, the path
+    // to the file is hardcoded here.
+    public func saveImage() throws {
         if let renderedImage {
             let ciContext = CIContext()
             let ciImage = CIImage(cgImage: renderedImage)
+
+            let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+            let fileUrl = downloadsDir.appending(path: "test.png")
 
             try ciContext.writePNGRepresentation(
                 of: ciImage,

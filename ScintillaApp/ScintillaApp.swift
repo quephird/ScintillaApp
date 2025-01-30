@@ -34,20 +34,13 @@ struct ScintillaApp: App {
                 .disabled(document == nil)
                 .keyboardShortcut("R")
                 Button("Save Image") {
-                    if let _ = viewModel.renderedImage {
-                        // TODO: This is tooooooootally temporary code just to verify
-                        // that I can generate any sort of image whatsoever and be able
-                        // to view it
-                        let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
-                        let fileUrl = downloadsDir.appending(path: "test.png")
-                        do {
-                            try viewModel.saveImage(fileUrl: fileUrl)
-                        } catch {
-                            print(error)
-                        }
+                    do {
+                        try viewModel.saveImage()
+                    } catch {
+                        print(error)
                     }
                 }
-                .disabled(document == nil)
+                .disabled(viewModel.renderedImage == nil)
             }
         }
     }
