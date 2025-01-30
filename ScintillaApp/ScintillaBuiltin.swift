@@ -12,6 +12,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case world
     case camera
     case pointLight
+    case colorRgb
 
     var objectName: ObjectName {
         switch self {
@@ -23,6 +24,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up"])
         case .pointLight:
             return .functionName("PointLight", ["position"])
+        case .colorRgb:
+            return .methodName(.shape, "color", ["rgb"])
         }
     }
 
@@ -36,6 +39,32 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .shape(Sphere())
         case .world:
             return try makeWorld(argumentValues: argumentValues)
+        default:
+            fatalError("Internal error: method calls should not get here")
+        }
+    }
+
+    public func callMethod(callee: ScintillaValue, argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        switch self {
+        case .colorRgb:
+            switch callee {
+            case .shape(let shape):
+                let firstArgumentValue = argumentValues[0]
+                guard case .tuple(let color) = firstArgumentValue else {
+                    throw RuntimeError.incorrectArgument
+                }
+
+                guard case (.double(let r), .double(let g), .double(let b)) = color else {
+                    throw RuntimeError.incorrectArgument
+                }
+
+                let solidColor: Material = .solidColor(r, g, b)
+                return .shape(shape.material(solidColor))
+            default:
+                throw RuntimeError.incorrectArgument
+            }
+        default:
+            fatalError("Internal error: only method calls should ever get here")
         }
     }
 

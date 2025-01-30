@@ -10,6 +10,7 @@ import Foundation
 enum RuntimeError: LocalizedError, CustomStringConvertible {
     case undefinedVariable(Location, Substring)
     case undefinedFunction(Location, Substring)
+    case undefinedMethod(Location, Substring)
     case unsupportedUnaryOperator(Location, Substring)
     case unaryOperandMustBeNumber(Location, Substring)
     case unsupportedBinaryOperator(Location, Substring)
@@ -26,6 +27,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[\(location)] Error: undefined variable, \(name)"
         case .undefinedFunction(let location, let name):
             return "[\(location)] Error: undefined function, \(name)"
+        case .undefinedMethod(let location, let name):
+            return "[\(location)] Error: undefined method, \(name)"
         case .unsupportedUnaryOperator(let location, let badOperator):
             return "[\(location)] Error: unsupported unary operator, \(badOperator)"
         case .unaryOperandMustBeNumber(let location, let badOperator):

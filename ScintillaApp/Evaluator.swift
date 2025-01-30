@@ -84,6 +84,10 @@ class Evaluator {
         case .function(let calleeName, let arguments, _):
             return try handleFunction(calleeToken: calleeName,
                                       arguments: arguments)
+        case .method(let calleeExpr, let methodToken, let arguments):
+            return try handleMethod(calleeExpr: calleeExpr,
+                                    methodToken: methodToken,
+                                    arguments: arguments)
         }
     }
 
@@ -165,5 +169,26 @@ class Evaluator {
         // TODO: Need to package up arguments such that names, locations, _and_ values
         // are all accessible within the call() function.
         return try callee.call(argumentValues: argumentValues)
+    }
+
+    private func handleMethod(calleeExpr: Expression<Int>,
+                              methodToken: Token,
+                              arguments: [Expression<Int>.Argument]) throws -> ScintillaValue {
+        let object = try evaluate(expr: calleeExpr)
+
+        let argumentValues = try arguments.map { try evaluate(expr: $0.value) }
+
+        let methodName = methodToken.lexeme
+        let argumentNames = arguments.map { $0.name.lexeme }
+        let methodObjectName: ObjectName = .methodName(.shape, methodName, argumentNames)
+        let methodValue = try environment.getValue(name: methodObjectName)
+
+        guard case .function(let method) = methodValue else {
+            throw RuntimeError.notAFunction(methodToken.location, methodToken.lexeme)
+        }
+
+        // TODO: Need to package up arguments such that names, locations, _and_ values
+        // are all accessible within the call() function.
+        return try method.callMethod(callee: object, argumentValues: argumentValues)
     }
 }

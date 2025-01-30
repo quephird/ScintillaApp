@@ -9,6 +9,7 @@ struct Resolver {
     private enum ArgumentListType {
         case none
         case constructorCall
+        case methodCall
         case listInitializer
         case tupleInitializer
     }
@@ -92,6 +93,8 @@ extension Resolver {
             }
 
             throw ResolverError.undefinedFunction(nameToken)
+        case .methodName:
+            fatalError("Methods should not need to be resolved")
         }
     }
 }
@@ -153,6 +156,10 @@ extension Resolver {
         case .function(let calleeName, let arguments, _):
             return try handleFunction(calleeToken: calleeName,
                                       arguments: arguments)
+        case .method(let calleeExpr, let methodToken, let arguments):
+            return try handleMethod(calleeExpr: calleeExpr,
+                                    methodToken: methodToken,
+                                    arguments: arguments)
         }
     }
 
@@ -233,5 +240,24 @@ extension Resolver {
         }
 
         return .function(calleeToken, resolvedArgs, depth)
+    }
+
+    mutating private func handleMethod(calleeExpr: Expression<UnresolvedDepth>,
+                                       methodToken: Token,
+                                       arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
+        let previousArgumentListType = currentArgumentListType
+        currentArgumentListType = .methodCall
+        defer {
+            currentArgumentListType = previousArgumentListType
+        }
+
+        let resolvedCalleeExpr = try resolve(expression: calleeExpr)
+
+        let resolvedArguments = try arguments.map { argument in
+            let resolvedValue = try resolve(expression: argument.value)
+            return Expression.Argument(name: argument.name, value: resolvedValue)
+        }
+
+        return .method(resolvedCalleeExpr, methodToken, resolvedArguments)
     }
 }

@@ -7,6 +7,17 @@
 
 import ScintillaLib
 
+enum ScintillaType {
+    case double
+    case list
+    case tuple
+    case function
+    case shape
+    case camera
+    case light
+    case world
+}
+
 enum ScintillaValue: Equatable, CustomStringConvertible {
     case double(Double)
     case list([ScintillaValue])
@@ -16,6 +27,27 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     case camera(Camera)
     case light(Light)
     case world(World)
+
+    var type: ScintillaType {
+        switch self {
+        case .double:
+            return .double
+        case .list:
+            return .list
+        case .tuple:
+            return .tuple
+        case .function:
+            return .function
+        case .shape(_):
+            return .shape
+        case .camera(_):
+            return .camera
+        case .light(_):
+            return .light
+        case .world(_):
+            return .world
+        }
+    }
 
     static func == (lhs: ScintillaValue, rhs: ScintillaValue) -> Bool {
         switch (lhs, rhs) {

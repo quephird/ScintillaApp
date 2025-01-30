@@ -17,7 +17,8 @@ indirect enum Expression<Depth: Equatable>: Equatable {
     case variable(Token, Depth)
     case list(Token, [Expression])
     case tuple(Token, Expression, Expression, Expression)
-    case function(Token, [(Argument)], Depth)
+    case function(Token, [Argument], Depth)
+    case method(Expression, Token, [Argument])
 
     var locationToken: Token {
         switch self {
@@ -35,6 +36,8 @@ indirect enum Expression<Depth: Equatable>: Equatable {
             return leftParenToken
         case .function(let nameToken, _, _):
             return nameToken
+        case .method(_, let methodNameToken, _):
+            return methodNameToken
         }
     }
 }

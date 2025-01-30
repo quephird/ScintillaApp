@@ -32,6 +32,9 @@ class Environment: Equatable {
         case .functionName(let baseName, _):
             let location = baseName.location()
             throw RuntimeError.undefinedFunction(location, baseName)
+        case .methodName(_, let methodName, _):
+            let location = methodName.location()
+            throw RuntimeError.undefinedMethod(location, methodName)
         }
     }
 
@@ -49,6 +52,9 @@ class Environment: Equatable {
         case .functionName(let baseName, _):
             let location = baseName.location()
             throw RuntimeError.undefinedFunction(location, baseName)
+        case .methodName(_, let methodName, _):
+            let location = methodName.location()
+            throw RuntimeError.undefinedMethod(location, methodName)
         }
     }
 
@@ -68,6 +74,9 @@ class Environment: Equatable {
         case .functionName(let baseName, _):
             let location = baseName.location()
             throw RuntimeError.undefinedFunction(location, baseName)
+        case .methodName(_, let methodName, _):
+            let location = methodName.location()
+            throw RuntimeError.undefinedMethod(location, methodName)
         }
     }
 
