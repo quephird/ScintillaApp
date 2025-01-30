@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RenderedImageView: View {
-    @ObservedObject var viewModel: ViewModel
+    var viewModel: ViewModel
 
     var body: some View {
         if let renderedImage = viewModel.renderedImage {

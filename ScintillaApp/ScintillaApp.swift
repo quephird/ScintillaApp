@@ -11,18 +11,19 @@ import UniformTypeIdentifiers
 @main
 struct ScintillaApp: App {
     @FocusedBinding(\.document) var document: ScintillaDocument?
-    @StateObject var viewModel = ViewModel()
+    @FocusedBinding(\.viewModel) var viewModel: ViewModel?
 
     var body: some Scene {
         DocumentGroup(newDocument: ScintillaDocument()) { file in
-            ContentView(document: file.$document, viewModel: viewModel)
+            ContentView(document: file.$document)
                 .focusedSceneValue(\.document, file.$document)
         }
         .commands {
             CommandGroup(after: .saveItem) {
                 Divider()
-                Button("Render Scene") {
-                    if let document {
+
+                Button("Render Scene…") {
+                    if let document, let viewModel {
                         Task {
                             viewModel.showSheet = true
                             try await viewModel.renderImage(source: document.text)
@@ -31,15 +32,12 @@ struct ScintillaApp: App {
                 }
                 .disabled(document == nil)
                 .keyboardShortcut("R")
-                Button("Save Image") {
-                    do {
-                        try viewModel.saveImage()
-                    } catch {
-                        // TODO: Need to surface error in the UI somehow
-                        print(error)
-                    }
+
+                Button("Export Image…") {
+                    viewModel!.showFileExporter = true
                 }
-                .disabled(viewModel.renderedImage == nil)
+                .disabled(viewModel?.renderedImage == nil)
+                .keyboardShortcut("E")
             }
         }
     }

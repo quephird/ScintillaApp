@@ -9,4 +9,5 @@ import SwiftUI
 
 extension FocusedValues {
     @Entry var document: Binding<ScintillaDocument>? = nil
+    @Entry var viewModel: Binding<ViewModel>? = nil
 }

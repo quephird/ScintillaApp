@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import SwiftUI
 
 extension CGImage: @retroactive Identifiable {
     public var id: ObjectIdentifier {
@@ -16,5 +17,17 @@ extension CGImage: @retroactive Identifiable {
 extension CGImage {
     public var nsSize: NSSize {
         NSSize(width: self.width, height: self.height)
+    }
+}
+
+extension CGImage: @retroactive Transferable {
+    public static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: .png) { cgImage in
+            let ciContext = CIContext()
+            let ciImage = CIImage(cgImage: cgImage)
+            return ciContext.pngRepresentation(of: ciImage,
+                                               format: .RGBA8,
+                                               colorSpace: ciImage.colorSpace!)!
+        }
     }
 }
