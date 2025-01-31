@@ -218,13 +218,14 @@ extension Parser {
         }
 
         let expr1 = try parseExpression()
-        guard currentTokenMatchesAny(types: [.comma]) else {
-            throw ParseError.missingComma(currentToken)
-        }
 
         if currentTokenMatches(type: .rightParen) {
             let _ = consumeToken(type: .rightParen)
             return .tuple2(leftParen, expr0, expr1)
+        }
+
+        guard currentTokenMatchesAny(types: [.comma]) else {
+            throw ParseError.missingComma(currentToken)
         }
 
         let expr2 = try parseExpression()
