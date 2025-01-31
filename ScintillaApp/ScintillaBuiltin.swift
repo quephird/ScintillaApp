@@ -15,6 +15,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case prism
     case sphere
     case superellipsoid
+    case surfaceOfRevolution
     case torus
     case world
     case camera
@@ -44,6 +45,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Sphere", [])
         case .superellipsoid:
             return .functionName("Superellipsoid", ["e", "n"])
+        case .surfaceOfRevolution:
+            return .functionName("SurfaceOfRevolution", ["yzPoints", "isCapped"])
         case .torus:
             return .functionName("Torus", ["majorRadius", "minorRadius"])
         case .world:
@@ -87,6 +90,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .shape(Sphere())
         case .superellipsoid:
             return try makeSuperellipsoid(argumentValues: argumentValues)
+        case .surfaceOfRevolution:
+            return try makeSurfaceOfRevolution(argumentValues: argumentValues)
         case .torus:
             return try makeTorus(argumentValues: argumentValues)
         case .camera:
@@ -156,6 +161,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
         let superellipsoid = Superellipsoid(e: e, n: n)
         return .shape(superellipsoid)
+    }
+
+    private func makeSurfaceOfRevolution(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let yzPoints = try extractRawTuple2List(argumentValue: argumentValues[0])
+        let isCapped = try extractRawBoolean(argumentValue: argumentValues[1])
+
+        let sor = SurfaceOfRevolution(yzPoints: yzPoints, isCapped: isCapped)
+        return .shape(sor)
     }
 
     private func makeTorus(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
