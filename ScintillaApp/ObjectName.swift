@@ -8,4 +8,5 @@
 enum ObjectName: Hashable {
     case variableName(Substring)
     case functionName(Substring, [Substring])
+    case methodName(ScintillaType, Substring, [Substring])
 }

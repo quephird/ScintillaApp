@@ -17,6 +17,27 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     case light(Light)
     case world(World)
 
+    var type: ScintillaType {
+        switch self {
+        case .double:
+            return .double
+        case .list:
+            return .list
+        case .tuple:
+            return .tuple
+        case .function:
+            return .function
+        case .shape(_):
+            return .shape
+        case .camera(_):
+            return .camera
+        case .light(_):
+            return .light
+        case .world(_):
+            return .world
+        }
+    }
+
     static func == (lhs: ScintillaValue, rhs: ScintillaValue) -> Bool {
         switch (lhs, rhs) {
         case (.double(let l), .double(let r)):

@@ -26,7 +26,12 @@ struct ScintillaApp: App {
                     if let document, let viewModel {
                         Task {
                             viewModel.showSheet = true
-                            try await viewModel.renderImage(source: document.text)
+                            // TODO: BLARGG... we need to surface errors in the UI here!
+                            do {
+                                try await viewModel.renderImage(source: document.text)
+                            } catch {
+                                print(error)
+                            }
                         }
                     }
                 }
