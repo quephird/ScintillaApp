@@ -13,6 +13,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case cylinder
     case plane
     case sphere
+    case superellipsoid
     case torus
     case world
     case camera
@@ -38,6 +39,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Plane", [])
         case .sphere:
             return .functionName("Sphere", [])
+        case .superellipsoid:
+            return .functionName("Superellipsoid", ["e", "n"])
         case .torus:
             return .functionName("Torus", ["majorRadius", "minorRadius"])
         case .world:
@@ -77,6 +80,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .shape(Plane())
         case .sphere:
             return .shape(Sphere())
+        case .superellipsoid:
+            return try makeSuperellipsoid(argumentValues: argumentValues)
         case .torus:
             return try makeTorus(argumentValues: argumentValues)
         case .camera:
@@ -129,6 +134,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
         let cylinder = Cylinder(bottomY: bottomY, topY: topY, isCapped: isCapped)
         return .shape(cylinder)
+    }
+
+    private func makeSuperellipsoid(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let e = try extractRawDouble(argumentValue: argumentValues[0])
+        let n = try extractRawDouble(argumentValue: argumentValues[1])
+
+        let superellipsoid = Superellipsoid(e: e, n: n)
+        return .shape(superellipsoid)
     }
 
     private func makeTorus(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
