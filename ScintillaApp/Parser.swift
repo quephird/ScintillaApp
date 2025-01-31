@@ -222,13 +222,18 @@ extension Parser {
             throw ParseError.missingComma(currentToken)
         }
 
+        if currentTokenMatches(type: .rightParen) {
+            let _ = consumeToken(type: .rightParen)
+            return .tuple2(leftParen, expr0, expr1)
+        }
+
         let expr2 = try parseExpression()
 
         guard currentTokenMatchesAny(types: [.rightParen]) else {
             throw ParseError.missingRightParen(currentToken)
         }
 
-        return .tuple(leftParen, expr0, expr1, expr2)
+        return .tuple3(leftParen, expr0, expr1, expr2)
     }
 
     mutating private func parseList() throws -> Expression<UnresolvedDepth>? {

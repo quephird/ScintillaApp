@@ -299,7 +299,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     }
 
     private func extractRawTuple(argumentValue: ScintillaValue) throws -> (Double, Double, Double) {
-        guard case .tuple(let tuple) = argumentValue else {
+        guard case .tuple3(let tuple) = argumentValue else {
             throw RuntimeError.expectedTuple
         }
 
