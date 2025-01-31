@@ -8,6 +8,7 @@
 import ScintillaLib
 
 enum ScintillaBuiltin: CaseIterable, Equatable {
+    case cube
     case sphere
     case world
     case camera
@@ -15,9 +16,16 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case colorRgb
     case colorHsl
     case translate
+    case scale
+    case rotateX
+    case rotateY
+    case rotateZ
+    case shear
 
     var objectName: ObjectName {
         switch self {
+        case .cube:
+            return .functionName("Cube", [])
         case .sphere:
             return .functionName("Sphere", [])
         case .world:
@@ -31,18 +39,30 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .colorHsl:
             return .methodName(.shape, "color", ["hsl"])
         case .translate:
-            return .methodName(.shape, "translate", ["by"])
+            return .methodName(.shape, "translate", ["x", "y", "z"])
+        case .scale:
+            return .methodName(.shape, "scale", ["x", "y", "z"])
+        case .rotateX:
+            return .methodName(.shape, "rotateX", ["theta"])
+        case .rotateY:
+            return .methodName(.shape, "rotateY", ["theta"])
+        case .rotateZ:
+            return .methodName(.shape, "rotateZ", ["theta"])
+        case .shear:
+            return .methodName(.shape, "shear", ["xy", "xz", "yx", "yz", "zx", "zy"])
         }
     }
 
     public func call(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
+        case .cube:
+            return .shape(Cube())
+        case .sphere:
+            return .shape(Sphere())
         case .camera:
             return try makeCamera(argumentValues: argumentValues)
         case .pointLight:
             return try makePointLight(argumentValues: argumentValues)
-        case .sphere:
-            return .shape(Sphere())
         case .world:
             return try makeWorld(argumentValues: argumentValues)
         default:
@@ -58,6 +78,16 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeColorHsl(object: object, argumentValues: argumentValues)
         case .translate:
             return try makeTranslate(object: object, argumentValues: argumentValues)
+        case .scale:
+            return try makeScale(object: object, argumentValues: argumentValues)
+        case .rotateX:
+            return try makeRotateX(object: object, argumentValues: argumentValues)
+        case .rotateY:
+            return try makeRotateY(object: object, argumentValues: argumentValues)
+        case .rotateZ:
+            return try makeRotateZ(object: object, argumentValues: argumentValues)
+        case .shear:
+            return try makeRotateZ(object: object, argumentValues: argumentValues)
         default:
             fatalError("Internal error: only method calls should ever get here")
         }
@@ -128,9 +158,84 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             throw RuntimeError.incorrectObject
         }
 
-        let (x, y, z) = try extractRawTuple(argumentValue: argumentValues[0])
+        let x = try extractRawDouble(argumentValue: argumentValues[0])
+        let y = try extractRawDouble(argumentValue: argumentValues[1])
+        let z = try extractRawDouble(argumentValue: argumentValues[2])
 
         return .shape(shape.translate(x, y, z))
+    }
+
+    private func makeScale(object: ScintillaValue,
+                           argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        guard case .shape(let shape) = object else {
+            throw RuntimeError.incorrectObject
+        }
+
+        let x = try extractRawDouble(argumentValue: argumentValues[0])
+        let y = try extractRawDouble(argumentValue: argumentValues[1])
+        let z = try extractRawDouble(argumentValue: argumentValues[2])
+
+        return .shape(shape.scale(x, y, z))
+    }
+
+    private func makeShear(object: ScintillaValue,
+                           argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        guard case .shape(let shape) = object else {
+            throw RuntimeError.incorrectObject
+        }
+
+        let xy = try extractRawDouble(argumentValue: argumentValues[0])
+        let xz = try extractRawDouble(argumentValue: argumentValues[1])
+        let yx = try extractRawDouble(argumentValue: argumentValues[2])
+        let yz = try extractRawDouble(argumentValue: argumentValues[3])
+        let zx = try extractRawDouble(argumentValue: argumentValues[4])
+        let zy = try extractRawDouble(argumentValue: argumentValues[5])
+
+        return .shape(shape.shear(xy, xz, yx, yz, zx, zy))
+    }
+
+    private enum RotationAxis {
+        case x, y, z
+    }
+
+    private func makeRotateX(object: ScintillaValue,
+                             argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        return try makeRotationCall(object: object,
+                                    argumentValues: argumentValues,
+                                    rotationAxis: .x)
+    }
+
+    private func makeRotateY(object: ScintillaValue,
+                             argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        return try makeRotationCall(object: object,
+                                    argumentValues: argumentValues,
+                                    rotationAxis: .y)
+    }
+
+    private func makeRotateZ(object: ScintillaValue,
+                             argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        return try makeRotationCall(object: object,
+                                    argumentValues: argumentValues,
+                                    rotationAxis: .z)
+    }
+
+    private func makeRotationCall(object: ScintillaValue,
+                                  argumentValues: [ScintillaValue],
+                                  rotationAxis: RotationAxis) throws -> ScintillaValue {
+        guard case .shape(let shape) = object else {
+            throw RuntimeError.incorrectObject
+        }
+
+        let theta = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return switch rotationAxis {
+        case .x:
+            .shape(shape.rotateX(theta))
+        case .y:
+            .shape(shape.rotateY(theta))
+        case .z:
+            .shape(shape.rotateZ(theta))
+        }
     }
 
     private func extractRawDouble(argumentValue: ScintillaValue) throws -> Double {
