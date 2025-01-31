@@ -10,6 +10,7 @@ import ScintillaLib
 enum ScintillaBuiltin: CaseIterable, Equatable {
     case cone
     case cube
+    case cylinder
     case plane
     case sphere
     case world
@@ -30,6 +31,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Cone", ["bottomY", "topY", "isCapped"])
         case .cube:
             return .functionName("Cube", [])
+        case .cylinder:
+            return .functionName("Cylinder", ["bottomY", "topY", "isCapped"])
         case .plane:
             return .functionName("Plane", [])
         case .sphere:
@@ -65,6 +68,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeCone(argumentValues: argumentValues)
         case .cube:
             return .shape(Cube())
+        case .cylinder:
+            return try makeCylinder(argumentValues: argumentValues)
         case .plane:
             return .shape(Plane())
         case .sphere:
@@ -110,6 +115,15 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
         let cone = Cone(bottomY: bottomY, topY: topY, isCapped: isCapped)
         return .shape(cone)
+    }
+
+    private func makeCylinder(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let bottomY = try extractRawDouble(argumentValue: argumentValues[0])
+        let topY = try extractRawDouble(argumentValue: argumentValues[1])
+        let isCapped = try extractRawBoolean(argumentValue: argumentValues[2])
+
+        let cylinder = Cylinder(bottomY: bottomY, topY: topY, isCapped: isCapped)
+        return .shape(cylinder)
     }
 
     private func makeWorld(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
