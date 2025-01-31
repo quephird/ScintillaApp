@@ -183,6 +183,14 @@ extension Parser {
             return list
         }
 
+        if currentTokenMatchesAny(types: [.false]) {
+            return .literal(previousToken, .boolean(false))
+        }
+
+        if currentTokenMatchesAny(types: [.true]) {
+            return .literal(previousToken, .boolean(true))
+        }
+
         if let number = consumeToken(type: .double) {
             let value = Double(number.lexeme)!
             return .literal(previousToken, .double(value))

@@ -6,6 +6,7 @@
 //
 
 enum ScintillaType {
+    case boolean
     case double
     case list
     case tuple

@@ -8,6 +8,7 @@
 import ScintillaLib
 
 enum ScintillaValue: Equatable, CustomStringConvertible {
+    case boolean(Bool)
     case double(Double)
     case list([ScintillaValue])
     indirect case tuple((ScintillaValue, ScintillaValue, ScintillaValue))
@@ -19,6 +20,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
 
     var type: ScintillaType {
         switch self {
+        case .boolean:
+            return .boolean
         case .double:
             return .double
         case .list:
@@ -40,6 +43,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
 
     static func == (lhs: ScintillaValue, rhs: ScintillaValue) -> Bool {
         switch (lhs, rhs) {
+        case (.boolean(let l), .boolean(let r)):
+            return l == r
         case (.double(let l), .double(let r)):
             return l == r
         case (.list(let l), .list(let r)):
@@ -70,6 +75,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
 
     var description: String {
         switch self {
+        case .boolean(let value):
+            return "\(value)"
         case .double(let value):
             return "\(value)"
         case .list(let values):

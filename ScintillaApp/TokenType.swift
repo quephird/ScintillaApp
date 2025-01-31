@@ -29,7 +29,9 @@ enum TokenType: Equatable {
     case double
 
     // Keywords
+    case `false`
     case `let`
+    case `true`
 
     // Used for bad tokens
     case unknown

@@ -8,6 +8,7 @@
 import ScintillaLib
 
 enum ScintillaBuiltin: CaseIterable, Equatable {
+    case cone
     case cube
     case plane
     case sphere
@@ -25,6 +26,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     var objectName: ObjectName {
         switch self {
+        case .cone:
+            return .functionName("Cone", ["bottomY", "topY", "isCapped"])
         case .cube:
             return .functionName("Cube", [])
         case .plane:
@@ -58,6 +61,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     public func call(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
+        case .cone:
+            return try makeCone(argumentValues: argumentValues)
         case .cube:
             return .shape(Cube())
         case .plane:
@@ -96,6 +101,15 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         default:
             fatalError("Internal error: only method calls should ever get here")
         }
+    }
+
+    private func makeCone(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let bottomY = try extractRawDouble(argumentValue: argumentValues[0])
+        let topY = try extractRawDouble(argumentValue: argumentValues[1])
+        let isCapped = try extractRawBoolean(argumentValue: argumentValues[2])
+
+        let cone = Cone(bottomY: bottomY, topY: topY, isCapped: isCapped)
+        return .shape(cone)
     }
 
     private func makeWorld(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
@@ -226,6 +240,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .z:
             .shape(shape.rotateZ(theta))
         }
+    }
+
+    private func extractRawBoolean(argumentValue: ScintillaValue) throws -> Bool {
+        guard case .boolean(let rawBoolean) = argumentValue else {
+            throw RuntimeError.expectedBoolean
+        }
+
+        return rawBoolean
     }
 
     private func extractRawDouble(argumentValue: ScintillaValue) throws -> Double {
