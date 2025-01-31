@@ -43,7 +43,7 @@ extension CodeEditor {
         // TODO: Need to build these regexes dynamically somehow from ScintillaBuiltin!
         let cameraKeyword = /Camera/
         let lightKeywords = /AreaLight|PointLight/
-        let shapeKeywords = /ParametricSurface|Plane|Cone|Cube|Sphere/
+        let shapeKeywords = /ParametricSurface|Plane|Cone|Cube|Cylinder|Sphere|Torus/
         let regexColorMappings: [(Regex<Substring>, NSColor)] = [
             (cameraKeyword, NSColor(named: "CameraKeyword")!),
             (lightKeywords, NSColor(named: "LightKeyword")!),
