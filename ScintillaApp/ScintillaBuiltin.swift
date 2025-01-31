@@ -9,6 +9,7 @@ import ScintillaLib
 
 enum ScintillaBuiltin: CaseIterable, Equatable {
     case cube
+    case plane
     case sphere
     case world
     case camera
@@ -26,6 +27,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         switch self {
         case .cube:
             return .functionName("Cube", [])
+        case .plane:
+            return .functionName("Plane", [])
         case .sphere:
             return .functionName("Sphere", [])
         case .world:
@@ -57,6 +60,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         switch self {
         case .cube:
             return .shape(Cube())
+        case .plane:
+            return .shape(Plane())
         case .sphere:
             return .shape(Sphere())
         case .camera:
