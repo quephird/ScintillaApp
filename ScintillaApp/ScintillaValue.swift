@@ -7,17 +7,6 @@
 
 import ScintillaLib
 
-enum ScintillaType {
-    case double
-    case list
-    case tuple
-    case function
-    case shape
-    case camera
-    case light
-    case world
-}
-
 enum ScintillaValue: Equatable, CustomStringConvertible {
     case double(Double)
     case list([ScintillaValue])

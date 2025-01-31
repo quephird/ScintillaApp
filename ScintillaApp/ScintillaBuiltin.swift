@@ -147,10 +147,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     private func makeColorFunctionCall(object: ScintillaValue,
                                        argumentValues: [ScintillaValue],
                                        colorSpace: ColorSpace) throws -> ScintillaValue {
-        guard case .shape(let shape) = object else {
-            throw RuntimeError.incorrectObject
-        }
-
+        let shape = try extractRawShape(argumentValue: object)
         let (colorComponent0, colorComponent1, colorComponent2) = try extractRawTuple(argumentValue: argumentValues[0])
 
         let solidColor: Material = .solidColor(colorComponent0, colorComponent1, colorComponent2, colorSpace)
@@ -159,10 +156,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     private func makeTranslate(object: ScintillaValue,
                                argumentValues: [ScintillaValue]) throws -> ScintillaValue {
-        guard case .shape(let shape) = object else {
-            throw RuntimeError.incorrectObject
-        }
-
+        let shape = try extractRawShape(argumentValue: object)
         let x = try extractRawDouble(argumentValue: argumentValues[0])
         let y = try extractRawDouble(argumentValue: argumentValues[1])
         let z = try extractRawDouble(argumentValue: argumentValues[2])
@@ -172,10 +166,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     private func makeScale(object: ScintillaValue,
                            argumentValues: [ScintillaValue]) throws -> ScintillaValue {
-        guard case .shape(let shape) = object else {
-            throw RuntimeError.incorrectObject
-        }
-
+        let shape = try extractRawShape(argumentValue: object)
         let x = try extractRawDouble(argumentValue: argumentValues[0])
         let y = try extractRawDouble(argumentValue: argumentValues[1])
         let z = try extractRawDouble(argumentValue: argumentValues[2])
@@ -185,10 +176,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     private func makeShear(object: ScintillaValue,
                            argumentValues: [ScintillaValue]) throws -> ScintillaValue {
-        guard case .shape(let shape) = object else {
-            throw RuntimeError.incorrectObject
-        }
-
+        let shape = try extractRawShape(argumentValue: object)
         let xy = try extractRawDouble(argumentValue: argumentValues[0])
         let xz = try extractRawDouble(argumentValue: argumentValues[1])
         let yx = try extractRawDouble(argumentValue: argumentValues[2])
@@ -227,10 +215,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     private func makeRotationCall(object: ScintillaValue,
                                   argumentValues: [ScintillaValue],
                                   rotationAxis: RotationAxis) throws -> ScintillaValue {
-        guard case .shape(let shape) = object else {
-            throw RuntimeError.incorrectObject
-        }
-
+        let shape = try extractRawShape(argumentValue: object)
         let theta = try extractRawDouble(argumentValue: argumentValues[0])
 
         return switch rotationAxis {
@@ -293,13 +278,17 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
 
         let shapes = try wrappedShapes.map { wrappedShape in
-            guard case .shape(let shape) = wrappedShape else {
-                throw RuntimeError.expectedShape
-            }
-
-            return shape
+            return try extractRawShape(argumentValue: wrappedShape)
         }
 
         return shapes
+    }
+
+    private func extractRawShape(argumentValue: ScintillaValue) throws -> any Shape {
+        guard case .shape(let shape) = argumentValue else {
+            throw RuntimeError.expectedShape
+        }
+
+        return shape
     }
 }
