@@ -28,6 +28,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case rotateY
     case rotateZ
     case shear
+    case difference
 
     var objectName: ObjectName {
         switch self {
@@ -71,6 +72,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .methodName(.shape, "rotateZ", ["theta"])
         case .shear:
             return .methodName(.shape, "shear", ["xy", "xz", "yx", "yz", "zx", "zy"])
+        case .difference:
+            return .methodName(.shape, "difference", ["shapes"])
         }
     }
 
@@ -123,6 +126,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeRotateZ(object: object, argumentValues: argumentValues)
         case .shear:
             return try makeRotateZ(object: object, argumentValues: argumentValues)
+        case .difference:
+            return try makeDifference(object: object, argumentValues: argumentValues)
         default:
             fatalError("Internal error: only method calls should ever get here")
         }
@@ -182,7 +187,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     private func makeWorld(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let camera = try extractRawCamera(argumentValue: argumentValues[0])
         let lights = try extractRawLights(argumentValue: argumentValues[1])
-        let shapes = try extractRawShapes(argumentValue: argumentValues[2])
+        let shapes = try extractRawShapeList(argumentValue: argumentValues[2])
 
         let newWorld = World(camera, lights, shapes)
         return .world(newWorld)
@@ -266,6 +271,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let zy = try extractRawDouble(argumentValue: argumentValues[5])
 
         return .shape(shape.shear(xy, xz, yx, yz, zx, zy))
+    }
+
+    private func makeDifference(object: ScintillaValue,
+                                argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let shape = try extractRawShape(argumentValue: object)
+        let rightShapes = try extractRawShapeList(argumentValue: argumentValues[0])
+
+        return .shape(CSG.makeCSG(.difference, shape, rightShapes))
     }
 
     private enum RotationAxis {
@@ -385,7 +398,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return lights
     }
 
-    private func extractRawShapes(argumentValue: ScintillaValue) throws -> [any Shape] {
+    private func extractRawShapeList(argumentValue: ScintillaValue) throws -> [any Shape] {
         guard case .list(let wrappedShapes) = argumentValue else {
             throw RuntimeError.incorrectArgument
         }
