@@ -8,9 +8,11 @@
 import ScintillaLib
 
 enum ScintillaValue: Equatable, CustomStringConvertible {
+    case boolean(Bool)
     case double(Double)
     case list([ScintillaValue])
-    indirect case tuple((ScintillaValue, ScintillaValue, ScintillaValue))
+    indirect case tuple2((ScintillaValue, ScintillaValue))
+    indirect case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
     case function(ScintillaBuiltin)
     case shape(any Shape)
     case camera(Camera)
@@ -19,12 +21,16 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
 
     var type: ScintillaType {
         switch self {
+        case .boolean:
+            return .boolean
         case .double:
             return .double
         case .list:
             return .list
-        case .tuple:
-            return .tuple
+        case .tuple2:
+            return .tuple2
+        case .tuple3:
+            return .tuple3
         case .function:
             return .function
         case .shape(_):
@@ -40,11 +46,15 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
 
     static func == (lhs: ScintillaValue, rhs: ScintillaValue) -> Bool {
         switch (lhs, rhs) {
+        case (.boolean(let l), .boolean(let r)):
+            return l == r
         case (.double(let l), .double(let r)):
             return l == r
         case (.list(let l), .list(let r)):
             return l == r
-        case (.tuple(let l), .tuple(let r)):
+        case (.tuple2(let l), .tuple2(let r)):
+            return l == r
+        case (.tuple3(let l), .tuple3(let r)):
             return l == r
         case (.function(let l), .function(let r)):
             return l == r
@@ -70,11 +80,15 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
 
     var description: String {
         switch self {
+        case .boolean(let value):
+            return "\(value)"
         case .double(let value):
             return "\(value)"
         case .list(let values):
             return values.map { "\($0)" }.joined(separator: ", ")
-        case .tuple(let values):
+        case .tuple2(let values):
+            return "(\(values.0), \(values.1))"
+        case .tuple3(let values):
             return "(\(values.0), \(values.1), \(values.2))"
         case .function(let builtin):
             return "\(builtin.objectName)"

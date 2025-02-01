@@ -8,9 +8,15 @@
 import ScintillaLib
 
 enum ScintillaBuiltin: CaseIterable, Equatable {
+    case cone
     case cube
+    case cylinder
     case plane
+    case prism
     case sphere
+    case superellipsoid
+    case surfaceOfRevolution
+    case torus
     case world
     case camera
     case pointLight
@@ -25,12 +31,24 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     var objectName: ObjectName {
         switch self {
+        case .cone:
+            return .functionName("Cone", ["bottomY", "topY", "isCapped"])
         case .cube:
             return .functionName("Cube", [])
+        case .cylinder:
+            return .functionName("Cylinder", ["bottomY", "topY", "isCapped"])
         case .plane:
             return .functionName("Plane", [])
+        case .prism:
+            return .functionName("Prism", ["bottomY", "topY", "xzPoints"])
         case .sphere:
             return .functionName("Sphere", [])
+        case .superellipsoid:
+            return .functionName("Superellipsoid", ["e", "n"])
+        case .surfaceOfRevolution:
+            return .functionName("SurfaceOfRevolution", ["yzPoints", "isCapped"])
+        case .torus:
+            return .functionName("Torus", ["majorRadius", "minorRadius"])
         case .world:
             return .functionName("World", ["camera", "lights", "shapes"])
         case .camera:
@@ -58,12 +76,24 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     public func call(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
+        case .cone:
+            return try makeCone(argumentValues: argumentValues)
         case .cube:
             return .shape(Cube())
+        case .cylinder:
+            return try makeCylinder(argumentValues: argumentValues)
         case .plane:
             return .shape(Plane())
+        case .prism:
+            return try makePrism(argumentValues: argumentValues)
         case .sphere:
             return .shape(Sphere())
+        case .superellipsoid:
+            return try makeSuperellipsoid(argumentValues: argumentValues)
+        case .surfaceOfRevolution:
+            return try makeSurfaceOfRevolution(argumentValues: argumentValues)
+        case .torus:
+            return try makeTorus(argumentValues: argumentValues)
         case .camera:
             return try makeCamera(argumentValues: argumentValues)
         case .pointLight:
@@ -98,6 +128,57 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
+    private func makeCone(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let bottomY = try extractRawDouble(argumentValue: argumentValues[0])
+        let topY = try extractRawDouble(argumentValue: argumentValues[1])
+        let isCapped = try extractRawBoolean(argumentValue: argumentValues[2])
+
+        let cone = Cone(bottomY: bottomY, topY: topY, isCapped: isCapped)
+        return .shape(cone)
+    }
+
+    private func makeCylinder(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let bottomY = try extractRawDouble(argumentValue: argumentValues[0])
+        let topY = try extractRawDouble(argumentValue: argumentValues[1])
+        let isCapped = try extractRawBoolean(argumentValue: argumentValues[2])
+
+        let cylinder = Cylinder(bottomY: bottomY, topY: topY, isCapped: isCapped)
+        return .shape(cylinder)
+    }
+
+    private func makePrism(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let bottomY = try extractRawDouble(argumentValue: argumentValues[0])
+        let topY = try extractRawDouble(argumentValue: argumentValues[1])
+        let xzPoints = try extractRawTuple2List(argumentValue: argumentValues[2])
+
+        let prism = Prism(bottomY: bottomY, topY: topY, xzPoints: xzPoints)
+        return .shape(prism)
+    }
+
+    private func makeSuperellipsoid(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let e = try extractRawDouble(argumentValue: argumentValues[0])
+        let n = try extractRawDouble(argumentValue: argumentValues[1])
+
+        let superellipsoid = Superellipsoid(e: e, n: n)
+        return .shape(superellipsoid)
+    }
+
+    private func makeSurfaceOfRevolution(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let yzPoints = try extractRawTuple2List(argumentValue: argumentValues[0])
+        let isCapped = try extractRawBoolean(argumentValue: argumentValues[1])
+
+        let sor = SurfaceOfRevolution(yzPoints: yzPoints, isCapped: isCapped)
+        return .shape(sor)
+    }
+
+    private func makeTorus(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let majorRadius = try extractRawDouble(argumentValue: argumentValues[0])
+        let minorRadius = try extractRawDouble(argumentValue: argumentValues[1])
+
+        let torus = Torus(majorRadius: majorRadius, minorRadius: minorRadius)
+        return .shape(torus)
+    }
+
     private func makeWorld(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let camera = try extractRawCamera(argumentValue: argumentValues[0])
         let lights = try extractRawLights(argumentValue: argumentValues[1])
@@ -111,9 +192,9 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let width = try extractRawDouble(argumentValue: argumentValues[0])
         let height = try extractRawDouble(argumentValue: argumentValues[1])
         let viewAngle = try extractRawDouble(argumentValue: argumentValues[2])
-        let (fromX, fromY, fromZ) = try extractRawTuple(argumentValue: argumentValues[3])
-        let (toX, toY, toZ) = try extractRawTuple(argumentValue: argumentValues[4])
-        let (upX, upY, upZ) = try extractRawTuple(argumentValue: argumentValues[5])
+        let (fromX, fromY, fromZ) = try extractRawTuple3(argumentValue: argumentValues[3])
+        let (toX, toY, toZ) = try extractRawTuple3(argumentValue: argumentValues[4])
+        let (upX, upY, upZ) = try extractRawTuple3(argumentValue: argumentValues[5])
 
         return .camera(Camera(width: Int(width),
                               height: Int(height),
@@ -124,7 +205,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     }
 
     private func makePointLight(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
-        let (x, y, z) = try extractRawTuple(argumentValue: argumentValues[0])
+        let (x, y, z) = try extractRawTuple3(argumentValue: argumentValues[0])
 
         let point = Point(x, y, z)
         return .light(PointLight(position: point))
@@ -148,7 +229,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
                                        argumentValues: [ScintillaValue],
                                        colorSpace: ColorSpace) throws -> ScintillaValue {
         let shape = try extractRawShape(argumentValue: object)
-        let (colorComponent0, colorComponent1, colorComponent2) = try extractRawTuple(argumentValue: argumentValues[0])
+        let (colorComponent0, colorComponent1, colorComponent2) = try extractRawTuple3(argumentValue: argumentValues[0])
 
         let solidColor: Material = .solidColor(colorComponent0, colorComponent1, colorComponent2, colorSpace)
         return .shape(shape.material(solidColor))
@@ -228,6 +309,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
+    private func extractRawBoolean(argumentValue: ScintillaValue) throws -> Bool {
+        guard case .boolean(let rawBoolean) = argumentValue else {
+            throw RuntimeError.expectedBoolean
+        }
+
+        return rawBoolean
+    }
+
     private func extractRawDouble(argumentValue: ScintillaValue) throws -> Double {
         guard case .double(let rawDouble) = argumentValue else {
             throw RuntimeError.expectedDouble
@@ -236,8 +325,32 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return rawDouble
     }
 
-    private func extractRawTuple(argumentValue: ScintillaValue) throws -> (Double, Double, Double) {
-        guard case .tuple(let tuple) = argumentValue else {
+    private func extractRawTuple2List(argumentValue: ScintillaValue) throws -> [(Double, Double)] {
+        guard case .list(let wrappedTuples) = argumentValue else {
+            throw RuntimeError.incorrectArgument
+        }
+
+        let rawTupleList = try wrappedTuples.map { wrappedTuple in
+            return try extractRawTuple2(argumentValue: wrappedTuple)
+        }
+
+        return rawTupleList
+    }
+
+    private func extractRawTuple2(argumentValue: ScintillaValue) throws -> (Double, Double) {
+        guard case .tuple2(let tuple) = argumentValue else {
+            throw RuntimeError.expectedTuple
+        }
+
+        guard case (.double(let rawDouble0), .double(let rawDouble1)) = tuple else {
+            fatalError("Tuple should only ever have three double values")
+        }
+
+        return (rawDouble0, rawDouble1)
+    }
+
+    private func extractRawTuple3(argumentValue: ScintillaValue) throws -> (Double, Double, Double) {
+        guard case .tuple3(let tuple) = argumentValue else {
             throw RuntimeError.expectedTuple
         }
 

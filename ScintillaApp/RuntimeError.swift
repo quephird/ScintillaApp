@@ -19,6 +19,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     // TODO: Need to capture location and lexemes for the following three error cases
     case incorrectArgument
     case incorrectObject
+    case expectedBoolean
     case expectedDouble
     case expectedTuple
     case expectedCamera
@@ -47,6 +48,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[\(location)] Error: not a function, \(badFunction)"
         case .incorrectArgument:
             return "[] Error: bad argument"
+        case .expectedBoolean:
+            return "[] Error: expected a boolean value for the argument"
         case .expectedDouble:
             return "[] Error: expected a double value for the argument"
         case .expectedTuple:

@@ -13,7 +13,9 @@ struct Tokenizer {
     private var currentIndex: String.Index
 
     let keywords: [String: TokenType] = [
+        "false": .false,
         "let": .let,
+        "true": .true,
     ]
 
     init(source: String) {

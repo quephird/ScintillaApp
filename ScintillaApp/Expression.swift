@@ -16,7 +16,8 @@ indirect enum Expression<Depth: Equatable>: Equatable {
     case literal(Token, ScintillaValue)
     case variable(Token, Depth)
     case list(Token, [Expression])
-    case tuple(Token, Expression, Expression, Expression)
+    case tuple2(Token, Expression, Expression)
+    case tuple3(Token, Expression, Expression, Expression)
     case function(Token, [Argument], Depth)
     case method(Expression, Token, [Argument])
 
@@ -32,7 +33,9 @@ indirect enum Expression<Depth: Equatable>: Equatable {
             return nameToken
         case .list(let leftBracketToken, _):
             return leftBracketToken
-        case .tuple(let leftParenToken, _, _, _):
+        case .tuple2(let leftParenToken, _, _):
+            return leftParenToken
+        case .tuple3(let leftParenToken, _, _, _):
             return leftParenToken
         case .function(let nameToken, _, _):
             return nameToken

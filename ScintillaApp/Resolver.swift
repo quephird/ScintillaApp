@@ -148,11 +148,15 @@ extension Resolver {
             return .literal(valueToken, value)
         case .list(let leftBracketToken, let elements):
             return try handleList(leftBracketToken: leftBracketToken, elements: elements)
-        case .tuple(let leftParenToken, let expr0, let expr1, let expr2):
-            return try handleTuple(leftParenToken: leftParenToken,
-                                   expr0: expr0,
-                                   expr1: expr1,
-                                   expr2: expr2)
+        case .tuple2(let leftParenToken, let expr0, let expr1):
+            return try handleTuple2(leftParenToken: leftParenToken,
+                                    expr0: expr0,
+                                    expr1: expr1)
+        case .tuple3(let leftParenToken, let expr0, let expr1, let expr2):
+            return try handleTuple3(leftParenToken: leftParenToken,
+                                    expr0: expr0,
+                                    expr1: expr1,
+                                    expr2: expr2)
         case .function(let calleeName, let arguments, _):
             return try handleFunction(calleeToken: calleeName,
                                       arguments: arguments)
@@ -204,10 +208,25 @@ extension Resolver {
         return .list(leftBracketToken, resolvedElements)
     }
 
-    mutating private func handleTuple(leftParenToken: Token,
-                                      expr0: Expression<UnresolvedDepth>,
-                                      expr1: Expression<UnresolvedDepth>,
-                                      expr2: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+    mutating private func handleTuple2(leftParenToken: Token,
+                                       expr0: Expression<UnresolvedDepth>,
+                                       expr1: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+        let previousArgumentListType = currentArgumentListType
+        currentArgumentListType = .tupleInitializer
+        defer {
+            currentArgumentListType = previousArgumentListType
+        }
+
+        let resolvedExpr0 = try resolve(expression: expr0)
+        let resolvedExpr1 = try resolve(expression: expr1)
+
+        return .tuple2(leftParenToken, resolvedExpr0, resolvedExpr1)
+    }
+
+    mutating private func handleTuple3(leftParenToken: Token,
+                                       expr0: Expression<UnresolvedDepth>,
+                                       expr1: Expression<UnresolvedDepth>,
+                                       expr2: Expression<UnresolvedDepth>) throws -> Expression<Int> {
         let previousArgumentListType = currentArgumentListType
         currentArgumentListType = .tupleInitializer
         defer {
@@ -218,7 +237,7 @@ extension Resolver {
         let resolvedExpr1 = try resolve(expression: expr1)
         let resolvedExpr2 = try resolve(expression: expr2)
 
-        return .tuple(leftParenToken, resolvedExpr0, resolvedExpr1, resolvedExpr2)
+        return .tuple3(leftParenToken, resolvedExpr0, resolvedExpr1, resolvedExpr2)
     }
 
     mutating private func handleFunction(calleeToken: Token,

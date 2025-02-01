@@ -77,10 +77,13 @@ class Evaluator {
             return try handleVariableExpression(varToken: varToken, depth: depth)
         case .list(_, let elements):
             return try handleListExpression(elements: elements)
-        case .tuple(_, let expr0, let expr1, let expr2):
-            return try handleTupleExpression(expr0: expr0,
-                                             expr1: expr1,
-                                             expr2: expr2)
+        case .tuple2(_, let expr0, let expr1):
+            return try handleTuple2Expression(expr0: expr0,
+                                              expr1: expr1)
+        case .tuple3(_, let expr0, let expr1, let expr2):
+            return try handleTuple3Expression(expr0: expr0,
+                                              expr1: expr1,
+                                              expr2: expr2)
         case .function(let calleeName, let arguments, _):
             return try handleFunction(calleeToken: calleeName,
                                       arguments: arguments)
@@ -143,14 +146,22 @@ class Evaluator {
         return .list(elementValues)
     }
 
-    private func handleTupleExpression(expr0: Expression<Int>,
-                                       expr1: Expression<Int>,
-                                       expr2: Expression<Int>) throws -> ScintillaValue {
+    private func handleTuple2Expression(expr0: Expression<Int>,
+                                        expr1: Expression<Int>) throws -> ScintillaValue {
+        let value0 = try evaluate(expr: expr0)
+        let value1 = try evaluate(expr: expr1)
+
+        return .tuple2((value0, value1))
+    }
+
+    private func handleTuple3Expression(expr0: Expression<Int>,
+                                        expr1: Expression<Int>,
+                                        expr2: Expression<Int>) throws -> ScintillaValue {
         let value0 = try evaluate(expr: expr0)
         let value1 = try evaluate(expr: expr1)
         let value2 = try evaluate(expr: expr2)
 
-        return .tuple((value0, value1, value2))
+        return .tuple3((value0, value1, value2))
     }
 
     private func handleFunction(calleeToken: Token,

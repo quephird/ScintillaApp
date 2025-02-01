@@ -183,6 +183,14 @@ extension Parser {
             return list
         }
 
+        if currentTokenMatchesAny(types: [.false]) {
+            return .literal(previousToken, .boolean(false))
+        }
+
+        if currentTokenMatchesAny(types: [.true]) {
+            return .literal(previousToken, .boolean(true))
+        }
+
         if let number = consumeToken(type: .double) {
             let value = Double(number.lexeme)!
             return .literal(previousToken, .double(value))
@@ -210,6 +218,12 @@ extension Parser {
         }
 
         let expr1 = try parseExpression()
+
+        if currentTokenMatches(type: .rightParen) {
+            let _ = consumeToken(type: .rightParen)
+            return .tuple2(leftParen, expr0, expr1)
+        }
+
         guard currentTokenMatchesAny(types: [.comma]) else {
             throw ParseError.missingComma(currentToken)
         }
@@ -220,7 +234,7 @@ extension Parser {
             throw ParseError.missingRightParen(currentToken)
         }
 
-        return .tuple(leftParen, expr0, expr1, expr2)
+        return .tuple3(leftParen, expr0, expr1, expr2)
     }
 
     mutating private func parseList() throws -> Expression<UnresolvedDepth>? {
