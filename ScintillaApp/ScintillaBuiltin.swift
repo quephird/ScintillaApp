@@ -29,6 +29,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case rotateZ
     case shear
     case difference
+    case intersection
+    case union
 
     var objectName: ObjectName {
         switch self {
@@ -74,6 +76,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .methodName(.shape, "shear", ["xy", "xz", "yx", "yz", "zx", "zy"])
         case .difference:
             return .methodName(.shape, "difference", ["shapes"])
+        case .intersection:
+            return .methodName(.shape, "intersection", ["shapes"])
+        case .union:
+            return .methodName(.shape, "union", ["shapes"])
         }
     }
 
@@ -127,7 +133,17 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .shear:
             return try makeRotateZ(object: object, argumentValues: argumentValues)
         case .difference:
-            return try makeDifference(object: object, argumentValues: argumentValues)
+            return try makeCSG(object: object,
+                               argumentValues: argumentValues,
+                               operation: .difference)
+        case .intersection:
+            return try makeCSG(object: object,
+                               argumentValues: argumentValues,
+                               operation: .intersection)
+        case .union:
+            return try makeCSG(object: object,
+                               argumentValues: argumentValues,
+                               operation: .union)
         default:
             fatalError("Internal error: only method calls should ever get here")
         }
@@ -273,12 +289,13 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .shape(shape.shear(xy, xz, yx, yz, zx, zy))
     }
 
-    private func makeDifference(object: ScintillaValue,
-                                argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func makeCSG(object: ScintillaValue,
+                         argumentValues: [ScintillaValue],
+                         operation: Operation) throws -> ScintillaValue {
         let shape = try extractRawShape(argumentValue: object)
         let rightShapes = try extractRawShapeList(argumentValue: argumentValues[0])
 
-        return .shape(CSG.makeCSG(.difference, shape, rightShapes))
+        return .shape(CSG.makeCSG(operation, shape, rightShapes))
     }
 
     private enum RotationAxis {
