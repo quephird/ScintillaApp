@@ -8,7 +8,7 @@
 import ScintillaLib
 
 // ACHTUNG!!! This may be a temporary implementation until if/when
-// ScintillaApp can somehow result builders
+// ScintillaApp can somehow produce result builders
 extension CSG {
     static func makeCSG(_ operation: Operation,
                         _ baseShape: any Shape,
