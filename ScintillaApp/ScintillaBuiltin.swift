@@ -11,6 +11,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case cone
     case cube
     case cylinder
+    case group
     case plane
     case prism
     case sphere
@@ -40,6 +41,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Cube", [])
         case .cylinder:
             return .functionName("Cylinder", ["bottomY", "topY", "isCapped"])
+        case .group:
+            return .functionName("Group", ["children"])
         case .plane:
             return .functionName("Plane", [])
         case .prism:
@@ -91,6 +94,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .shape(Cube())
         case .cylinder:
             return try makeCylinder(argumentValues: argumentValues)
+        case .group:
+            return try makeGroup(argumentValues: argumentValues)
         case .plane:
             return .shape(Plane())
         case .prism:
@@ -165,6 +170,13 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
         let cylinder = Cylinder(bottomY: bottomY, topY: topY, isCapped: isCapped)
         return .shape(cylinder)
+    }
+
+    private func makeGroup(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let children = try extractRawShapeList(argumentValue: argumentValues[0])
+
+        let group = Group(children: children)
+        return .shape(group)
     }
 
     private func makePrism(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
