@@ -13,6 +13,7 @@ import ScintillaLib
 @Observable
 class ViewModel {
     var showSheet: Bool = false
+    var currentEvaluatorError: Error?
     var showFileExporter: Bool = false
     var renderedImage: CGImage?
 
@@ -21,9 +22,14 @@ class ViewModel {
 
     public func renderImage(source: String) async throws {
         let evaluator = Evaluator()
-        let world = try evaluator.interpret(source: source)
-        let canvas = await world.render(updateClosure: updateProgress)
-        self.renderedImage = canvas.toCGImage()
+        do {
+            let world = try evaluator.interpret(source: source)
+            self.showSheet = true
+            let canvas = await world.render(updateClosure: updateProgress)
+            self.renderedImage = canvas.toCGImage()
+        } catch {
+            self.currentEvaluatorError = error
+        }
     }
 
     private func updateProgress(_ percentRendered: Double, elapsedTime: Range<Date>) {

@@ -13,10 +13,25 @@ struct ScintillaApp: App {
     @FocusedBinding(\.document) var document: ScintillaDocument?
     @FocusedBinding(\.viewModel) var viewModel: ViewModel?
 
+    var currentErrorMessage: String {
+        if let viewModel {
+            if let error = viewModel.currentEvaluatorError {
+                return "\(error)"
+            }
+        }
+
+        return ""
+    }
+
     var body: some Scene {
         DocumentGroup(newDocument: ScintillaDocument()) { file in
             ContentView(document: file.$document)
                 .focusedSceneValue(\.document, file.$document)
+            HStack {
+                Text(currentErrorMessage)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+            }
         }
         .commands {
             CommandGroup(after: .saveItem) {
@@ -25,9 +40,8 @@ struct ScintillaApp: App {
                 Button("Render Scene…") {
                     if let document, let viewModel {
                         Task {
-                            viewModel.showSheet = true
-                            // TODO: BLARGG... we need to surface errors in the UI here!
                             do {
+                                viewModel.currentEvaluatorError = nil
                                 try await viewModel.renderImage(source: document.text)
                             } catch {
                                 print(error)
