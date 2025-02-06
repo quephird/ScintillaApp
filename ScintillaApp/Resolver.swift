@@ -157,13 +157,21 @@ extension Resolver {
                                     expr0: expr0,
                                     expr1: expr1,
                                     expr2: expr2)
-        case .function(let calleeName, let arguments, _):
-            return try handleFunction(calleeToken: calleeName,
-                                      arguments: arguments)
-        case .method(let calleeExpr, let methodToken, let arguments):
+        case .constructor(let calleeName, let argumentNames, _):
+            return try handleConstructor(calleeToken: calleeName,
+                                         argumentNameTokens: argumentNames)
+        case .lambda(let leftBraceToken, let argumentNames, let expression):
+            return try handleLambda(leftBraceToken: leftBraceToken,
+                                    argumentNames: argumentNames,
+                                    expression: expression)
+        case .method(let calleeExpr, let methodName, let argumentNameTokens):
             return try handleMethod(calleeExpr: calleeExpr,
-                                    methodToken: methodToken,
-                                    arguments: arguments)
+                                    methodName: methodName,
+                                    argumentNameTokens: argumentNameTokens)
+        case .call(let calleeExpr, let leftParenToken, let arguments):
+            return try handleCall(calleeExpr: calleeExpr,
+                                  leftParenToken: leftParenToken,
+                                  arguments: arguments)
         }
     }
 
@@ -240,8 +248,8 @@ extension Resolver {
         return .tuple3(leftParenToken, resolvedExpr0, resolvedExpr1, resolvedExpr2)
     }
 
-    mutating private func handleFunction(calleeToken: Token,
-                                         arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
+    mutating private func handleConstructor(calleeToken: Token,
+                                            argumentNameTokens: [Token]) throws -> Expression<Int> {
         let previousArgumentListType = currentArgumentListType
         currentArgumentListType = .constructorCall
         defer {
@@ -249,34 +257,53 @@ extension Resolver {
         }
 
         let baseName = calleeToken.lexeme
-        let argumentNames = arguments.map { $0.name.lexeme }
+        let argumentNames = argumentNameTokens.map { $0.lexeme }
         let name: ObjectName = .functionName(baseName, argumentNames)
         let depth = try getDepth(name: name, nameToken: calleeToken)
 
-        let resolvedArgs = try arguments.map { argument in
-            let resolvedValue = try resolve(expression: argument.value)
-            return Expression.Argument(name: argument.name, value: resolvedValue)
-        }
-
-        return .function(calleeToken, resolvedArgs, depth)
+        return .constructor(calleeToken, argumentNameTokens, depth)
     }
 
-    mutating private func handleMethod(calleeExpr: Expression<UnresolvedDepth>,
-                                       methodToken: Token,
-                                       arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
+    mutating private func handleCall(calleeExpr: Expression<UnresolvedDepth>,
+                                     leftParenToken: Token,
+                                     arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
         let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .methodCall
+        currentArgumentListType = .constructorCall
         defer {
             currentArgumentListType = previousArgumentListType
         }
 
-        let resolvedCalleeExpr = try resolve(expression: calleeExpr)
+        var newCalleeExpr = calleeExpr
+        let argumentNames = arguments.map { $0.name }
+        if case .variable(let baseNameToken, _) = calleeExpr {
+            newCalleeExpr = .constructor(baseNameToken, argumentNames, UnresolvedDepth())
+        } else if case .method(let innerCalleeExpr, let baseNameToken, _) = calleeExpr {
+            newCalleeExpr = .method(innerCalleeExpr, baseNameToken, argumentNames)
+        }
+
+        let resolvedCalleeExpr = try resolve(expression: newCalleeExpr)
 
         let resolvedArguments = try arguments.map { argument in
             let resolvedValue = try resolve(expression: argument.value)
             return Expression.Argument(name: argument.name, value: resolvedValue)
         }
 
-        return .method(resolvedCalleeExpr, methodToken, resolvedArguments)
+        return .call(resolvedCalleeExpr, leftParenToken, resolvedArguments)
+    }
+
+    mutating private func handleLambda(leftBraceToken: Token,
+                                       argumentNames: [Token],
+                                       expression: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+        let resolvedExpression = try resolve(expression: expression)
+
+        return .lambda(leftBraceToken, argumentNames, resolvedExpression)
+    }
+
+    mutating private func handleMethod(calleeExpr: Expression<UnresolvedDepth>,
+                                       methodName: Token,
+                                       argumentNameTokens: [Token]) throws -> Expression<Int> {
+        let resolvedCalleeExpr = try resolve(expression: calleeExpr)
+
+        return .method(resolvedCalleeExpr, methodName, argumentNameTokens)
     }
 }

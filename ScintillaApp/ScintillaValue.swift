@@ -14,6 +14,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     indirect case tuple2((ScintillaValue, ScintillaValue))
     indirect case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
     case function(ScintillaBuiltin)
+    indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
+    case lambda(Lambda)
     case shape(any Shape)
     case camera(Camera)
     case light(Light)
@@ -33,6 +35,10 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return .tuple3
         case .function:
             return .function
+        case .boundMethod:
+            return .boundMethod
+        case .lambda:
+            return .lambda
         case .shape(_):
             return .shape
         case .camera(_):
@@ -57,6 +63,10 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
         case (.tuple3(let l), .tuple3(let r)):
             return l == r
         case (.function(let l), .function(let r)):
+            return l == r
+        case (.boundMethod(let l1, let l2), .boundMethod(let r1, let r2)):
+            return l1 == r1 && l2 == r2
+        case (.lambda(let l), .lambda(let r)):
             return l == r
         case (.shape(let l), .shape(let r)):
             return l == r
@@ -92,6 +102,10 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "(\(values.0), \(values.1), \(values.2))"
         case .function(let builtin):
             return "\(builtin.objectName)"
+        case .boundMethod(_, let builtin):
+            return "\(builtin.objectName)"
+        case .lambda(let lambda):
+            return "<lambda \(lambda.objectId)>"
         case .shape(let shape):
             return "\(shape)"
         case .camera(let camera):

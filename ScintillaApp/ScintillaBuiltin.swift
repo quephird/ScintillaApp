@@ -12,6 +12,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case cube
     case cylinder
     case group
+    case implicitSurface
     case plane
     case prism
     case sphere
@@ -43,6 +44,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Cylinder", ["bottomY", "topY", "isCapped"])
         case .group:
             return .functionName("Group", ["children"])
+        case .implicitSurface:
+            return .functionName("ImplicitSurface", ["bottomFrontLeft", "topBackRight", "function"])
         case .plane:
             return .functionName("Plane", [])
         case .prism:
@@ -96,6 +99,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeCylinder(argumentValues: argumentValues)
         case .group:
             return try makeGroup(argumentValues: argumentValues)
+        case .implicitSurface:
+            return try makeImplicitSurface(argumentValues: argumentValues)
         case .plane:
             return .shape(Plane())
         case .prism:

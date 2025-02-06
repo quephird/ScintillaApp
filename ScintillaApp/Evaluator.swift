@@ -84,13 +84,20 @@ class Evaluator {
             return try handleTuple3Expression(expr0: expr0,
                                               expr1: expr1,
                                               expr2: expr2)
-        case .function(let calleeName, let arguments, _):
-            return try handleFunction(calleeToken: calleeName,
-                                      arguments: arguments)
-        case .method(let calleeExpr, let methodToken, let arguments):
+        case .constructor(let calleeName, let argumentNames, let depth):
+            return try handleConstructor(calleeToken: calleeName,
+                                         argumentNameTokens: argumentNames,
+                                         depth: depth)
+        case .lambda(_, let argumentNames, let expression):
+            return try handleLambda(argumentNames: argumentNames,
+                                    expression: expression)
+        case .method(let calleeExpr, let methodToken, let argumentNameTokens):
             return try handleMethod(calleeExpr: calleeExpr,
                                     methodToken: methodToken,
-                                    arguments: arguments)
+                                    argumentNameTokens: argumentNameTokens)
+        case .call(let calleeExpr, let leftParenToken, let arguments):
+            return try handleCall(calleeExpr: calleeExpr,
+                                  arguments: arguments)
         }
     }
 
@@ -164,42 +171,59 @@ class Evaluator {
         return .tuple3((value0, value1, value2))
     }
 
-    private func handleFunction(calleeToken: Token,
-                                arguments: [Expression<Int>.Argument]) throws -> ScintillaValue {
-        let argumentValues = try arguments.map { try evaluate(expr: $0.value) }
+    private func handleConstructor(calleeToken: Token,
+                                   argumentNameTokens: [Token],
+                                   depth: Int) throws -> ScintillaValue {
 
         let baseName = calleeToken.lexeme
-        let argumentNames = arguments.map { $0.name.lexeme }
+        let argumentNames = argumentNameTokens.map { $0.lexeme }
         let calleeName: ObjectName = .functionName(baseName, argumentNames)
-        let callee = try environment.getValue(name: calleeName)
+        let callee = try environment.getValueAtDepth(name: calleeName, depth: depth)
 
-        guard case .function(let callee) = callee else {
+        guard case .function = callee else {
             throw RuntimeError.notAFunction(calleeToken.location, calleeToken.lexeme)
         }
 
-        // TODO: Need to package up arguments such that names, locations, _and_ values
-        // are all accessible within the call() function.
-        return try callee.call(argumentValues: argumentValues)
+        return callee
+    }
+
+    private func handleCall(calleeExpr: Expression<Int>,
+                            arguments: [Expression<Int>.Argument]) throws -> ScintillaValue {
+        let callee = try evaluate(expr: calleeExpr)
+        let argumentValues = try arguments.map { try evaluate(expr: $0.value) }
+
+        if case .function(let builtin) = callee {
+            // TODO: Need to package up arguments such that names, locations, _and_ values
+            // are all accessible within the call() function.
+            return try builtin.call(argumentValues: argumentValues)
+        }
+
+        if case .boundMethod(let callee, let builtin) = callee {
+            return try builtin.callMethod(object: callee, argumentValues: argumentValues)
+        }
+
+        // throw exception stating that the callee is not callable
+        throw RuntimeError.notAFunction(calleeExpr.locationToken.location, "FIXME")
+    }
+
+    private func handleLambda(argumentNames: [Token],
+                              expression: Expression<Int>) throws -> ScintillaValue {
+        fatalError("TODO!!! Need to figure out how to handle this!")
     }
 
     private func handleMethod(calleeExpr: Expression<Int>,
                               methodToken: Token,
-                              arguments: [Expression<Int>.Argument]) throws -> ScintillaValue {
-        let object = try evaluate(expr: calleeExpr)
-
-        let argumentValues = try arguments.map { try evaluate(expr: $0.value) }
-
+                              argumentNameTokens: [Token]) throws -> ScintillaValue {
+        let callee = try evaluate(expr: calleeExpr)
         let methodName = methodToken.lexeme
-        let argumentNames = arguments.map { $0.name.lexeme }
-        let methodObjectName: ObjectName = .methodName(.shape, methodName, argumentNames)
-        let methodValue = try environment.getValue(name: methodObjectName)
+        let argumentNames = argumentNameTokens.map { $0.lexeme }
+        let methodObjectName: ObjectName = .methodName(callee.type, methodName, argumentNames)
 
-        guard case .function(let method) = methodValue else {
-            throw RuntimeError.notAFunction(methodToken.location, methodToken.lexeme)
+        let methodValue = try environment.getValue(name: methodObjectName)
+        guard case .function(let builtin) = methodValue else {
+            fatalError("TODO!!! Need a better error here!!!")
         }
 
-        // TODO: Need to package up arguments such that names, locations, _and_ values
-        // are all accessible within the call() function.
-        return try method.callMethod(object: object, argumentValues: argumentValues)
+        return .boundMethod(callee, builtin)
     }
 }

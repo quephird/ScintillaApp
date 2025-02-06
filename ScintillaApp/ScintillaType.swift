@@ -12,6 +12,8 @@ enum ScintillaType {
     case tuple2
     case tuple3
     case function
+    case boundMethod
+    case lambda
     case shape
     case camera
     case light
