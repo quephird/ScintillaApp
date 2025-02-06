@@ -184,6 +184,17 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .shape(group)
     }
 
+    private func makeImplicitSurface(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let bottomFrontLeft = try extractRawTuple3(argumentValue: argumentValues[0])
+        let topBackRight = try extractRawTuple3(argumentValue: argumentValues[1])
+        let lambda = try extractRawSurfaceFunction(argumentValue: argumentValues[2])
+
+        let implicitSurface = ImplicitSurface(bottomFrontLeft: bottomFrontLeft,
+                                              topBackRight: topBackRight,
+                                              lambda)
+        return .shape(implicitSurface)
+    }
+
     private func makePrism(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let bottomY = try extractRawDouble(argumentValue: argumentValues[0])
         let topY = try extractRawDouble(argumentValue: argumentValues[1])
@@ -406,6 +417,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
 
         return (rawDouble0, rawDouble1, rawDouble2)
+    }
+
+    private func extractRawSurfaceFunction(argumentValue: ScintillaValue) throws -> Lambda {
+        guard case .lambda(let rawLambda) = argumentValue else {
+            throw RuntimeError.expectedLambda
+        }
+
+        return rawLambda
     }
 
     private func extractRawCamera(argumentValue: ScintillaValue) throws -> Camera {

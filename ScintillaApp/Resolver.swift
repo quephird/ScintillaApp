@@ -6,6 +6,15 @@
 //
 
 struct Resolver {
+    // TODO: Check if we need all of these
+    private enum FunctionType {
+        case none
+        case function
+        case method
+        case lambda
+        case initializer
+    }
+
     private enum ArgumentListType {
         case none
         case constructorCall
@@ -15,6 +24,7 @@ struct Resolver {
     }
 
     private var scopeStack: [[ObjectName: Bool]]
+    private var currentFunctionType: FunctionType = .none
     private var currentArgumentListType: ArgumentListType = .none
 
     init() {
@@ -294,9 +304,22 @@ extension Resolver {
     mutating private func handleLambda(leftBraceToken: Token,
                                        argumentNames: [Token],
                                        expression: Expression<UnresolvedDepth>) throws -> Expression<Int> {
-        let resolvedExpression = try resolve(expression: expression)
+        beginScope()
+        let previousFunctionType = currentFunctionType
+        currentFunctionType = .lambda
+        defer {
+            endScope()
+            currentFunctionType = previousFunctionType
+        }
 
-        return .lambda(leftBraceToken, argumentNames, resolvedExpression)
+        for argumentName in argumentNames {
+            try declareVariable(variableToken: argumentName)
+            defineVariable(variableToken: argumentName)
+        }
+
+        let resolvedExpr = try resolve(expression: expression)
+
+        return .lambda(leftBraceToken, argumentNames, resolvedExpr)
     }
 
     mutating private func handleMethod(calleeExpr: Expression<UnresolvedDepth>,

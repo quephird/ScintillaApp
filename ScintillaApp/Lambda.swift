@@ -7,9 +7,11 @@
 
 import Foundation
 
-struct Lambda: Equatable {
-    public var parameterList: [Token]
-    public var enclosingEnvironment: Environment
-    public var body: Expression<Int>
-    public var objectId: UUID = UUID()
-}
+typealias Lambda = (Double, Double, Double) -> Double
+
+//struct Lambda: Equatable {
+//    public var parameterList: [Token]
+//    public var enclosingEnvironment: Environment
+//    public var body: Expression<Int>
+//    public var objectId: UUID = UUID()
+//}

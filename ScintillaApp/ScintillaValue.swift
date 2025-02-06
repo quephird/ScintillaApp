@@ -67,7 +67,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
         case (.boundMethod(let l1, let l2), .boundMethod(let r1, let r2)):
             return l1 == r1 && l2 == r2
         case (.lambda(let l), .lambda(let r)):
-            return l == r
+            // TODO: Need to revisit this!!!
+            return true
         case (.shape(let l), .shape(let r)):
             return l == r
         case (.camera(let l), .camera(let r)):
@@ -105,7 +106,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
         case .boundMethod(_, let builtin):
             return "\(builtin.objectName)"
         case .lambda(let lambda):
-            return "<lambda \(lambda.objectId)>"
+            return "<lambda>"
         case .shape(let shape):
             return "\(shape)"
         case .camera(let camera):

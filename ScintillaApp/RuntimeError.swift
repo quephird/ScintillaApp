@@ -22,6 +22,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case expectedBoolean
     case expectedDouble
     case expectedTuple
+    case expectedLambda
     case expectedCamera
     case expectedLight
     case expectedShape
@@ -54,6 +55,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[] Error: expected a double value for the argument"
         case .expectedTuple:
             return "[] Error: expected a tuple for the argument"
+        case .expectedLambda:
+            return "[] Error: expected a lambda for the argument"
         case .expectedCamera:
             return "[] Error: expected a camera for the argument"
         case .expectedLight:

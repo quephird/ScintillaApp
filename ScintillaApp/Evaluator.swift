@@ -208,7 +208,37 @@ class Evaluator {
 
     private func handleLambda(argumentNames: [Token],
                               expression: Expression<Int>) throws -> ScintillaValue {
-        fatalError("TODO!!! Need to figure out how to handle this!")
+        let lambda = { (x: Double, y: Double, z: Double) -> Double in
+            var returnValue: Double
+            do {
+                let newEnvironment = Environment(enclosingEnvironment: self.environment)
+
+                let objectX: ObjectName = .variableName("x")
+                newEnvironment.define(name: objectX, value: .double(x))
+                let objectY: ObjectName = .variableName("y")
+                newEnvironment.define(name: objectY, value: .double(y))
+                let objectZ: ObjectName = .variableName("z")
+                newEnvironment.define(name: objectZ, value: .double(z))
+
+                let previousEnvironment = self.environment
+                self.environment = newEnvironment
+                defer {
+                    self.environment = previousEnvironment
+                }
+
+                let wrappedValue = try self.evaluate(expr: expression)
+                guard case .double(let value) = wrappedValue else {
+                    fatalError("BLARGH... expected a double return value!")
+                }
+                returnValue = value
+            } catch {
+                fatalError("Something went wrong inside body of lambda")
+            }
+
+            return returnValue
+        }
+
+        return .lambda(lambda)
     }
 
     private func handleMethod(calleeExpr: Expression<Int>,
