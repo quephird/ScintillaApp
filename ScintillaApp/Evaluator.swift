@@ -95,7 +95,7 @@ class Evaluator {
             return try handleMethod(calleeExpr: calleeExpr,
                                     methodToken: methodToken,
                                     argumentNameTokens: argumentNameTokens)
-        case .call(let calleeExpr, let leftParenToken, let arguments):
+        case .call(let calleeExpr, _, let arguments):
             return try handleCall(calleeExpr: calleeExpr,
                                   arguments: arguments)
         }
@@ -172,11 +172,17 @@ class Evaluator {
     }
 
     private func handleConstructor(calleeToken: Token,
-                                   argumentNameTokens: [Token],
+                                   argumentNameTokens: [Token?],
                                    depth: Int) throws -> ScintillaValue {
 
         let baseName = calleeToken.lexeme
-        let argumentNames = argumentNameTokens.map { $0.lexeme }
+        let argumentNames = argumentNameTokens.map { maybeNameToken in
+            if let nameToken = maybeNameToken  {
+                return nameToken.lexeme
+            }
+
+            return ""
+        }
         let calleeName: ObjectName = .functionName(baseName, argumentNames)
         let callee = try environment.getValueAtDepth(name: calleeName, depth: depth)
 
@@ -202,22 +208,21 @@ class Evaluator {
             return try builtin.callMethod(object: callee, argumentValues: argumentValues)
         }
 
-        // throw exception stating that the callee is not callable
+        // TODO: Need to throw new exception stating that the callee is not callable
         throw RuntimeError.notAFunction(calleeExpr.locationToken.location, "FIXME")
     }
 
     private func handleLambda(argumentNames: [Token],
                               expression: Expression<Int>) throws -> ScintillaValue {
+        let newEnvironment = Environment(enclosingEnvironment: self.environment)
         let lambda = { (x: Double, y: Double, z: Double) -> Double in
             var returnValue: Double
             do {
-                let newEnvironment = Environment(enclosingEnvironment: self.environment)
-
-                let objectX: ObjectName = .variableName("x")
+                let objectX: ObjectName = .variableName(argumentNames[0].lexeme)
                 newEnvironment.define(name: objectX, value: .double(x))
-                let objectY: ObjectName = .variableName("y")
+                let objectY: ObjectName = .variableName(argumentNames[1].lexeme)
                 newEnvironment.define(name: objectY, value: .double(y))
-                let objectZ: ObjectName = .variableName("z")
+                let objectZ: ObjectName = .variableName(argumentNames[2].lexeme)
                 newEnvironment.define(name: objectZ, value: .double(z))
 
                 let previousEnvironment = self.environment
@@ -243,10 +248,16 @@ class Evaluator {
 
     private func handleMethod(calleeExpr: Expression<Int>,
                               methodToken: Token,
-                              argumentNameTokens: [Token]) throws -> ScintillaValue {
+                              argumentNameTokens: [Token?]) throws -> ScintillaValue {
         let callee = try evaluate(expr: calleeExpr)
         let methodName = methodToken.lexeme
-        let argumentNames = argumentNameTokens.map { $0.lexeme }
+        let argumentNames = argumentNameTokens.map { maybeNameToken in
+            guard let nameToken = maybeNameToken else {
+                // TODO: Need to properly handle this!!!
+                fatalError("FIXME")
+            }
+            return nameToken.lexeme
+        }
         let methodObjectName: ObjectName = .methodName(callee.type, methodName, argumentNames)
 
         let methodValue = try environment.getValue(name: methodObjectName)

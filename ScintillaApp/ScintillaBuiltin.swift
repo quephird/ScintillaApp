@@ -5,6 +5,8 @@
 //  Created by Danielle Kefford on 1/26/25.
 //
 
+import Darwin
+
 import ScintillaLib
 
 enum ScintillaBuiltin: CaseIterable, Equatable {
@@ -33,6 +35,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case difference
     case intersection
     case union
+    case sinFunc
 
     var objectName: ObjectName {
         switch self {
@@ -86,6 +89,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .methodName(.shape, "intersection", ["shapes"])
         case .union:
             return .methodName(.shape, "union", ["shapes"])
+        case .sinFunc:
+            return .functionName("sin", [""])
         }
     }
 
@@ -119,6 +124,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makePointLight(argumentValues: argumentValues)
         case .world:
             return try makeWorld(argumentValues: argumentValues)
+        case .sinFunc:
+            return try handleSinFunc(argumentValues: argumentValues)
         default:
             fatalError("Internal error: method calls should not get here")
         }
@@ -365,6 +372,12 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .z:
             .shape(shape.rotateZ(theta))
         }
+    }
+
+    private func handleSinFunc(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let rawArgumentValue = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return .double(sin(rawArgumentValue))
     }
 
     private func extractRawBoolean(argumentValue: ScintillaValue) throws -> Bool {

@@ -259,7 +259,7 @@ extension Resolver {
     }
 
     mutating private func handleConstructor(calleeToken: Token,
-                                            argumentNameTokens: [Token]) throws -> Expression<Int> {
+                                            argumentNameTokens: [Token?]) throws -> Expression<Int> {
         let previousArgumentListType = currentArgumentListType
         currentArgumentListType = .constructorCall
         defer {
@@ -267,7 +267,13 @@ extension Resolver {
         }
 
         let baseName = calleeToken.lexeme
-        let argumentNames = argumentNameTokens.map { $0.lexeme }
+        let argumentNames = argumentNameTokens.map { maybeNameToken in
+            if let nameToken = maybeNameToken {
+                return nameToken.lexeme
+            }
+
+            return ""
+        }
         let name: ObjectName = .functionName(baseName, argumentNames)
         let depth = try getDepth(name: name, nameToken: calleeToken)
 
@@ -324,7 +330,7 @@ extension Resolver {
 
     mutating private func handleMethod(calleeExpr: Expression<UnresolvedDepth>,
                                        methodName: Token,
-                                       argumentNameTokens: [Token]) throws -> Expression<Int> {
+                                       argumentNameTokens: [Token?]) throws -> Expression<Int> {
         let resolvedCalleeExpr = try resolve(expression: calleeExpr)
 
         return .method(resolvedCalleeExpr, methodName, argumentNameTokens)

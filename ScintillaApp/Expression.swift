@@ -7,7 +7,7 @@
 
 indirect enum Expression<Depth: Equatable>: Equatable {
     public struct Argument: Equatable {
-        public var name: Token
+        public var name: Token?
         public var value: Expression<Depth>
     }
 
@@ -18,9 +18,9 @@ indirect enum Expression<Depth: Equatable>: Equatable {
     case list(Token, [Expression])
     case tuple2(Token, Expression, Expression)
     case tuple3(Token, Expression, Expression, Expression)
-    case constructor(Token, [Token], Depth)
+    case constructor(Token, [Token?], Depth)
     case lambda(Token, [Token], Expression)
-    case method(Expression, Token, [Token])
+    case method(Expression, Token, [Token?])
     case call(Expression, Token, [Argument])
 
     var locationToken: Token {
@@ -50,6 +50,7 @@ indirect enum Expression<Depth: Equatable>: Equatable {
         }
     }
 
+    // TODO: Do we still need this?
     var baseNameToken: Token? {
         switch self {
         case .call(let calleeExpr, _, _):

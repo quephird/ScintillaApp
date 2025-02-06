@@ -340,12 +340,13 @@ extension Parser {
         var arguments: [Expression<UnresolvedDepth>.Argument] = []
         if currentToken.type != .rightParen {
             repeat {
-                guard let argName = consumeToken(type: .identifier) else {
-                    throw ParseError.missingIdentifier(currentToken)
-                }
+                var argName: Token? = nil
+                if let consumedToken = consumeToken(type: .identifier) {
+                    argName = consumedToken
 
-                guard currentTokenMatchesAny(types: [.colon]) else {
-                    throw ParseError.missingColon(currentToken)
+                    guard currentTokenMatchesAny(types: [.colon]) else {
+                        throw ParseError.missingColon(currentToken)
+                    }
                 }
 
                 let argValue = try parseExpression()
