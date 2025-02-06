@@ -17,6 +17,10 @@ class Environment: Equatable {
         values[name] = value
     }
 
+    func undefineAll() {
+        values.removeAll(keepingCapacity: true)
+    }
+
     func assignAtDepth(name: ObjectName, value: ScintillaValue, depth: Int) throws {
         let ancestor = try ancestor(depth: depth)
 

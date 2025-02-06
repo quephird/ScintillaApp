@@ -212,12 +212,29 @@ class Evaluator {
         throw RuntimeError.notAFunction(calleeExpr.locationToken.location, "FIXME")
     }
 
+    private func reuseOrCreateEnvironment(environment: Environment) -> Environment {
+        var cursor: Environment? = self.environment
+        while cursor != nil {
+            if cursor === environment {
+                return Environment(enclosingEnvironment: environment.enclosingEnvironment)
+            }
+            cursor = cursor!.enclosingEnvironment
+        }
+
+        // Can reuse `environment`
+        environment.undefineAll()
+        return environment
+    }
+
     private func handleLambda(argumentNames: [Token],
                               expression: Expression<Int>) throws -> ScintillaValue {
-        let newEnvironment = Environment(enclosingEnvironment: self.environment)
+        let sharedEnvironment = Environment(enclosingEnvironment: self.environment)
+
         let lambda = { (x: Double, y: Double, z: Double) -> Double in
             var returnValue: Double
             do {
+                let newEnvironment = self.reuseOrCreateEnvironment(environment: sharedEnvironment)
+
                 let objectX: ObjectName = .variableName(argumentNames[0].lexeme)
                 newEnvironment.define(name: objectX, value: .double(x))
                 let objectY: ObjectName = .variableName(argumentNames[1].lexeme)
