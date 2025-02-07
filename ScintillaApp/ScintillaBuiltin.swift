@@ -14,7 +14,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case cube
     case cylinder
     case group
-    case implicitSurface
+    case implicitSurface1
+    case implicitSurface2
     case plane
     case prism
     case sphere
@@ -47,8 +48,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Cylinder", ["bottomY", "topY", "isCapped"])
         case .group:
             return .functionName("Group", ["children"])
-        case .implicitSurface:
+        case .implicitSurface1:
             return .functionName("ImplicitSurface", ["bottomFrontLeft", "topBackRight", "function"])
+        case .implicitSurface2:
+            return .functionName("ImplicitSurface", ["center", "radius", "function"])
         case .plane:
             return .functionName("Plane", [])
         case .prism:
@@ -104,8 +107,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeCylinder(argumentValues: argumentValues)
         case .group:
             return try makeGroup(argumentValues: argumentValues)
-        case .implicitSurface:
-            return try makeImplicitSurface(argumentValues: argumentValues)
+        case .implicitSurface1:
+            return try makeImplicitSurface1(argumentValues: argumentValues)
+        case .implicitSurface2:
+            return try makeImplicitSurface2(argumentValues: argumentValues)
         case .plane:
             return .shape(Plane())
         case .prism:
@@ -191,13 +196,24 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .shape(group)
     }
 
-    private func makeImplicitSurface(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func makeImplicitSurface1(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let bottomFrontLeft = try extractRawTuple3(argumentValue: argumentValues[0])
         let topBackRight = try extractRawTuple3(argumentValue: argumentValues[1])
         let lambda = try extractRawSurfaceFunction(argumentValue: argumentValues[2])
 
         let implicitSurface = ImplicitSurface(bottomFrontLeft: bottomFrontLeft,
                                               topBackRight: topBackRight,
+                                              lambda)
+        return .shape(implicitSurface)
+    }
+
+    private func makeImplicitSurface2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let center = try extractRawTuple3(argumentValue: argumentValues[0])
+        let radius = try extractRawDouble(argumentValue: argumentValues[1])
+        let lambda = try extractRawSurfaceFunction(argumentValue: argumentValues[2])
+
+        let implicitSurface = ImplicitSurface(center: center,
+                                              radius: radius,
                                               lambda)
         return .shape(implicitSurface)
     }
