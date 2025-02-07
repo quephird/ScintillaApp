@@ -69,8 +69,11 @@ extension Parser {
     // Scintilla programs are parsed in the following order:
     //
     //    program        → statement* expression EOF ;
-    //    statement      → letDecl ;
+    //    statement      → letDecl
+    //                   | funDecl ;
     //    letDecl        → "let" IDENTIFIER "=" expression ;
+    //    funDecl        → "func" IDENTIFIER "(" argList ")" "{" letDecl* expression "}" ;
+    //    argList        → IDENTIFIER ("," IDENTIFIER)*
     //    expression     → term ;
     //    term           → factor ( ( "-" | "+" ) factor )* ;
     //    factor         → unary ( ( "/" | "*" | "%" ) unary )* ;
@@ -80,23 +83,23 @@ extension Parser {
     //    method         → postfix "." IDENTIFIER ;
     //    call           → postfix "(" ( (IDENTIFIER ":")? expression)* ")" ;
     //    primary        → tuple
+    //                   | grouping
     //                   | list
     //                   | double
     //                   | IDENTIFIER
     //                   | lambda ;
-    //    lambda         → "{" IDENTIFIER ("," IDENTIFIER)* "in" expression "}" ;
-
-//    Cube().translate(x: 0.0, y: 2,0, z: 1.0)
-//    { x, y in x + y }(1, 2)
-
-    //    postfix        → primary ( method | call )* ;
-    //    method         → "." IDENTIFIER ;
-    //    call           → "(" ( (IDENTIFIER ":")? expression)* ")" ;
-
+    //    tuple          → "(" expression ( "," expression )* ")" ;
+    //    grouping       → "(" expression ")" ;
+    //    list           → "[" expression ( "," expression )* "]" ;
+    //    lambda         → "{" arglist "in" expression "}" ;
 
     mutating func parseStatement() throws -> Statement<UnresolvedDepth>? {
         if let letDecl = try parseLetDeclaration() {
             return letDecl
+        }
+
+        if let funDecl = try parseFunctionDeclaration() {
+            return funDecl
         }
 
         return nil
@@ -118,6 +121,50 @@ extension Parser {
         let letExpr = try parseExpression()
 
         return .letDeclaration(varName, letExpr);
+    }
+
+    mutating private func parseFunctionDeclaration() throws -> Statement<UnresolvedDepth>? {
+        guard currentTokenMatchesAny(types: [.func]) else {
+            return nil
+        }
+
+        guard let funcName = consumeToken(type: .identifier) else {
+            throw ParseError.missingFunctionName(currentToken)
+        }
+
+        guard currentTokenMatchesAny(types: [.leftParen]) else {
+            throw ParseError.missingLeftParen(currentToken)
+        }
+
+        var argumentNames: [Token] = []
+        repeat {
+            guard let argumentName = consumeToken(type: .identifier) else {
+                throw ParseError.missingIdentifier(currentToken)
+            }
+
+            argumentNames.append(argumentName)
+        } while currentTokenMatchesAny(types: [.comma])
+
+        guard currentTokenMatchesAny(types: [.rightParen]) else {
+            throw ParseError.missingRightParen(currentToken)
+        }
+
+        guard currentTokenMatchesAny(types: [.leftBrace]) else {
+            throw ParseError.missingLeftBrace(currentToken)
+        }
+
+        var letDecls: [Statement<UnresolvedDepth>] = []
+        while let letDecl = try parseLetDeclaration() {
+            letDecls.append(letDecl)
+        }
+
+        let returnExpr = try parseExpression()
+
+        guard currentTokenMatchesAny(types: [.rightBrace]) else {
+            throw ParseError.missingRightBrace(currentToken)
+        }
+
+        return .functionDeclaration(funcName, argumentNames, letDecls, returnExpr)
     }
 
     mutating private func parseExpression() throws -> Expression<UnresolvedDepth> {
@@ -207,8 +254,8 @@ extension Parser {
     }
 
     mutating private func parsePrimary() throws -> Expression<UnresolvedDepth> {
-        if let tuple = try parseTuple() {
-            return tuple
+        if let tupleOrGrouping = try parseTupleOrGrouping() {
+            return tupleOrGrouping
         }
 
         if let list = try parseList() {
@@ -236,23 +283,22 @@ extension Parser {
             return .variable(varName, UnresolvedDepth())
         }
 
-        //        if let varName = consumeToken(type: .identifier) {
-        //            if let object = try parseConstructor(name: varName) {
-        //                return object
-        //            }
-        //
-        //            return .variable(varName, UnresolvedDepth())
-        //        }
-
         throw ParseError.expectedExpression(currentToken)
     }
 
-    mutating private func parseTuple() throws -> Expression<UnresolvedDepth>? {
+    mutating private func parseTupleOrGrouping() throws -> Expression<UnresolvedDepth>? {
         guard let leftParen = consumeToken(type: .leftParen) else {
             return nil
         }
 
         let expr0 = try parseExpression()
+
+        // NOTA BENE: A tuple with one component is going to be parsed
+        // as a single grouped expression
+        if currentTokenMatchesAny(types: [.rightParen]) {
+            return expr0
+        }
+
         guard currentTokenMatchesAny(types: [.comma]) else {
             throw ParseError.missingComma(currentToken)
         }
@@ -321,20 +367,6 @@ extension Parser {
 
         return .lambda(leftBrace, argumentNames, expression)
     }
-
-//    mutating private func parseConstructor(name: Token) throws -> Expression<UnresolvedDepth>? {
-//        guard currentTokenMatchesAny(types: [.leftParen]) else {
-//            return nil
-//        }
-//
-//        let arguments = try parseArguments()
-//
-//        guard currentTokenMatchesAny(types: [.rightParen]) else {
-//            throw ParseError.missingRightParen(currentToken)
-//        }
-//
-//        return .function(name, arguments, UnresolvedDepth())
-//    }
 
     mutating private func parseArguments() throws -> [Expression<UnresolvedDepth>.Argument] {
         var arguments: [Expression<UnresolvedDepth>.Argument] = []

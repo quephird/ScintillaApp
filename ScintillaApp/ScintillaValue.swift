@@ -16,6 +16,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     case function(ScintillaBuiltin)
     indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
     case lambda(Lambda)
+    case userDefinedFunction(UserDefinedFunction)
     case shape(any Shape)
     case camera(Camera)
     case light(Light)
@@ -39,6 +40,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return .boundMethod
         case .lambda:
             return .lambda
+        case .userDefinedFunction:
+            return .userDefinedFunction
         case .shape(_):
             return .shape
         case .camera(_):
@@ -69,6 +72,9 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
         case (.lambda(let l), .lambda(let r)):
             // TODO: Need to revisit this!!!
             return true
+        case (.userDefinedFunction(let l), .userDefinedFunction(let r)):
+            // TODO: Need to revisit this!!!
+            return l.objectId == r.objectId
         case (.shape(let l), .shape(let r)):
             return l == r
         case (.camera(let l), .camera(let r)):
@@ -107,6 +113,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "\(builtin.objectName)"
         case .lambda(let lambda):
             return "<lambda>"
+        case .userDefinedFunction(let userDefinedFunction):
+            return "<function: \(userDefinedFunction.name)>"
         case .shape(let shape):
             return "\(shape)"
         case .camera(let camera):
@@ -115,6 +123,15 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "\(light)"
         case .world(let world):
             return "\(world)"
+        }
+    }
+
+    var isCallable: Bool {
+        switch self {
+        case .function, .boundMethod, .lambda, .userDefinedFunction:
+            return true
+        default:
+            return false
         }
     }
 }

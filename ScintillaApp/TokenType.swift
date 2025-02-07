@@ -30,6 +30,7 @@ enum TokenType: Equatable {
 
     // Keywords
     case `false`
+    case `func`
     case `in`
     case `let`
     case `true`

@@ -53,6 +53,11 @@ class Evaluator {
         switch statement {
         case .letDeclaration(let nameToken, let expr):
             try handleLetDeclaration(nameToken: nameToken, expr: expr)
+        case .functionDeclaration(let nameToken, let argumentNames, let letDecls, let returnExpr):
+            try handleFunctionDeclaration(nameToken: nameToken,
+                                          argumentNames: argumentNames,
+                                          letDecls: letDecls,
+                                          returnExpr: returnExpr)
         case .expression(let expr):
             let _ = try evaluate(expr: expr)
         }
@@ -65,7 +70,22 @@ class Evaluator {
         environment.define(name: name, value: value)
     }
 
-    private func evaluate(expr: Expression<Int>) throws -> ScintillaValue {
+    private func handleFunctionDeclaration(nameToken: Token,
+                                           argumentNames: [Token],
+                                           letDecls: [Statement<Int>],
+                                           returnExpr: Expression<Int>) throws {
+        let environmentWhenDeclared = self.environment
+        let function = UserDefinedFunction(name: String(nameToken.lexeme),
+                                           argumentNames: argumentNames,
+                                           enclosingEnvironment: environmentWhenDeclared,
+                                           letDecls: letDecls,
+                                           returnExpr: returnExpr)
+        let argumentNames = argumentNames.map { $0.lexeme }
+        let name: ObjectName = .functionName(nameToken.lexeme, argumentNames)
+        environment.define(name: name, value: .userDefinedFunction(function))
+    }
+
+    public func evaluate(expr: Expression<Int>) throws -> ScintillaValue {
         switch expr {
         case .literal(_, let literal):
             return literal
@@ -186,7 +206,7 @@ class Evaluator {
         let calleeName: ObjectName = .functionName(baseName, argumentNames)
         let callee = try environment.getValueAtDepth(name: calleeName, depth: depth)
 
-        guard case .function = callee else {
+        guard callee.isCallable else {
             throw RuntimeError.notAFunction(calleeToken.location, calleeToken.lexeme)
         }
 
@@ -206,6 +226,10 @@ class Evaluator {
 
         if case .boundMethod(let callee, let builtin) = callee {
             return try builtin.callMethod(object: callee, argumentValues: argumentValues)
+        }
+
+        if case .userDefinedFunction(let userDefinedFunction) = callee {
+            return try userDefinedFunction.call(evaluator: self, argumentValues: argumentValues)
         }
 
         // TODO: Need to throw new exception stating that the callee is not callable

@@ -48,23 +48,28 @@ extension Resolver {
     }
 
     mutating private func declareVariable(variableToken: Token) throws {
-        // ACHTUNG!!! Only variables declared/defined in local
-        // blocks are tracked by the resolver, which is why
-        // we bail here since the stack is empty in the
-        // global environment.
-        if scopeStack.isEmpty {
-            return
-        }
-
         let name: ObjectName = .variableName(variableToken.lexeme)
-        if scopeStack.lastMutable.keys.contains(name) {
-            throw ResolverError.variableAlreadyDefined(variableToken)
-        }
-
-        scopeStack.lastMutable[name] = false
+        try declareObject(objectName: name)
     }
 
     mutating private func defineVariable(variableToken: Token) {
+        let name: ObjectName = .variableName(variableToken.lexeme)
+        defineObject(objectName: name)
+    }
+
+    mutating private func declareFunction(nameToken: Token, argumentNameTokens: [Token]) throws {
+        let argumentNames = argumentNameTokens.map { $0.lexeme }
+        let name: ObjectName = .functionName(nameToken.lexeme, argumentNames)
+        try declareObject(objectName: name)
+    }
+
+    mutating private func defineFunction(nameToken: Token, argumentNameTokens: [Token]) {
+        let argumentNames = argumentNameTokens.map { $0.lexeme }
+        let name: ObjectName = .functionName(nameToken.lexeme, argumentNames)
+        defineObject(objectName: name)
+    }
+
+    mutating private func declareObject(objectName: ObjectName) throws {
         // ACHTUNG!!! Only variables declared/defined in local
         // blocks are tracked by the resolver, which is why
         // we bail here since the stack is empty in the
@@ -73,8 +78,23 @@ extension Resolver {
             return
         }
 
-        let name: ObjectName = .variableName(variableToken.lexeme)
-        scopeStack.lastMutable[name] = true
+        if scopeStack.lastMutable.keys.contains(objectName) {
+            throw ResolverError.variableAlreadyDefined(objectName)
+        }
+
+        scopeStack.lastMutable[objectName] = false
+    }
+
+    mutating private func defineObject(objectName: ObjectName) {
+        // ACHTUNG!!! Only variables declared/defined in local
+        // blocks are tracked by the resolver, which is why
+        // we bail here since the stack is empty in the
+        // global environment.
+        if scopeStack.isEmpty {
+            return
+        }
+
+        scopeStack.lastMutable[objectName] = true
     }
 
     private func getDepth(name: ObjectName, nameToken: Token) throws -> Int {
@@ -125,6 +145,11 @@ extension Resolver {
         switch statement {
         case .letDeclaration(let nameToken, let initializeExpr):
             return try handleLetDeclaration(nameToken: nameToken, initializeExpr: initializeExpr)
+        case .functionDeclaration(let nameToken, let argumentNames, let letDecls, let returnExpr):
+            return try handleFunctionDeclaration(nameToken: nameToken,
+                                                 argumentNames: argumentNames,
+                                                 letDecls: letDecls,
+                                                 returnExpr: returnExpr)
         case .expression(let expr):
             return try handleExpressionStatement(expr: expr)
         }
@@ -138,6 +163,32 @@ extension Resolver {
 
         defineVariable(variableToken: nameToken)
         return .letDeclaration(nameToken, resolvedInitializerExpr)
+    }
+
+    mutating private func handleFunctionDeclaration(nameToken: Token,
+                                                    argumentNames: [Token],
+                                                    letDecls: [Statement<UnresolvedDepth>],
+                                                    returnExpr: Expression<UnresolvedDepth>) throws -> Statement<Int> {
+        try declareFunction(nameToken: nameToken, argumentNameTokens: argumentNames)
+        defineFunction(nameToken: nameToken, argumentNameTokens: argumentNames)
+
+        beginScope()
+        let previousFunctionType = currentFunctionType
+        currentFunctionType = .function
+        defer {
+            endScope()
+            currentFunctionType = previousFunctionType
+        }
+
+        for argumentName in argumentNames {
+            try declareVariable(variableToken: argumentName)
+            defineVariable(variableToken: argumentName)
+        }
+
+        let resolvedLetDecls = try letDecls.map { try resolve(statement: $0) }
+        let resolvedReturnExpr = try resolve(expression: returnExpr)
+
+        return .functionDeclaration(nameToken, argumentNames, resolvedLetDecls, resolvedReturnExpr)
     }
 
     mutating private func handleExpressionStatement(expr: Expression<UnresolvedDepth>) throws -> Statement<Int> {

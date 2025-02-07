@@ -9,6 +9,7 @@ import Foundation
 
 enum ParseError: CustomStringConvertible, LocalizedError {
     case missingVariableName(Token)
+    case missingFunctionName(Token)
     case missingEquals(Token)
     case missingLeftParen(Token)
     case missingRightParen(Token)
@@ -25,6 +26,8 @@ enum ParseError: CustomStringConvertible, LocalizedError {
         switch self {
         case .missingVariableName(let token):
             return "[\(token.location)] Error: expected variable name"
+        case .missingFunctionName(let token):
+            return "[\(token.location)] Error: expected function name"
         case .missingEquals(let token):
             return "[\(token.location)] Error: expected equals sign in let statement"
         case .missingLeftParen(let token):

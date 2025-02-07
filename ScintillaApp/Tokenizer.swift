@@ -14,6 +14,7 @@ struct Tokenizer {
 
     let keywords: [String: TokenType] = [
         "false": .false,
+        "func": .func,
         "in": .in,
         "let": .let,
         "true": .true,
