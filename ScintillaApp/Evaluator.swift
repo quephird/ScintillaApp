@@ -273,10 +273,12 @@ class Evaluator {
 
                 let wrappedValue = try self.evaluate(expr: expression)
                 guard case .double(let value) = wrappedValue else {
+                    // TODO
                     fatalError("BLARGH... expected a double return value!")
                 }
                 returnValue = value
             } catch {
+                // TODO
                 fatalError("Something went wrong inside body of lambda")
             }
 
@@ -301,7 +303,7 @@ class Evaluator {
 
         let methodValue = try environment.getValue(name: methodObjectName)
         guard case .function(let builtin) = methodValue else {
-            fatalError("TODO!!! Need a better error here!!!")
+            throw RuntimeError.notAFunction(methodToken.location, methodToken.lexeme)
         }
 
         return .boundMethod(callee, builtin)
