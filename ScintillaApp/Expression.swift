@@ -49,18 +49,4 @@ indirect enum Expression<Depth: Equatable>: Equatable {
             return leftParenToken
         }
     }
-
-    // TODO: Do we still need this?
-    var baseNameToken: Token? {
-        switch self {
-        case .call(let calleeExpr, _, _):
-            if case .variable(let nameToken, _) = calleeExpr {
-                return nameToken
-            }
-
-            return calleeExpr.baseNameToken
-        default:
-            return nil
-        }
-    }
 }
