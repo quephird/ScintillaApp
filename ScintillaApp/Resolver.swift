@@ -6,21 +6,17 @@
 //
 
 struct Resolver {
-    // TODO: Check if we need all of these
     private enum FunctionType {
         case none
         case function
         case method
         case lambda
-        case initializer
     }
 
     private enum ArgumentListType {
         case none
         case constructorCall
         case methodCall
-        case listInitializer
-        case tupleInitializer
     }
 
     private var scopeStack: [[ObjectName: Bool]]
@@ -264,12 +260,6 @@ extension Resolver {
 
     mutating private func handleList(leftBracketToken: Token,
                                      elements: [Expression<UnresolvedDepth>]) throws -> Expression<Int> {
-        let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .listInitializer
-        defer {
-            currentArgumentListType = previousArgumentListType
-        }
-
         let resolvedElements = try elements.map { element in
             return try resolve(expression: element)
         }
@@ -280,12 +270,6 @@ extension Resolver {
     mutating private func handleTuple2(leftParenToken: Token,
                                        expr0: Expression<UnresolvedDepth>,
                                        expr1: Expression<UnresolvedDepth>) throws -> Expression<Int> {
-        let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .tupleInitializer
-        defer {
-            currentArgumentListType = previousArgumentListType
-        }
-
         let resolvedExpr0 = try resolve(expression: expr0)
         let resolvedExpr1 = try resolve(expression: expr1)
 
@@ -296,12 +280,6 @@ extension Resolver {
                                        expr0: Expression<UnresolvedDepth>,
                                        expr1: Expression<UnresolvedDepth>,
                                        expr2: Expression<UnresolvedDepth>) throws -> Expression<Int> {
-        let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .tupleInitializer
-        defer {
-            currentArgumentListType = previousArgumentListType
-        }
-
         let resolvedExpr0 = try resolve(expression: expr0)
         let resolvedExpr1 = try resolve(expression: expr1)
         let resolvedExpr2 = try resolve(expression: expr2)
