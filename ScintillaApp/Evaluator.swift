@@ -291,10 +291,9 @@ class Evaluator {
                               argumentNameTokens: [Token?]) throws -> ScintillaValue {
         let callee = try evaluate(expr: calleeExpr)
         let methodName = methodToken.lexeme
-        let argumentNames = argumentNameTokens.map { maybeNameToken in
+        let argumentNames = try argumentNameTokens.map { maybeNameToken in
             guard let nameToken = maybeNameToken else {
-                // TODO: Need to properly handle this!!!
-                fatalError("FIXME")
+                throw RuntimeError.missingArgumentName(methodToken)
             }
             return nameToken.lexeme
         }
