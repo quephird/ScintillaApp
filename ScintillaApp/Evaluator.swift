@@ -273,12 +273,11 @@ class Evaluator {
 
                 let wrappedValue = try self.evaluate(expr: expression)
                 guard case .double(let value) = wrappedValue else {
-                    // TODO
-                    fatalError("BLARGH... expected a double return value!")
+                    throw RuntimeError.expectedDouble
                 }
                 returnValue = value
             } catch {
-                // TODO
+                // TODO: Figure out how best to handle this in ScintillaLib
                 fatalError("Something went wrong inside body of lambda")
             }
 

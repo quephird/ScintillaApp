@@ -16,13 +16,19 @@ extension ObjectName: CustomStringConvertible {
         switch self {
         case .variableName(let name):
             return String(name)
-        case .functionName(let name, _):
-            // TODO: Follow orders from my PM and interpolate argument names as well 🫡
-            return String(name)
-        case .methodName(_, let name, _):
-            // TODO: Follow orders from my PM and interpolate argument names as well 🫡
-            return String(name)
+        case .functionName(let name, let argumentNames):
+            let argumentList = self.argumentList(argumentNames: argumentNames)
+            return "\(name)(\(argumentList))"
+        case .methodName(_, let name, let argumentNames):
+            let argumentList = self.argumentList(argumentNames: argumentNames)
+            return "\(name)(\(argumentList))"
         }
+    }
+
+    private func argumentList(argumentNames: [Substring]) -> String {
+        argumentNames
+            .map { "\($0):" }
+            .joined(separator: ",")
     }
 }
 
