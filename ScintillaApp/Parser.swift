@@ -91,7 +91,7 @@ extension Parser {
     //    tuple          → "(" expression ( "," expression )* ")" ;
     //    grouping       → "(" expression ")" ;
     //    list           → "[" expression ( "," expression )* "]" ;
-    //    lambda         → "{" arglist "in" expression "}" ;
+    //    lambda         → "{" argList "in" expression "}" ;
 
     mutating func parseStatement() throws -> Statement<UnresolvedDepth>? {
         if let letDecl = try parseLetDeclaration() {

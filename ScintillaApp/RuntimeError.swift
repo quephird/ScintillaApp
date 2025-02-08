@@ -16,6 +16,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case unsupportedBinaryOperator(Location, Substring)
     case binaryOperandsMustBeNumbers(Location, Substring)
     case notAFunction(Location, Substring)
+    case notCallable(Location, Substring)
     // TODO: Need to capture location and lexemes for the following three error cases
     case incorrectArgument
     case incorrectObject
@@ -47,6 +48,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[\(location)] Error: binary operands must be numbers, \(badOperator)"
         case .notAFunction(let location, let badFunction):
             return "[\(location)] Error: not a function, \(badFunction)"
+        case .notCallable(let location, let badObject):
+            return "[\(location)] Error: not a function, \(badObject)"
         case .incorrectArgument:
             return "[] Error: bad argument"
         case .expectedBoolean:

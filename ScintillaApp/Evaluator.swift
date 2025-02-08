@@ -232,8 +232,7 @@ class Evaluator {
             return try userDefinedFunction.call(evaluator: self, argumentValues: argumentValues)
         }
 
-        // TODO: Need to throw new exception stating that the callee is not callable
-        throw RuntimeError.notAFunction(calleeExpr.locationToken.location, "FIXME")
+        throw RuntimeError.notCallable(calleeExpr.locationToken.location, calleeExpr.locationToken.lexeme)
     }
 
     private func reuseOrCreateEnvironment(environment: Environment) -> Environment {
