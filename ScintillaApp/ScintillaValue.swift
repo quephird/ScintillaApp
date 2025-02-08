@@ -7,6 +7,8 @@
 
 import ScintillaLib
 
+import Foundation
+
 enum ScintillaValue: Equatable, CustomStringConvertible {
     case boolean(Bool)
     case double(Double)
@@ -15,7 +17,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     indirect case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
     case function(ScintillaBuiltin)
     indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
-    case lambda(Lambda)
+    case lambda(Lambda, UUID)
     case userDefinedFunction(UserDefinedFunction)
     case shape(any Shape)
     case camera(Camera)
@@ -69,11 +71,9 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return l == r
         case (.boundMethod(let l1, let l2), .boundMethod(let r1, let r2)):
             return l1 == r1 && l2 == r2
-        case (.lambda(let l), .lambda(let r)):
-            // TODO: Need to revisit this!!!
-            return true
+        case (.lambda(_, let leftId), .lambda(_, let rightId)):
+            return leftId == rightId
         case (.userDefinedFunction(let l), .userDefinedFunction(let r)):
-            // TODO: Need to revisit this!!!
             return l.objectId == r.objectId
         case (.shape(let l), .shape(let r)):
             return l == r
@@ -111,7 +111,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "\(builtin.objectName)"
         case .boundMethod(_, let builtin):
             return "\(builtin.objectName)"
-        case .lambda(let lambda):
+        case .lambda(let lambda, _):
             return "<lambda>"
         case .userDefinedFunction(let userDefinedFunction):
             return "<function: \(userDefinedFunction.name)>"

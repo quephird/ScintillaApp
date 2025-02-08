@@ -449,7 +449,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     }
 
     private func extractRawSurfaceFunction(argumentValue: ScintillaValue) throws -> Lambda {
-        guard case .lambda(let rawLambda) = argumentValue else {
+        guard case .lambda(let rawLambda, _) = argumentValue else {
             throw RuntimeError.expectedLambda
         }
 

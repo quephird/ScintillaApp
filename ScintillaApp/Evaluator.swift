@@ -285,7 +285,9 @@ class Evaluator {
             return returnValue
         }
 
-        return .lambda(lambda)
+        // NOTA BENE: We associate an ID with each lambda so that
+        // ScintillaValue conforms to Equatable
+        return .lambda(lambda, UUID())
     }
 
     private func handleMethod(calleeExpr: Expression<Int>,
