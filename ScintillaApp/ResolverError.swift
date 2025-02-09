@@ -12,7 +12,7 @@ enum ResolverError: LocalizedError, CustomStringConvertible {
     case undefinedFunction(Token)
     case incorrectArgumentsForFunction(Token)
     case variableAccessedBeforeInitialization(Token)
-    case variableAlreadyDefined(Token)
+    case variableAlreadyDefined(ObjectName)
 
     var description: String {
         switch self {
@@ -24,8 +24,8 @@ enum ResolverError: LocalizedError, CustomStringConvertible {
             return "[\(token.location)] Error: incorrect arguments for function, \(token.lexeme)"
         case .variableAccessedBeforeInitialization(let token):
             return "[\(token.location)] Error: cannot read local variable in its own initializer"
-        case .variableAlreadyDefined(let token):
-            return "[\(token.location)] Error: variable \(token.lexeme) already defined in this scope"
+        case .variableAlreadyDefined(let objectName):
+            return "[\(objectName.location())] Error: variable \(objectName) already defined in this scope"
         }
     }
 }

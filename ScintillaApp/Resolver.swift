@@ -6,15 +6,21 @@
 //
 
 struct Resolver {
+    private enum FunctionType {
+        case none
+        case function
+        case method
+        case lambda
+    }
+
     private enum ArgumentListType {
         case none
-        case constructorCall
+        case functionCall
         case methodCall
-        case listInitializer
-        case tupleInitializer
     }
 
     private var scopeStack: [[ObjectName: Bool]]
+    private var currentFunctionType: FunctionType = .none
     private var currentArgumentListType: ArgumentListType = .none
 
     init() {
@@ -38,23 +44,28 @@ extension Resolver {
     }
 
     mutating private func declareVariable(variableToken: Token) throws {
-        // ACHTUNG!!! Only variables declared/defined in local
-        // blocks are tracked by the resolver, which is why
-        // we bail here since the stack is empty in the
-        // global environment.
-        if scopeStack.isEmpty {
-            return
-        }
-
         let name: ObjectName = .variableName(variableToken.lexeme)
-        if scopeStack.lastMutable.keys.contains(name) {
-            throw ResolverError.variableAlreadyDefined(variableToken)
-        }
-
-        scopeStack.lastMutable[name] = false
+        try declareObject(objectName: name)
     }
 
     mutating private func defineVariable(variableToken: Token) {
+        let name: ObjectName = .variableName(variableToken.lexeme)
+        defineObject(objectName: name)
+    }
+
+    mutating private func declareFunction(nameToken: Token, argumentNameTokens: [Token]) throws {
+        let argumentNames = argumentNameTokens.map { $0.lexeme }
+        let name: ObjectName = .functionName(nameToken.lexeme, argumentNames)
+        try declareObject(objectName: name)
+    }
+
+    mutating private func defineFunction(nameToken: Token, argumentNameTokens: [Token]) {
+        let argumentNames = argumentNameTokens.map { $0.lexeme }
+        let name: ObjectName = .functionName(nameToken.lexeme, argumentNames)
+        defineObject(objectName: name)
+    }
+
+    mutating private func declareObject(objectName: ObjectName) throws {
         // ACHTUNG!!! Only variables declared/defined in local
         // blocks are tracked by the resolver, which is why
         // we bail here since the stack is empty in the
@@ -63,8 +74,23 @@ extension Resolver {
             return
         }
 
-        let name: ObjectName = .variableName(variableToken.lexeme)
-        scopeStack.lastMutable[name] = true
+        if scopeStack.lastMutable.keys.contains(objectName) {
+            throw ResolverError.variableAlreadyDefined(objectName)
+        }
+
+        scopeStack.lastMutable[objectName] = false
+    }
+
+    mutating private func defineObject(objectName: ObjectName) {
+        // ACHTUNG!!! Only variables declared/defined in local
+        // blocks are tracked by the resolver, which is why
+        // we bail here since the stack is empty in the
+        // global environment.
+        if scopeStack.isEmpty {
+            return
+        }
+
+        scopeStack.lastMutable[objectName] = true
     }
 
     private func getDepth(name: ObjectName, nameToken: Token) throws -> Int {
@@ -115,6 +141,11 @@ extension Resolver {
         switch statement {
         case .letDeclaration(let nameToken, let initializeExpr):
             return try handleLetDeclaration(nameToken: nameToken, initializeExpr: initializeExpr)
+        case .functionDeclaration(let nameToken, let argumentNames, let letDecls, let returnExpr):
+            return try handleFunctionDeclaration(nameToken: nameToken,
+                                                 argumentNames: argumentNames,
+                                                 letDecls: letDecls,
+                                                 returnExpr: returnExpr)
         case .expression(let expr):
             return try handleExpressionStatement(expr: expr)
         }
@@ -128,6 +159,32 @@ extension Resolver {
 
         defineVariable(variableToken: nameToken)
         return .letDeclaration(nameToken, resolvedInitializerExpr)
+    }
+
+    mutating private func handleFunctionDeclaration(nameToken: Token,
+                                                    argumentNames: [Token],
+                                                    letDecls: [Statement<UnresolvedDepth>],
+                                                    returnExpr: Expression<UnresolvedDepth>) throws -> Statement<Int> {
+        try declareFunction(nameToken: nameToken, argumentNameTokens: argumentNames)
+        defineFunction(nameToken: nameToken, argumentNameTokens: argumentNames)
+
+        beginScope()
+        let previousFunctionType = currentFunctionType
+        currentFunctionType = .function
+        defer {
+            endScope()
+            currentFunctionType = previousFunctionType
+        }
+
+        for argumentName in argumentNames {
+            try declareVariable(variableToken: argumentName)
+            defineVariable(variableToken: argumentName)
+        }
+
+        let resolvedLetDecls = try letDecls.map { try resolve(statement: $0) }
+        let resolvedReturnExpr = try resolve(expression: returnExpr)
+
+        return .functionDeclaration(nameToken, argumentNames, resolvedLetDecls, resolvedReturnExpr)
     }
 
     mutating private func handleExpressionStatement(expr: Expression<UnresolvedDepth>) throws -> Statement<Int> {
@@ -157,13 +214,21 @@ extension Resolver {
                                     expr0: expr0,
                                     expr1: expr1,
                                     expr2: expr2)
-        case .function(let calleeName, let arguments, _):
+        case .function(let calleeName, let argumentNames, _):
             return try handleFunction(calleeToken: calleeName,
-                                      arguments: arguments)
-        case .method(let calleeExpr, let methodToken, let arguments):
+                                      argumentNameTokens: argumentNames)
+        case .lambda(let leftBraceToken, let argumentNames, let expression):
+            return try handleLambda(leftBraceToken: leftBraceToken,
+                                    argumentNames: argumentNames,
+                                    expression: expression)
+        case .method(let calleeExpr, let methodName, let argumentNameTokens):
             return try handleMethod(calleeExpr: calleeExpr,
-                                    methodToken: methodToken,
-                                    arguments: arguments)
+                                    methodName: methodName,
+                                    argumentNameTokens: argumentNameTokens)
+        case .call(let calleeExpr, let leftParenToken, let arguments):
+            return try handleCall(calleeExpr: calleeExpr,
+                                  leftParenToken: leftParenToken,
+                                  arguments: arguments)
         }
     }
 
@@ -195,12 +260,6 @@ extension Resolver {
 
     mutating private func handleList(leftBracketToken: Token,
                                      elements: [Expression<UnresolvedDepth>]) throws -> Expression<Int> {
-        let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .listInitializer
-        defer {
-            currentArgumentListType = previousArgumentListType
-        }
-
         let resolvedElements = try elements.map { element in
             return try resolve(expression: element)
         }
@@ -211,12 +270,6 @@ extension Resolver {
     mutating private func handleTuple2(leftParenToken: Token,
                                        expr0: Expression<UnresolvedDepth>,
                                        expr1: Expression<UnresolvedDepth>) throws -> Expression<Int> {
-        let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .tupleInitializer
-        defer {
-            currentArgumentListType = previousArgumentListType
-        }
-
         let resolvedExpr0 = try resolve(expression: expr0)
         let resolvedExpr1 = try resolve(expression: expr1)
 
@@ -227,12 +280,6 @@ extension Resolver {
                                        expr0: Expression<UnresolvedDepth>,
                                        expr1: Expression<UnresolvedDepth>,
                                        expr2: Expression<UnresolvedDepth>) throws -> Expression<Int> {
-        let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .tupleInitializer
-        defer {
-            currentArgumentListType = previousArgumentListType
-        }
-
         let resolvedExpr0 = try resolve(expression: expr0)
         let resolvedExpr1 = try resolve(expression: expr1)
         let resolvedExpr2 = try resolve(expression: expr2)
@@ -241,42 +288,75 @@ extension Resolver {
     }
 
     mutating private func handleFunction(calleeToken: Token,
-                                         arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
-        let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .constructorCall
-        defer {
-            currentArgumentListType = previousArgumentListType
-        }
-
+                                         argumentNameTokens: [Token?]) throws -> Expression<Int> {
         let baseName = calleeToken.lexeme
-        let argumentNames = arguments.map { $0.name.lexeme }
+        let argumentNames = argumentNameTokens.map { maybeNameToken in
+            if let nameToken = maybeNameToken {
+                return nameToken.lexeme
+            }
+
+            return ""
+        }
         let name: ObjectName = .functionName(baseName, argumentNames)
         let depth = try getDepth(name: name, nameToken: calleeToken)
 
-        let resolvedArgs = try arguments.map { argument in
-            let resolvedValue = try resolve(expression: argument.value)
-            return Expression.Argument(name: argument.name, value: resolvedValue)
-        }
-
-        return .function(calleeToken, resolvedArgs, depth)
+        return .function(calleeToken, argumentNameTokens, depth)
     }
 
-    mutating private func handleMethod(calleeExpr: Expression<UnresolvedDepth>,
-                                       methodToken: Token,
-                                       arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
+    mutating private func handleCall(calleeExpr: Expression<UnresolvedDepth>,
+                                     leftParenToken: Token,
+                                     arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
         let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .methodCall
         defer {
             currentArgumentListType = previousArgumentListType
         }
 
-        let resolvedCalleeExpr = try resolve(expression: calleeExpr)
+        var newCalleeExpr = calleeExpr
+        let argumentNames = arguments.map { $0.name }
+        if case .variable(let baseNameToken, _) = calleeExpr {
+            currentArgumentListType = .functionCall
+            newCalleeExpr = .function(baseNameToken, argumentNames, UnresolvedDepth())
+        } else if case .method(let innerCalleeExpr, let baseNameToken, _) = calleeExpr {
+            currentArgumentListType = .methodCall
+            newCalleeExpr = .method(innerCalleeExpr, baseNameToken, argumentNames)
+        }
+
+        let resolvedCalleeExpr = try resolve(expression: newCalleeExpr)
 
         let resolvedArguments = try arguments.map { argument in
             let resolvedValue = try resolve(expression: argument.value)
             return Expression.Argument(name: argument.name, value: resolvedValue)
         }
 
-        return .method(resolvedCalleeExpr, methodToken, resolvedArguments)
+        return .call(resolvedCalleeExpr, leftParenToken, resolvedArguments)
+    }
+
+    mutating private func handleLambda(leftBraceToken: Token,
+                                       argumentNames: [Token],
+                                       expression: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+        beginScope()
+        let previousFunctionType = currentFunctionType
+        currentFunctionType = .lambda
+        defer {
+            endScope()
+            currentFunctionType = previousFunctionType
+        }
+
+        for argumentName in argumentNames {
+            try declareVariable(variableToken: argumentName)
+            defineVariable(variableToken: argumentName)
+        }
+
+        let resolvedExpr = try resolve(expression: expression)
+
+        return .lambda(leftBraceToken, argumentNames, resolvedExpr)
+    }
+
+    mutating private func handleMethod(calleeExpr: Expression<UnresolvedDepth>,
+                                       methodName: Token,
+                                       argumentNameTokens: [Token?]) throws -> Expression<Int> {
+        let resolvedCalleeExpr = try resolve(expression: calleeExpr)
+
+        return .method(resolvedCalleeExpr, methodName, argumentNameTokens)
     }
 }

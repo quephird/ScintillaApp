@@ -7,7 +7,7 @@
 
 indirect enum Expression<Depth: Equatable>: Equatable {
     public struct Argument: Equatable {
-        public var name: Token
+        public var name: Token?
         public var value: Expression<Depth>
     }
 
@@ -18,8 +18,18 @@ indirect enum Expression<Depth: Equatable>: Equatable {
     case list(Token, [Expression])
     case tuple2(Token, Expression, Expression)
     case tuple3(Token, Expression, Expression, Expression)
-    case function(Token, [Argument], Depth)
-    case method(Expression, Token, [Argument])
+    // NOTA BENE: The following represents _three_ kinds of objects:
+    //
+    // * Builtin constructors of Scintilla objects, such as `Camera`, `ImplicitSurface`, etc.
+    // * Native standalone functions "registered" in the environment, such as `sin()`, `cos()`, etc.
+    // * User-defined functions
+    case function(Token, [Token?], Depth)
+    // ... whereas this case handles only one kind of object:
+    //
+    // * Builtin methods of Scintilla objects, such as `Shape.translate()`, `Shape.rotateX()`, etc.
+    case method(Expression, Token, [Token?])
+    case lambda(Token, [Token], Expression)
+    case call(Expression, Token, [Argument])
 
     var locationToken: Token {
         switch self {
@@ -39,8 +49,12 @@ indirect enum Expression<Depth: Equatable>: Equatable {
             return leftParenToken
         case .function(let nameToken, _, _):
             return nameToken
+        case .lambda(let leftBraceToken, _, _):
+            return leftBraceToken
         case .method(_, let methodNameToken, _):
             return methodNameToken
+        case .call(_, let leftParenToken, _):
+            return leftParenToken
         }
     }
 }

@@ -5,6 +5,8 @@
 //  Created by Danielle Kefford on 1/26/25.
 //
 
+import Darwin
+
 import ScintillaLib
 
 enum ScintillaBuiltin: CaseIterable, Equatable {
@@ -12,6 +14,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case cube
     case cylinder
     case group
+    case implicitSurface1
+    case implicitSurface2
     case plane
     case prism
     case sphere
@@ -32,6 +36,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case difference
     case intersection
     case union
+    case sinFunc
 
     var objectName: ObjectName {
         switch self {
@@ -43,6 +48,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Cylinder", ["bottomY", "topY", "isCapped"])
         case .group:
             return .functionName("Group", ["children"])
+        case .implicitSurface1:
+            return .functionName("ImplicitSurface", ["bottomFrontLeft", "topBackRight", "function"])
+        case .implicitSurface2:
+            return .functionName("ImplicitSurface", ["center", "radius", "function"])
         case .plane:
             return .functionName("Plane", [])
         case .prism:
@@ -83,6 +92,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .methodName(.shape, "intersection", ["shapes"])
         case .union:
             return .methodName(.shape, "union", ["shapes"])
+        case .sinFunc:
+            return .functionName("sin", [""])
         }
     }
 
@@ -96,6 +107,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeCylinder(argumentValues: argumentValues)
         case .group:
             return try makeGroup(argumentValues: argumentValues)
+        case .implicitSurface1:
+            return try makeImplicitSurface1(argumentValues: argumentValues)
+        case .implicitSurface2:
+            return try makeImplicitSurface2(argumentValues: argumentValues)
         case .plane:
             return .shape(Plane())
         case .prism:
@@ -114,6 +129,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makePointLight(argumentValues: argumentValues)
         case .world:
             return try makeWorld(argumentValues: argumentValues)
+        case .sinFunc:
+            return try handleSinFunc(argumentValues: argumentValues)
         default:
             fatalError("Internal error: method calls should not get here")
         }
@@ -177,6 +194,28 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
         let group = Group(children: children)
         return .shape(group)
+    }
+
+    private func makeImplicitSurface1(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let bottomFrontLeft = try extractRawTuple3(argumentValue: argumentValues[0])
+        let topBackRight = try extractRawTuple3(argumentValue: argumentValues[1])
+        let lambda = try extractRawSurfaceFunction(argumentValue: argumentValues[2])
+
+        let implicitSurface = ImplicitSurface(bottomFrontLeft: bottomFrontLeft,
+                                              topBackRight: topBackRight,
+                                              lambda)
+        return .shape(implicitSurface)
+    }
+
+    private func makeImplicitSurface2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let center = try extractRawTuple3(argumentValue: argumentValues[0])
+        let radius = try extractRawDouble(argumentValue: argumentValues[1])
+        let lambda = try extractRawSurfaceFunction(argumentValue: argumentValues[2])
+
+        let implicitSurface = ImplicitSurface(center: center,
+                                              radius: radius,
+                                              lambda)
+        return .shape(implicitSurface)
     }
 
     private func makePrism(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
@@ -351,6 +390,12 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
+    private func handleSinFunc(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let rawArgumentValue = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return .double(sin(rawArgumentValue))
+    }
+
     private func extractRawBoolean(argumentValue: ScintillaValue) throws -> Bool {
         guard case .boolean(let rawBoolean) = argumentValue else {
             throw RuntimeError.expectedBoolean
@@ -401,6 +446,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
 
         return (rawDouble0, rawDouble1, rawDouble2)
+    }
+
+    private func extractRawSurfaceFunction(argumentValue: ScintillaValue) throws -> Lambda {
+        guard case .lambda(let rawLambda, _) = argumentValue else {
+            throw RuntimeError.expectedLambda
+        }
+
+        return rawLambda
     }
 
     private func extractRawCamera(argumentValue: ScintillaValue) throws -> Camera {

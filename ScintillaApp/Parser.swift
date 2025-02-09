@@ -69,24 +69,37 @@ extension Parser {
     // Scintilla programs are parsed in the following order:
     //
     //    program        → statement* expression EOF ;
-    //    statement      → letDecl ;
+    //    statement      → letDecl
+    //                   | funDecl ;
     //    letDecl        → "let" IDENTIFIER "=" expression ;
+    //    funDecl        → "func" IDENTIFIER "(" argList ")" "{" letDecl* expression "}" ;
+    //    argList        → IDENTIFIER ("," IDENTIFIER)*
     //    expression     → term ;
     //    term           → factor ( ( "-" | "+" ) factor )* ;
     //    factor         → unary ( ( "/" | "*" | "%" ) unary )* ;
     //    unary          → ( "!" | "-" | "*" ) unary
-    //                   | method ;
-    //    method         → primary ( . IDENTIFIER ( (IDENTIFIER : expression)* ) )* ;
+    //                   | postfix ;
+    //    postfix        → primary | method | call ;
+    //    method         → postfix "." IDENTIFIER ;
+    //    call           → postfix "(" ( (IDENTIFIER ":")? expression)* ")" ;
     //    primary        → tuple
+    //                   | grouping
     //                   | list
     //                   | double
     //                   | IDENTIFIER
-    //                   | constructor ;
-    //    constructor    → IDENTIFIER ( (IDENTIFIER : expression)* ) ;
+    //                   | lambda ;
+    //    tuple          → "(" expression ( "," expression )* ")" ;
+    //    grouping       → "(" expression ")" ;
+    //    list           → "[" expression ( "," expression )* "]" ;
+    //    lambda         → "{" argList "in" expression "}" ;
 
     mutating func parseStatement() throws -> Statement<UnresolvedDepth>? {
         if let letDecl = try parseLetDeclaration() {
             return letDecl
+        }
+
+        if let funDecl = try parseFunctionDeclaration() {
+            return funDecl
         }
 
         return nil
@@ -108,6 +121,50 @@ extension Parser {
         let letExpr = try parseExpression()
 
         return .letDeclaration(varName, letExpr);
+    }
+
+    mutating private func parseFunctionDeclaration() throws -> Statement<UnresolvedDepth>? {
+        guard currentTokenMatchesAny(types: [.func]) else {
+            return nil
+        }
+
+        guard let funcName = consumeToken(type: .identifier) else {
+            throw ParseError.missingFunctionName(currentToken)
+        }
+
+        guard currentTokenMatchesAny(types: [.leftParen]) else {
+            throw ParseError.missingLeftParen(currentToken)
+        }
+
+        var argumentNames: [Token] = []
+        repeat {
+            guard let argumentName = consumeToken(type: .identifier) else {
+                throw ParseError.missingIdentifier(currentToken)
+            }
+
+            argumentNames.append(argumentName)
+        } while currentTokenMatchesAny(types: [.comma])
+
+        guard currentTokenMatchesAny(types: [.rightParen]) else {
+            throw ParseError.missingRightParen(currentToken)
+        }
+
+        guard currentTokenMatchesAny(types: [.leftBrace]) else {
+            throw ParseError.missingLeftBrace(currentToken)
+        }
+
+        var letDecls: [Statement<UnresolvedDepth>] = []
+        while let letDecl = try parseLetDeclaration() {
+            letDecls.append(letDecl)
+        }
+
+        let returnExpr = try parseExpression()
+
+        guard currentTokenMatchesAny(types: [.rightBrace]) else {
+            throw ParseError.missingRightBrace(currentToken)
+        }
+
+        return .functionDeclaration(funcName, argumentNames, letDecls, returnExpr)
     }
 
     mutating private func parseExpression() throws -> Expression<UnresolvedDepth> {
@@ -147,36 +204,58 @@ extension Parser {
             return .unary(oper, expr)
         }
 
-        return try parseMethod()
+        return try parsePostfix()
     }
 
-    mutating private func parseMethod() throws -> Expression<UnresolvedDepth> {
+    mutating private func parsePostfix() throws -> Expression<UnresolvedDepth> {
         var primary = try parsePrimary()
 
-        while currentTokenMatchesAny(types: [.dot]) {
-            guard let methodName = consumeToken(type: .identifier) else {
-                throw ParseError.missingIdentifier(currentToken)
+        while true {
+            if let method = try parseMethod(calleeExpr: primary) {
+                primary = method
+                continue
             }
 
-            guard let _ = consumeToken(type: .leftParen) else {
-                throw ParseError.missingLeftParen(currentToken)
+            if let call = try parseCall(calleeExpr: primary) {
+                primary = call
+                continue
             }
 
-            let arguments = try parseArguments()
-
-            guard currentTokenMatchesAny(types: [.rightParen]) else {
-                throw ParseError.missingRightParen(currentToken)
-            }
-
-            primary = .method(primary, methodName, arguments)
+            break
         }
 
         return primary
     }
 
+    mutating private func parseMethod(calleeExpr: Expression<UnresolvedDepth>) throws -> Expression<UnresolvedDepth>? {
+        guard currentTokenMatchesAny(types: [.dot]) else {
+            return nil
+        }
+
+        guard let methodName = consumeToken(type: .identifier) else {
+            throw ParseError.missingIdentifier(currentToken)
+        }
+
+        return .method(calleeExpr, methodName, [])
+    }
+
+    mutating private func parseCall(calleeExpr: Expression<UnresolvedDepth>) throws -> Expression<UnresolvedDepth>? {
+        guard let leftParen = consumeToken(type: .leftParen) else {
+            return nil
+        }
+
+        let arguments = try parseArguments()
+
+        guard currentTokenMatchesAny(types: [.rightParen]) else {
+            throw ParseError.missingRightParen(currentToken)
+        }
+
+        return .call(calleeExpr, leftParen, arguments)
+    }
+
     mutating private func parsePrimary() throws -> Expression<UnresolvedDepth> {
-        if let tuple = try parseTuple() {
-            return tuple
+        if let tupleOrGrouping = try parseTupleOrGrouping() {
+            return tupleOrGrouping
         }
 
         if let list = try parseList() {
@@ -196,23 +275,30 @@ extension Parser {
             return .literal(previousToken, .double(value))
         }
 
-        if let varName = consumeToken(type: .identifier) {
-            if let object = try parseConstructor(name: varName) {
-                return object
-            }
+        if let lambda = try parseLambda() {
+            return lambda
+        }
 
+        if let varName = consumeToken(type: .identifier) {
             return .variable(varName, UnresolvedDepth())
         }
 
         throw ParseError.expectedExpression(currentToken)
     }
 
-    mutating private func parseTuple() throws -> Expression<UnresolvedDepth>? {
+    mutating private func parseTupleOrGrouping() throws -> Expression<UnresolvedDepth>? {
         guard let leftParen = consumeToken(type: .leftParen) else {
             return nil
         }
 
         let expr0 = try parseExpression()
+
+        // NOTA BENE: A tuple with one component is going to be parsed
+        // as a single grouped expression
+        if currentTokenMatchesAny(types: [.rightParen]) {
+            return expr0
+        }
+
         guard currentTokenMatchesAny(types: [.comma]) else {
             throw ParseError.missingComma(currentToken)
         }
@@ -255,30 +341,44 @@ extension Parser {
         return .list(leftBracket, exprList)
     }
 
-    mutating private func parseConstructor(name: Token) throws -> Expression<UnresolvedDepth>? {
-        guard currentTokenMatchesAny(types: [.leftParen]) else {
+    mutating private func parseLambda() throws -> Expression<UnresolvedDepth>? {
+        guard let leftBrace = consumeToken(type: .leftBrace) else {
             return nil
         }
 
-        let arguments = try parseArguments()
+        var argumentNames: [Token] = []
+        repeat {
+            guard let argumentName = consumeToken(type: .identifier) else {
+                throw ParseError.missingIdentifier(currentToken)
+            }
 
-        guard currentTokenMatchesAny(types: [.rightParen]) else {
-            throw ParseError.missingRightParen(currentToken)
+            argumentNames.append(argumentName)
+        } while currentTokenMatchesAny(types: [.comma])
+
+        guard currentTokenMatchesAny(types: [.in]) else {
+            throw ParseError.missingIn(currentToken)
         }
 
-        return .function(name, arguments, UnresolvedDepth())
+        let expression = try parseExpression()
+
+        guard currentTokenMatchesAny(types: [.rightBrace]) else {
+            throw ParseError.missingRightBrace(currentToken)
+        }
+
+        return .lambda(leftBrace, argumentNames, expression)
     }
 
     mutating private func parseArguments() throws -> [Expression<UnresolvedDepth>.Argument] {
         var arguments: [Expression<UnresolvedDepth>.Argument] = []
         if currentToken.type != .rightParen {
             repeat {
-                guard let argName = consumeToken(type: .identifier) else {
-                    throw ParseError.missingIdentifier(currentToken)
-                }
+                var argName: Token? = nil
+                if let consumedToken = consumeToken(type: .identifier) {
+                    argName = consumedToken
 
-                guard currentTokenMatchesAny(types: [.colon]) else {
-                    throw ParseError.missingColon(currentToken)
+                    guard currentTokenMatchesAny(types: [.colon]) else {
+                        throw ParseError.missingColon(currentToken)
+                    }
                 }
 
                 let argValue = try parseExpression()

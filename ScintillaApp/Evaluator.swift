@@ -18,7 +18,7 @@ class Evaluator {
 
         for builtin in ScintillaBuiltin.allCases {
             let name = builtin.objectName
-            globalEnvironment.define(name: name, value: .function(builtin))
+            globalEnvironment.define(name: name, value: .builtin(builtin))
         }
 
         self.environment = globalEnvironment
@@ -53,6 +53,11 @@ class Evaluator {
         switch statement {
         case .letDeclaration(let nameToken, let expr):
             try handleLetDeclaration(nameToken: nameToken, expr: expr)
+        case .functionDeclaration(let nameToken, let argumentNames, let letDecls, let returnExpr):
+            try handleFunctionDeclaration(nameToken: nameToken,
+                                          argumentNames: argumentNames,
+                                          letDecls: letDecls,
+                                          returnExpr: returnExpr)
         case .expression(let expr):
             let _ = try evaluate(expr: expr)
         }
@@ -65,7 +70,22 @@ class Evaluator {
         environment.define(name: name, value: value)
     }
 
-    private func evaluate(expr: Expression<Int>) throws -> ScintillaValue {
+    private func handleFunctionDeclaration(nameToken: Token,
+                                           argumentNames: [Token],
+                                           letDecls: [Statement<Int>],
+                                           returnExpr: Expression<Int>) throws {
+        let environmentWhenDeclared = self.environment
+        let function = UserDefinedFunction(name: String(nameToken.lexeme),
+                                           argumentNames: argumentNames,
+                                           enclosingEnvironment: environmentWhenDeclared,
+                                           letDecls: letDecls,
+                                           returnExpr: returnExpr)
+        let argumentNames = argumentNames.map { $0.lexeme }
+        let name: ObjectName = .functionName(nameToken.lexeme, argumentNames)
+        environment.define(name: name, value: .userDefinedFunction(function))
+    }
+
+    public func evaluate(expr: Expression<Int>) throws -> ScintillaValue {
         switch expr {
         case .literal(_, let literal):
             return literal
@@ -84,13 +104,20 @@ class Evaluator {
             return try handleTuple3Expression(expr0: expr0,
                                               expr1: expr1,
                                               expr2: expr2)
-        case .function(let calleeName, let arguments, _):
+        case .function(let calleeName, let argumentNames, let depth):
             return try handleFunction(calleeToken: calleeName,
-                                      arguments: arguments)
-        case .method(let calleeExpr, let methodToken, let arguments):
+                                      argumentNameTokens: argumentNames,
+                                      depth: depth)
+        case .lambda(_, let argumentNames, let expression):
+            return try handleLambda(argumentNames: argumentNames,
+                                    expression: expression)
+        case .method(let calleeExpr, let methodToken, let argumentNameTokens):
             return try handleMethod(calleeExpr: calleeExpr,
                                     methodToken: methodToken,
-                                    arguments: arguments)
+                                    argumentNameTokens: argumentNameTokens)
+        case .call(let calleeExpr, _, let arguments):
+            return try handleCall(calleeExpr: calleeExpr,
+                                  arguments: arguments)
         }
     }
 
@@ -165,41 +192,120 @@ class Evaluator {
     }
 
     private func handleFunction(calleeToken: Token,
-                                arguments: [Expression<Int>.Argument]) throws -> ScintillaValue {
-        let argumentValues = try arguments.map { try evaluate(expr: $0.value) }
-
+                                argumentNameTokens: [Token?],
+                                depth: Int) throws -> ScintillaValue {
         let baseName = calleeToken.lexeme
-        let argumentNames = arguments.map { $0.name.lexeme }
-        let calleeName: ObjectName = .functionName(baseName, argumentNames)
-        let callee = try environment.getValue(name: calleeName)
+        let argumentNames = argumentNameTokens.map { maybeNameToken in
+            if let nameToken = maybeNameToken  {
+                return nameToken.lexeme
+            }
 
-        guard case .function(let callee) = callee else {
+            return ""
+        }
+        let calleeName: ObjectName = .functionName(baseName, argumentNames)
+        let callee = try environment.getValueAtDepth(name: calleeName, depth: depth)
+
+        guard callee.isCallable else {
             throw RuntimeError.notAFunction(calleeToken.location, calleeToken.lexeme)
         }
 
-        // TODO: Need to package up arguments such that names, locations, _and_ values
-        // are all accessible within the call() function.
-        return try callee.call(argumentValues: argumentValues)
+        return callee
+    }
+
+    private func handleCall(calleeExpr: Expression<Int>,
+                            arguments: [Expression<Int>.Argument]) throws -> ScintillaValue {
+        let callee = try evaluate(expr: calleeExpr)
+        let argumentValues = try arguments.map { try evaluate(expr: $0.value) }
+
+        if case .builtin(let builtin) = callee {
+            // TODO: Need to package up arguments such that names, locations, _and_ values
+            // are all accessible within the call() function.
+            return try builtin.call(argumentValues: argumentValues)
+        }
+
+        if case .boundMethod(let callee, let builtin) = callee {
+            return try builtin.callMethod(object: callee, argumentValues: argumentValues)
+        }
+
+        if case .userDefinedFunction(let userDefinedFunction) = callee {
+            return try userDefinedFunction.call(evaluator: self, argumentValues: argumentValues)
+        }
+
+        throw RuntimeError.notCallable(calleeExpr.locationToken.location, calleeExpr.locationToken.lexeme)
+    }
+
+    private func reuseOrCreateEnvironment(environment: Environment) -> Environment {
+        var cursor: Environment? = self.environment
+        while cursor != nil {
+            if cursor === environment {
+                return Environment(enclosingEnvironment: environment.enclosingEnvironment)
+            }
+            cursor = cursor!.enclosingEnvironment
+        }
+
+        // Can reuse `environment`
+        environment.undefineAll()
+        return environment
+    }
+
+    private func handleLambda(argumentNames: [Token],
+                              expression: Expression<Int>) throws -> ScintillaValue {
+        let sharedEnvironment = Environment(enclosingEnvironment: self.environment)
+
+        let lambda = { (x: Double, y: Double, z: Double) -> Double in
+            var returnValue: Double
+            do {
+                let newEnvironment = self.reuseOrCreateEnvironment(environment: sharedEnvironment)
+
+                let objectX: ObjectName = .variableName(argumentNames[0].lexeme)
+                newEnvironment.define(name: objectX, value: .double(x))
+                let objectY: ObjectName = .variableName(argumentNames[1].lexeme)
+                newEnvironment.define(name: objectY, value: .double(y))
+                let objectZ: ObjectName = .variableName(argumentNames[2].lexeme)
+                newEnvironment.define(name: objectZ, value: .double(z))
+
+                let previousEnvironment = self.environment
+                self.environment = newEnvironment
+                defer {
+                    self.environment = previousEnvironment
+                }
+
+                let wrappedValue = try self.evaluate(expr: expression)
+                guard case .double(let value) = wrappedValue else {
+                    throw RuntimeError.expectedDouble
+                }
+                returnValue = value
+            } catch {
+                // TODO: Figure out how best to handle this in ScintillaLib
+                fatalError("Something went wrong inside body of lambda")
+            }
+
+            return returnValue
+        }
+
+        // NOTA BENE: We associate an ID with each lambda so that
+        // ScintillaValue conforms to Equatable
+        return .lambda(lambda, UUID())
     }
 
     private func handleMethod(calleeExpr: Expression<Int>,
                               methodToken: Token,
-                              arguments: [Expression<Int>.Argument]) throws -> ScintillaValue {
-        let object = try evaluate(expr: calleeExpr)
-
-        let argumentValues = try arguments.map { try evaluate(expr: $0.value) }
-
+                              argumentNameTokens: [Token?]) throws -> ScintillaValue {
+        let callee = try evaluate(expr: calleeExpr)
         let methodName = methodToken.lexeme
-        let argumentNames = arguments.map { $0.name.lexeme }
-        let methodObjectName: ObjectName = .methodName(.shape, methodName, argumentNames)
-        let methodValue = try environment.getValue(name: methodObjectName)
+        let argumentNames = try argumentNameTokens.map { maybeNameToken in
+            guard let nameToken = maybeNameToken else {
+                throw RuntimeError.missingArgumentName(methodToken)
+            }
+            return nameToken.lexeme
+        }
+        let methodObjectName: ObjectName = .methodName(callee.type, methodName, argumentNames)
 
-        guard case .function(let method) = methodValue else {
+        let methodValue = try environment.getValue(name: methodObjectName)
+        guard case .builtin(let builtin) = methodValue else {
             throw RuntimeError.notAFunction(methodToken.location, methodToken.lexeme)
         }
 
-        // TODO: Need to package up arguments such that names, locations, _and_ values
-        // are all accessible within the call() function.
-        return try method.callMethod(object: object, argumentValues: argumentValues)
+        return .boundMethod(callee, builtin)
     }
 }
