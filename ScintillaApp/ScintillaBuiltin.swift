@@ -16,6 +16,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case group
     case implicitSurface1
     case implicitSurface2
+    case parametricSurface
     case plane
     case prism
     case sphere
@@ -54,6 +55,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("ImplicitSurface", ["bottomFrontLeft", "topBackRight", "function"])
         case .implicitSurface2:
             return .functionName("ImplicitSurface", ["center", "radius", "function"])
+        case .parametricSurface:
+            return .functionName("ParametricSurface", ["bottomFrontLeft", "topBackRight",
+                                                       "uRange", "vRange",
+                                                       "fx", "fy", "fz"])
         case .plane:
             return .functionName("Plane", [])
         case .prism:
@@ -118,6 +123,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeImplicitSurface1(evaluator: evaluator, argumentValues: argumentValues)
         case .implicitSurface2:
             return try makeImplicitSurface2(evaluator: evaluator, argumentValues: argumentValues)
+        case .parametricSurface:
+            return try makeParametricSurface(evaluator: evaluator, argumentValues: argumentValues)
         case .plane:
             return .shape(Plane())
         case .prism:
@@ -233,6 +240,27 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let implicitSurface = ImplicitSurface(center: center,
                                               radius: radius,
                                               lambda)
+        return .shape(implicitSurface)
+    }
+
+    private func makeParametricSurface(evaluator: Evaluator,
+                                        argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let bottomFrontLeft = try extractRawTuple3(argumentValue: argumentValues[0])
+        let topBackRight = try extractRawTuple3(argumentValue: argumentValues[1])
+        let uRange = try extractRawTuple2(argumentValue: argumentValues[2])
+        let vRange = try extractRawTuple2(argumentValue: argumentValues[3])
+        let fx = try extractRawParametricSurfaceFunction(evaluator: evaluator,
+                                                         argumentValue: argumentValues[4])
+        let fy = try extractRawParametricSurfaceFunction(evaluator: evaluator,
+                                                         argumentValue: argumentValues[5])
+        let fz = try extractRawParametricSurfaceFunction(evaluator: evaluator,
+                                                         argumentValue: argumentValues[6])
+
+        let implicitSurface = ParametricSurface(bottomFrontLeft: bottomFrontLeft,
+                                                topBackRight: topBackRight,
+                                                uRange: uRange,
+                                                vRange: vRange,
+                                                fx: fx, fy: fy, fz: fz)
         return .shape(implicitSurface)
     }
 
@@ -481,6 +509,37 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             let argumentValues: [ScintillaValue] = [
                 .double(x), .double(y), .double(z)
             ]
+
+            // TODO: Figure out how to surface either of these errors _without_ throwing
+            let result: ScintillaValue
+            do {
+                result = try udf.call(evaluator: evaluator, argumentValues: argumentValues)
+            } catch {
+                fatalError("Something bad happened during the execution of the implicit surface lambda")
+            }
+
+            guard case .double(let numericResult) = result else {
+                fatalError("Return value of implicit surface lambda was not a double")
+            }
+
+            return numericResult
+        }
+
+        return lambda
+    }
+
+    private func extractRawParametricSurfaceFunction(evaluator: Evaluator,
+                                                     argumentValue: ScintillaValue) throws -> ParametricSurfaceLambda {
+        guard case .implicitSurfaceLambda(let udf) = argumentValue else {
+            throw RuntimeError.expectedUserDefinedFunction
+        }
+
+        guard udf.argumentNames.count == 2 else {
+            throw RuntimeError.parametricSurfaceLambdaWrongArity
+        }
+
+        let lambda = { (u: Double, v: Double) -> Double in
+            let argumentValues: [ScintillaValue] = [.double(u), .double(v)]
 
             // TODO: Figure out how to surface either of these errors _without_ throwing
             let result: ScintillaValue

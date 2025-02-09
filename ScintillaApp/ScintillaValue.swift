@@ -9,8 +9,8 @@ import ScintillaLib
 
 import Foundation
 
-// TODO: Will likely need to revisit this when we introduce ParametricSurface
 typealias ImplicitSurfaceLambda = (Double, Double, Double) -> Double
+typealias ParametricSurfaceLambda = (Double, Double) -> Double
 
 enum ScintillaValue: Equatable, CustomStringConvertible {
     case boolean(Bool)

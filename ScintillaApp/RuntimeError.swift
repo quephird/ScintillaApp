@@ -30,6 +30,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case expectedShape
     case expectedUserDefinedFunction
     case implicitSurfaceLambdaWrongArity
+    case parametricSurfaceLambdaWrongArity
     case missingLastExpression
     case lastExpressionNeedsToBeWorld
 
@@ -77,6 +78,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[] Error: expected user-defined function"
         case .implicitSurfaceLambdaWrongArity:
             return "[] Error: implicit surface lambda must take three arguments"
+        case .parametricSurfaceLambdaWrongArity:
+            return "[] Error: parametric surface lambda must take two arguments"
         case .missingLastExpression:
             return "[] Error: missing last expression"
         case .lastExpressionNeedsToBeWorld:
