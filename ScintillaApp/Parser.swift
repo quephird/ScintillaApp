@@ -15,6 +15,14 @@ struct Parser {
         return tokens[cursor - 1]
     }
 
+    private var nextToken: Token? {
+        if cursor < tokens.count - 1 {
+            return tokens[cursor + 1]
+        }
+
+        return nil
+    }
+
     init(tokens: [Token]) {
         self.tokens = tokens
     }
@@ -373,7 +381,8 @@ extension Parser {
         if currentToken.type != .rightParen {
             repeat {
                 var argName: Token? = nil
-                if let consumedToken = consumeToken(type: .identifier) {
+                if case .colon? = nextToken?.type,
+                   let consumedToken = consumeToken(type: .identifier) {
                     argName = consumedToken
 
                     guard currentTokenMatchesAny(types: [.colon]) else {
