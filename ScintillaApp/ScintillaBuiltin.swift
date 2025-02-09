@@ -97,7 +97,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
-    public func call(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    public func call(evaluator: Evaluator,
+                     argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
         case .cone:
             return try makeCone(argumentValues: argumentValues)
@@ -108,9 +109,9 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .group:
             return try makeGroup(argumentValues: argumentValues)
         case .implicitSurface1:
-            return try makeImplicitSurface1(argumentValues: argumentValues)
+            return try makeImplicitSurface1(evaluator: evaluator, argumentValues: argumentValues)
         case .implicitSurface2:
-            return try makeImplicitSurface2(argumentValues: argumentValues)
+            return try makeImplicitSurface2(evaluator: evaluator, argumentValues: argumentValues)
         case .plane:
             return .shape(Plane())
         case .prism:
@@ -196,10 +197,12 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .shape(group)
     }
 
-    private func makeImplicitSurface1(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func makeImplicitSurface1(evaluator: Evaluator,
+                                      argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let bottomFrontLeft = try extractRawTuple3(argumentValue: argumentValues[0])
         let topBackRight = try extractRawTuple3(argumentValue: argumentValues[1])
-        let lambda = try extractRawSurfaceFunction(argumentValue: argumentValues[2])
+        let lambda = try extractRawImplicitSurfaceFunction(evaluator: evaluator,
+                                                           argumentValue: argumentValues[2])
 
         let implicitSurface = ImplicitSurface(bottomFrontLeft: bottomFrontLeft,
                                               topBackRight: topBackRight,
@@ -207,10 +210,12 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .shape(implicitSurface)
     }
 
-    private func makeImplicitSurface2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func makeImplicitSurface2(evaluator: Evaluator,
+                                      argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let center = try extractRawTuple3(argumentValue: argumentValues[0])
         let radius = try extractRawDouble(argumentValue: argumentValues[1])
-        let lambda = try extractRawSurfaceFunction(argumentValue: argumentValues[2])
+        let lambda = try extractRawImplicitSurfaceFunction(evaluator: evaluator,
+                                                           argumentValue: argumentValues[2])
 
         let implicitSurface = ImplicitSurface(center: center,
                                               radius: radius,
@@ -448,12 +453,37 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return (rawDouble0, rawDouble1, rawDouble2)
     }
 
-    private func extractRawSurfaceFunction(argumentValue: ScintillaValue) throws -> Lambda {
-        guard case .lambda(let rawLambda, _) = argumentValue else {
-            throw RuntimeError.expectedLambda
+    private func extractRawImplicitSurfaceFunction(evaluator: Evaluator,
+                                                   argumentValue: ScintillaValue) throws -> ImplicitSurfaceLambda {
+        guard case .implicitSurfaceLambda(let udf) = argumentValue else {
+            throw RuntimeError.expectedUserDefinedFunction
         }
 
-        return rawLambda
+        guard udf.argumentNames.count == 3 else {
+            throw RuntimeError.implicitSurfaceLambdaWrongArity
+        }
+
+        let lambda = { (x: Double, y: Double, z: Double) -> Double in
+            let argumentValues: [ScintillaValue] = [
+                .double(x), .double(y), .double(z)
+            ]
+
+            // TODO: Figure out how to surface either of these errors _without_ throwing
+            let result: ScintillaValue
+            do {
+                result = try udf.call(evaluator: evaluator, argumentValues: argumentValues)
+            } catch {
+                fatalError("Something bad happened during the execution of the implicit surface lambda")
+            }
+
+            guard case .double(let numericResult) = result else {
+                fatalError("Return value of implicit surface lambda was not a double")
+            }
+
+            return numericResult
+        }
+
+        return lambda
     }
 
     private func extractRawCamera(argumentValue: ScintillaValue) throws -> Camera {

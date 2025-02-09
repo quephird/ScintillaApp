@@ -28,6 +28,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case expectedCamera
     case expectedLight
     case expectedShape
+    case expectedUserDefinedFunction
+    case implicitSurfaceLambdaWrongArity
     case missingLastExpression
     case lastExpressionNeedsToBeWorld
 
@@ -71,6 +73,10 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[] Error: expected the argument to be a list of Shapes"
         case .incorrectObject:
             return "[] Error: method does not exist on object"
+        case .expectedUserDefinedFunction:
+            return "[] Error: expected user-defined function"
+        case .implicitSurfaceLambdaWrongArity:
+            return "[] Error: implicit surface lambda must take three arguments"
         case .missingLastExpression:
             return "[] Error: missing last expression"
         case .lastExpressionNeedsToBeWorld:

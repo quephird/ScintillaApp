@@ -10,7 +10,7 @@ import ScintillaLib
 import Foundation
 
 // TODO: Will likely need to revisit this when we introduce ParametricSurface
-typealias Lambda = (Double, Double, Double) -> Double
+typealias ImplicitSurfaceLambda = (Double, Double, Double) -> Double
 
 enum ScintillaValue: Equatable, CustomStringConvertible {
     case boolean(Bool)
@@ -20,7 +20,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     indirect case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
     case builtin(ScintillaBuiltin)
     indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
-    case lambda(Lambda, UUID)
+    case implicitSurfaceLambda(UserDefinedFunction)
     case userDefinedFunction(UserDefinedFunction)
     case shape(any Shape)
     case camera(Camera)
@@ -43,8 +43,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return .builtin
         case .boundMethod:
             return .boundMethod
-        case .lambda:
-            return .lambda
+        case .implicitSurfaceLambda:
+            return .implicitSurfaceLambda
         case .userDefinedFunction:
             return .userDefinedFunction
         case .shape(_):
@@ -74,8 +74,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return l == r
         case (.boundMethod(let l1, let l2), .boundMethod(let r1, let r2)):
             return l1 == r1 && l2 == r2
-        case (.lambda(_, let leftId), .lambda(_, let rightId)):
-            return leftId == rightId
+        case (.implicitSurfaceLambda(let l), .implicitSurfaceLambda(let r)):
+            return l.objectId == r.objectId
         case (.userDefinedFunction(let l), .userDefinedFunction(let r)):
             return l.objectId == r.objectId
         case (.shape(let l), .shape(let r)):
@@ -114,8 +114,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "\(builtin.objectName)"
         case .boundMethod(_, let builtin):
             return "\(builtin.objectName)"
-        case .lambda(let lambda, _):
-            return "<lambda>"
+        case .implicitSurfaceLambda(let userDefinedFunction):
+            return "<implicit surface lambda: \(userDefinedFunction.objectId)>"
         case .userDefinedFunction(let userDefinedFunction):
             return "<function: \(userDefinedFunction.name)>"
         case .shape(let shape):
@@ -131,7 +131,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
 
     var isCallable: Bool {
         switch self {
-        case .builtin, .boundMethod, .lambda, .userDefinedFunction:
+        case .builtin, .boundMethod, .implicitSurfaceLambda, .userDefinedFunction:
             return true
         default:
             return false

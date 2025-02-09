@@ -13,7 +13,7 @@ enum ScintillaType {
     case tuple3
     case builtin
     case boundMethod
-    case lambda
+    case implicitSurfaceLambda
     case userDefinedFunction
     case shape
     case camera

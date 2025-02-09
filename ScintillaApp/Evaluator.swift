@@ -220,7 +220,7 @@ class Evaluator {
         if case .builtin(let builtin) = callee {
             // TODO: Need to package up arguments such that names, locations, _and_ values
             // are all accessible within the call() function.
-            return try builtin.call(argumentValues: argumentValues)
+            return try builtin.call(evaluator: self, argumentValues: argumentValues)
         }
 
         if case .boundMethod(let callee, let builtin) = callee {
@@ -250,42 +250,13 @@ class Evaluator {
 
     private func handleLambda(argumentNames: [Token],
                               expression: Expression<Int>) throws -> ScintillaValue {
-        let sharedEnvironment = Environment(enclosingEnvironment: self.environment)
+        let udf = UserDefinedFunction(name: "",
+                                      argumentNames: argumentNames,
+                                      enclosingEnvironment: self.environment,
+                                      letDecls: [],
+                                      returnExpr: expression)
 
-        let lambda = { (x: Double, y: Double, z: Double) -> Double in
-            var returnValue: Double
-            do {
-                let newEnvironment = self.reuseOrCreateEnvironment(environment: sharedEnvironment)
-
-                let objectX: ObjectName = .variableName(argumentNames[0].lexeme)
-                newEnvironment.define(name: objectX, value: .double(x))
-                let objectY: ObjectName = .variableName(argumentNames[1].lexeme)
-                newEnvironment.define(name: objectY, value: .double(y))
-                let objectZ: ObjectName = .variableName(argumentNames[2].lexeme)
-                newEnvironment.define(name: objectZ, value: .double(z))
-
-                let previousEnvironment = self.environment
-                self.environment = newEnvironment
-                defer {
-                    self.environment = previousEnvironment
-                }
-
-                let wrappedValue = try self.evaluate(expr: expression)
-                guard case .double(let value) = wrappedValue else {
-                    throw RuntimeError.expectedDouble
-                }
-                returnValue = value
-            } catch {
-                // TODO: Figure out how best to handle this in ScintillaLib
-                fatalError("Something went wrong inside body of lambda")
-            }
-
-            return returnValue
-        }
-
-        // NOTA BENE: We associate an ID with each lambda so that
-        // ScintillaValue conforms to Equatable
-        return .lambda(lambda, UUID())
+        return .implicitSurfaceLambda(udf)
     }
 
     private func handleMethod(calleeExpr: Expression<Int>,
