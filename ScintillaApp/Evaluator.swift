@@ -18,7 +18,7 @@ class Evaluator {
 
         for builtin in ScintillaBuiltin.allCases {
             let name = builtin.objectName
-            globalEnvironment.define(name: name, value: .function(builtin))
+            globalEnvironment.define(name: name, value: .builtin(builtin))
         }
 
         self.environment = globalEnvironment
@@ -104,10 +104,10 @@ class Evaluator {
             return try handleTuple3Expression(expr0: expr0,
                                               expr1: expr1,
                                               expr2: expr2)
-        case .constructor(let calleeName, let argumentNames, let depth):
-            return try handleConstructor(calleeToken: calleeName,
-                                         argumentNameTokens: argumentNames,
-                                         depth: depth)
+        case .function(let calleeName, let argumentNames, let depth):
+            return try handleFunction(calleeToken: calleeName,
+                                      argumentNameTokens: argumentNames,
+                                      depth: depth)
         case .lambda(_, let argumentNames, let expression):
             return try handleLambda(argumentNames: argumentNames,
                                     expression: expression)
@@ -191,10 +191,9 @@ class Evaluator {
         return .tuple3((value0, value1, value2))
     }
 
-    private func handleConstructor(calleeToken: Token,
-                                   argumentNameTokens: [Token?],
-                                   depth: Int) throws -> ScintillaValue {
-
+    private func handleFunction(calleeToken: Token,
+                                argumentNameTokens: [Token?],
+                                depth: Int) throws -> ScintillaValue {
         let baseName = calleeToken.lexeme
         let argumentNames = argumentNameTokens.map { maybeNameToken in
             if let nameToken = maybeNameToken  {
@@ -218,7 +217,7 @@ class Evaluator {
         let callee = try evaluate(expr: calleeExpr)
         let argumentValues = try arguments.map { try evaluate(expr: $0.value) }
 
-        if case .function(let builtin) = callee {
+        if case .builtin(let builtin) = callee {
             // TODO: Need to package up arguments such that names, locations, _and_ values
             // are all accessible within the call() function.
             return try builtin.call(argumentValues: argumentValues)
@@ -303,7 +302,7 @@ class Evaluator {
         let methodObjectName: ObjectName = .methodName(callee.type, methodName, argumentNames)
 
         let methodValue = try environment.getValue(name: methodObjectName)
-        guard case .function(let builtin) = methodValue else {
+        guard case .builtin(let builtin) = methodValue else {
             throw RuntimeError.notAFunction(methodToken.location, methodToken.lexeme)
         }
 

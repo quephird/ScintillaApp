@@ -15,7 +15,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     case list([ScintillaValue])
     indirect case tuple2((ScintillaValue, ScintillaValue))
     indirect case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
-    case function(ScintillaBuiltin)
+    case builtin(ScintillaBuiltin)
     indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
     case lambda(Lambda, UUID)
     case userDefinedFunction(UserDefinedFunction)
@@ -36,8 +36,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return .tuple2
         case .tuple3:
             return .tuple3
-        case .function:
-            return .function
+        case .builtin:
+            return .builtin
         case .boundMethod:
             return .boundMethod
         case .lambda:
@@ -67,7 +67,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return l == r
         case (.tuple3(let l), .tuple3(let r)):
             return l == r
-        case (.function(let l), .function(let r)):
+        case (.builtin(let l), .builtin(let r)):
             return l == r
         case (.boundMethod(let l1, let l2), .boundMethod(let r1, let r2)):
             return l1 == r1 && l2 == r2
@@ -107,7 +107,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "(\(values.0), \(values.1))"
         case .tuple3(let values):
             return "(\(values.0), \(values.1), \(values.2))"
-        case .function(let builtin):
+        case .builtin(let builtin):
             return "\(builtin.objectName)"
         case .boundMethod(_, let builtin):
             return "\(builtin.objectName)"
@@ -128,7 +128,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
 
     var isCallable: Bool {
         switch self {
-        case .function, .boundMethod, .lambda, .userDefinedFunction:
+        case .builtin, .boundMethod, .lambda, .userDefinedFunction:
             return true
         default:
             return false

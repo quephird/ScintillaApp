@@ -15,7 +15,7 @@ struct Resolver {
 
     private enum ArgumentListType {
         case none
-        case constructorCall
+        case functionCall
         case methodCall
     }
 
@@ -214,9 +214,9 @@ extension Resolver {
                                     expr0: expr0,
                                     expr1: expr1,
                                     expr2: expr2)
-        case .constructor(let calleeName, let argumentNames, _):
-            return try handleConstructor(calleeToken: calleeName,
-                                         argumentNameTokens: argumentNames)
+        case .function(let calleeName, let argumentNames, _):
+            return try handleFunction(calleeToken: calleeName,
+                                      argumentNameTokens: argumentNames)
         case .lambda(let leftBraceToken, let argumentNames, let expression):
             return try handleLambda(leftBraceToken: leftBraceToken,
                                     argumentNames: argumentNames,
@@ -287,14 +287,8 @@ extension Resolver {
         return .tuple3(leftParenToken, resolvedExpr0, resolvedExpr1, resolvedExpr2)
     }
 
-    mutating private func handleConstructor(calleeToken: Token,
-                                            argumentNameTokens: [Token?]) throws -> Expression<Int> {
-        let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .constructorCall
-        defer {
-            currentArgumentListType = previousArgumentListType
-        }
-
+    mutating private func handleFunction(calleeToken: Token,
+                                         argumentNameTokens: [Token?]) throws -> Expression<Int> {
         let baseName = calleeToken.lexeme
         let argumentNames = argumentNameTokens.map { maybeNameToken in
             if let nameToken = maybeNameToken {
@@ -306,14 +300,13 @@ extension Resolver {
         let name: ObjectName = .functionName(baseName, argumentNames)
         let depth = try getDepth(name: name, nameToken: calleeToken)
 
-        return .constructor(calleeToken, argumentNameTokens, depth)
+        return .function(calleeToken, argumentNameTokens, depth)
     }
 
     mutating private func handleCall(calleeExpr: Expression<UnresolvedDepth>,
                                      leftParenToken: Token,
                                      arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
         let previousArgumentListType = currentArgumentListType
-        currentArgumentListType = .constructorCall
         defer {
             currentArgumentListType = previousArgumentListType
         }
@@ -321,8 +314,10 @@ extension Resolver {
         var newCalleeExpr = calleeExpr
         let argumentNames = arguments.map { $0.name }
         if case .variable(let baseNameToken, _) = calleeExpr {
-            newCalleeExpr = .constructor(baseNameToken, argumentNames, UnresolvedDepth())
+            currentArgumentListType = .functionCall
+            newCalleeExpr = .function(baseNameToken, argumentNames, UnresolvedDepth())
         } else if case .method(let innerCalleeExpr, let baseNameToken, _) = calleeExpr {
+            currentArgumentListType = .methodCall
             newCalleeExpr = .method(innerCalleeExpr, baseNameToken, argumentNames)
         }
 
