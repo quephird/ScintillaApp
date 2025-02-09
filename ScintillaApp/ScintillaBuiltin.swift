@@ -37,6 +37,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case intersection
     case union
     case sinFunc
+    case cosFunc
+    case tanFunc
 
     var objectName: ObjectName {
         switch self {
@@ -94,6 +96,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .methodName(.shape, "union", ["shapes"])
         case .sinFunc:
             return .functionName("sin", [""])
+        case .cosFunc:
+            return .functionName("cos", [""])
+        case .tanFunc:
+            return .functionName("tan", [""])
         }
     }
 
@@ -131,7 +137,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .world:
             return try makeWorld(argumentValues: argumentValues)
         case .sinFunc:
-            return try handleSinFunc(argumentValues: argumentValues)
+            return try handleTrigFunction(argumentValues: argumentValues,
+                                          nativeTrigFunction: sin)
+        case .cosFunc:
+            return try handleTrigFunction(argumentValues: argumentValues,
+                                          nativeTrigFunction: cos)
+        case .tanFunc:
+            return try handleTrigFunction(argumentValues: argumentValues,
+                                          nativeTrigFunction: tan)
         default:
             fatalError("Internal error: method calls should not get here")
         }
@@ -395,10 +408,11 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
-    private func handleSinFunc(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func handleTrigFunction(argumentValues: [ScintillaValue],
+                                    nativeTrigFunction: (Double) -> Double) throws -> ScintillaValue {
         let rawArgumentValue = try extractRawDouble(argumentValue: argumentValues[0])
 
-        return .double(sin(rawArgumentValue))
+        return .double(nativeTrigFunction(rawArgumentValue))
     }
 
     private func extractRawBoolean(argumentValue: ScintillaValue) throws -> Bool {
