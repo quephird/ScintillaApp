@@ -15,9 +15,14 @@ struct UserDefinedFunction: Equatable {
     var returnExpr: Expression<ResolvedLocation>
     var objectId: UUID = UUID()
 
+    var expectedCapacity: Int {
+        return letDecls.count + argumentNames.count
+    }
+
     // General case
     func call(evaluator: Evaluator, argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let newEnvironment = evaluator.recycleEnvironment(enclosingEnvironment: self.enclosingEnvironment)
+        newEnvironment.reserveCapacity(capacity: self.expectedCapacity)
 
         for (i, argumentName) in argumentNames.enumerated() {
             let argumentValue = argumentValues[i]
@@ -41,6 +46,7 @@ struct UserDefinedFunction: Equatable {
     // Specific case for a function that oniy takes Doubles and returns a Double
     func call(evaluator: Evaluator, argumentValues a1: Double, _ a2: Double, _ a3: Double) throws -> Double {
         let newEnvironment = evaluator.recycleEnvironment(enclosingEnvironment: self.enclosingEnvironment)
+        newEnvironment.reserveCapacity(capacity: self.expectedCapacity)
 
         func setArgument(_ index: Int, _ value: Double) {
             guard index < argumentNames.count else { return }

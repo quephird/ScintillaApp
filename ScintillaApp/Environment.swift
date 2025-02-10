@@ -14,6 +14,10 @@ class Environment: Equatable {
         self.enclosingEnvironment = enclosingEnvironment
     }
 
+    public func reserveCapacity(capacity: Int) {
+        self.values.reserveCapacity(capacity)
+    }
+
     func define(name: ObjectName, value: ScintillaValue) {
         values.append(value)
 
