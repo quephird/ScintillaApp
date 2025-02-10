@@ -12,20 +12,20 @@ import Foundation
 typealias ImplicitSurfaceLambda = (Double, Double, Double) -> Double
 typealias ParametricSurfaceLambda = (Double, Double) -> Double
 
-indirect enum ScintillaValue: Equatable, CustomStringConvertible {
+enum ScintillaValue: Equatable, CustomStringConvertible {
     case boolean(Bool)
     case double(Double)
-    case list([ScintillaValue])
-    case tuple2((ScintillaValue, ScintillaValue))
-    case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
+    indirect case list([ScintillaValue])
+    indirect case tuple2((ScintillaValue, ScintillaValue))
+    indirect case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
     case builtin(ScintillaBuiltin)
-    case boundMethod(ScintillaValue, ScintillaBuiltin)
-    case implicitSurfaceLambda(UserDefinedFunction)
-    case userDefinedFunction(UserDefinedFunction)
-    case shape(any Shape)
-    case camera(Camera)
-    case light(Light)
-    case world(World)
+    indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
+    indirect case implicitSurfaceLambda(UserDefinedFunction)
+    indirect case userDefinedFunction(UserDefinedFunction)
+    indirect case shape(any Shape)
+    indirect case camera(Camera)
+    indirect case light(Light)
+    indirect case world(World)
 
     var type: ScintillaType {
         switch self {

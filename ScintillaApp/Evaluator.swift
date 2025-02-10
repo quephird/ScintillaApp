@@ -149,6 +149,8 @@ class Evaluator {
             return try handleBinaryExpression(leftExpr: leftExpr, oper: oper, rightExpr: rightExpr)
         case .call(let calleeExpr, _, let arguments):
             return try handleCallDouble(calleeExpr: calleeExpr, arguments: arguments)
+        case .variable(let name, let location):
+            return try handleVariableExpressionDouble(varToken: name, location: location)
         default:
             let result = try evaluate(expr: expr)
 
@@ -193,6 +195,14 @@ class Evaluator {
 
     private func handleVariableExpression(varToken: Token, location: ResolvedLocation) throws -> ScintillaValue {
         return try environment.getValueAtLocation(location: location)
+    }
+
+    private func handleVariableExpressionDouble(varToken: Token, location: ResolvedLocation) throws -> Double {
+        let result = try environment.getValueAtLocation(location: location)
+        guard case .double(let double) = result else {
+            throw RuntimeError.expectedDouble
+        }
+        return double
     }
 
     private func handleListExpression(elements: [Expression<ResolvedLocation>]) throws -> ScintillaValue {
