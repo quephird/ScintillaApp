@@ -16,7 +16,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case group
     case implicitSurface1
     case implicitSurface2
-    case parametricSurface
+    case parametricSurface1
+    case parametricSurface2
     case plane
     case prism
     case sphere
@@ -55,9 +56,15 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("ImplicitSurface", ["bottomFrontLeft", "topBackRight", "function"])
         case .implicitSurface2:
             return .functionName("ImplicitSurface", ["center", "radius", "function"])
-        case .parametricSurface:
+        // TODO: Add second constructor exposing accuracy and maxGradient parameters
+        case .parametricSurface1:
             return .functionName("ParametricSurface", ["bottomFrontLeft", "topBackRight",
                                                        "uRange", "vRange",
+                                                       "fx", "fy", "fz"])
+        case .parametricSurface2:
+            return .functionName("ParametricSurface", ["bottomFrontLeft", "topBackRight",
+                                                       "uRange", "vRange",
+                                                       "accuracy", "maxGradient",
                                                        "fx", "fy", "fz"])
         case .plane:
             return .functionName("Plane", [])
@@ -123,8 +130,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeImplicitSurface1(evaluator: evaluator, argumentValues: argumentValues)
         case .implicitSurface2:
             return try makeImplicitSurface2(evaluator: evaluator, argumentValues: argumentValues)
-        case .parametricSurface:
-            return try makeParametricSurface(evaluator: evaluator, argumentValues: argumentValues)
+        case .parametricSurface1:
+            return try makeParametricSurface1(evaluator: evaluator, argumentValues: argumentValues)
+        case .parametricSurface2:
+            return try makeParametricSurface2(evaluator: evaluator, argumentValues: argumentValues)
         case .plane:
             return .shape(Plane())
         case .prism:
@@ -243,7 +252,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .shape(implicitSurface)
     }
 
-    private func makeParametricSurface(evaluator: Evaluator,
+    private func makeParametricSurface1(evaluator: Evaluator,
                                         argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let bottomFrontLeft = try extractRawTuple3(argumentValue: argumentValues[0])
         let topBackRight = try extractRawTuple3(argumentValue: argumentValues[1])
@@ -260,6 +269,31 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
                                                 topBackRight: topBackRight,
                                                 uRange: uRange,
                                                 vRange: vRange,
+                                                fx: fx, fy: fy, fz: fz)
+        return .shape(parametricSurface)
+    }
+
+    private func makeParametricSurface2(evaluator: Evaluator,
+                                        argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let bottomFrontLeft = try extractRawTuple3(argumentValue: argumentValues[0])
+        let topBackRight = try extractRawTuple3(argumentValue: argumentValues[1])
+        let uRange = try extractRawTuple2(argumentValue: argumentValues[2])
+        let vRange = try extractRawTuple2(argumentValue: argumentValues[3])
+        let accuracy = try extractRawDouble(argumentValue: argumentValues[4])
+        let maxGradient = try extractRawDouble(argumentValue: argumentValues[5])
+        let fx = try extractRawParametricSurfaceFunction(evaluator: evaluator,
+                                                         argumentValue: argumentValues[6])
+        let fy = try extractRawParametricSurfaceFunction(evaluator: evaluator,
+                                                         argumentValue: argumentValues[7])
+        let fz = try extractRawParametricSurfaceFunction(evaluator: evaluator,
+                                                         argumentValue: argumentValues[8])
+
+        let parametricSurface = ParametricSurface(bottomFrontLeft: bottomFrontLeft,
+                                                topBackRight: topBackRight,
+                                                uRange: uRange,
+                                                vRange: vRange,
+                                                accuracy: accuracy,
+                                                maxGradient: maxGradient,
                                                 fx: fx, fy: fy, fz: fz)
         return .shape(parametricSurface)
     }
