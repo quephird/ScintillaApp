@@ -106,12 +106,8 @@ class Evaluator {
 
     public func evaluate(expr: Expression<ResolvedLocation>) throws -> ScintillaValue {
         switch expr {
-        case .literal(_, let literal):
-            return literal
-        case .unary(let oper, let expr):
-            return try handleUnaryExpression(oper: oper, expr: expr)
-        case .binary(let leftExpr, let oper, let rightExpr):
-            return try handleBinaryExpression(leftExpr: leftExpr, oper: oper, rightExpr: rightExpr)
+        case .boolLiteral(_, let value):
+            return .boolean(value)
         case .variable(let varToken, let location):
             return try handleVariableExpression(varToken: varToken, location: location)
         case .list(_, let elements):
@@ -137,20 +133,39 @@ class Evaluator {
         case .call(let calleeExpr, _, let arguments):
             return try handleCall(calleeExpr: calleeExpr,
                                   arguments: arguments)
+        case .doubleLiteral, .unary, .binary:
+            let result = try evaluateDouble(expr: expr)
+            return .double(result)
         }
     }
 
-    private func handleUnaryExpression(oper: Token, expr: Expression<ResolvedLocation>) throws -> ScintillaValue {
-        let value = try evaluate(expr: expr)
+    public func evaluateDouble(expr: Expression<ResolvedLocation>) throws -> Double {
+        switch expr {
+        case .doubleLiteral(_, let value):
+            return value
+        case .unary(let oper, let expr):
+            return try handleUnaryExpression(oper: oper, expr: expr)
+        case .binary(let leftExpr, let oper, let rightExpr):
+            return try handleBinaryExpression(leftExpr: leftExpr, oper: oper, rightExpr: rightExpr)
+        case .call(let calleeExpr, _, let arguments):
+            return try handleCallDouble(calleeExpr: calleeExpr, arguments: arguments)
+        default:
+            let result = try evaluate(expr: expr)
+
+            guard case .double(let double) = result else {
+                throw RuntimeError.expectedDouble
+            }
+
+            return double
+        }
+    }
+
+    private func handleUnaryExpression(oper: Token, expr: Expression<ResolvedLocation>) throws -> Double {
+        let number = try evaluateDouble(expr: expr)
 
         switch oper.type {
         case .minus:
-            switch value {
-            case .double(let number):
-                return .double(-number)
-            default:
-                throw RuntimeError.unaryOperandMustBeNumber(oper.location, oper.lexeme)
-            }
+            return -number
         default:
             throw RuntimeError.unsupportedUnaryOperator(oper.location, oper.lexeme)
         }
@@ -158,32 +173,26 @@ class Evaluator {
 
     private func handleBinaryExpression(leftExpr: Expression<ResolvedLocation>,
                                         oper: Token,
-                                        rightExpr: Expression<ResolvedLocation>) throws -> ScintillaValue {
-        let leftValue = try evaluate(expr: leftExpr)
-        let rightValue = try evaluate(expr: rightExpr)
+                                        rightExpr: Expression<ResolvedLocation>) throws -> Double {
+        let leftNumber = try evaluateDouble(expr: leftExpr)
+        let rightNumber = try evaluateDouble(expr: rightExpr)
 
-        switch (leftValue, rightValue) {
-        case (.double(let leftNumber), .double(let rightNumber)):
-            switch oper.type {
-            case .plus:
-                return .double(leftNumber + rightNumber)
-            case .minus:
-                return .double(leftNumber - rightNumber)
-            case .star:
-                return .double(leftNumber * rightNumber)
-            case .slash:
-                return .double(leftNumber / rightNumber)
-            default:
-                throw RuntimeError.unsupportedBinaryOperator(oper.location, oper.lexeme)
-            }
+        switch oper.type {
+        case .plus:
+            return leftNumber + rightNumber
+        case .minus:
+            return leftNumber - rightNumber
+        case .star:
+            return leftNumber * rightNumber
+        case .slash:
+            return leftNumber / rightNumber
         default:
-            throw RuntimeError.binaryOperandsMustBeNumbers(oper.location, oper.lexeme)
+            throw RuntimeError.unsupportedBinaryOperator(oper.location, oper.lexeme)
         }
     }
 
     private func handleVariableExpression(varToken: Token, location: ResolvedLocation) throws -> ScintillaValue {
-        let name: ObjectName = .variableName(varToken.lexeme)
-        return try environment.getValueAtLocation(name: name, location: location)
+        return try environment.getValueAtLocation(location: location)
     }
 
     private func handleListExpression(elements: [Expression<ResolvedLocation>]) throws -> ScintillaValue {
@@ -242,6 +251,31 @@ class Evaluator {
         }
 
         throw RuntimeError.notCallable(calleeExpr.locationToken.location, calleeExpr.locationToken.lexeme)
+    }
+
+    private func handleCallDouble(calleeExpr: Expression<ResolvedLocation>,
+                                  arguments: [Expression<ResolvedLocation>.Argument]) throws -> Double {
+        let callee = try evaluate(expr: calleeExpr)
+
+        switch callee {
+        case .builtin(.sinFunc):
+            let arg = try evaluateDouble(expr: arguments[0].value)
+            return sin(arg)
+        case .builtin(.cosFunc):
+            let arg = try evaluateDouble(expr: arguments[0].value)
+            return cos(arg)
+        case .builtin(.tanFunc):
+            let arg = try evaluateDouble(expr: arguments[0].value)
+            return tan(arg)
+        default:
+            let result = try handleCall(calleeExpr: calleeExpr,
+                                        arguments: arguments)
+            guard case .double(let doubleValue) = result else {
+                throw RuntimeError.expectedDouble
+            }
+
+            return doubleValue
+        }
     }
 
     private func handleLambda(argumentNames: [Token],

@@ -271,16 +271,16 @@ extension Parser {
         }
 
         if currentTokenMatchesAny(types: [.false]) {
-            return .literal(previousToken, .boolean(false))
+            return .boolLiteral(previousToken, false)
         }
 
         if currentTokenMatchesAny(types: [.true]) {
-            return .literal(previousToken, .boolean(true))
+            return .boolLiteral(previousToken, true)
         }
 
         if let number = consumeToken(type: .double) {
             let value = Double(number.lexeme)!
-            return .literal(previousToken, .double(value))
+            return .doubleLiteral(previousToken, value)
         }
 
         if let lambda = try parseLambda() {

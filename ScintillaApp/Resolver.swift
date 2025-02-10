@@ -204,8 +204,10 @@ extension Resolver {
             return try handleBinary(leftExpr: leftExpr, operToken: operToken, rightExpr: rightExpr)
         case .unary(let operToken, let rightExpr):
             return try handleUnary(operToken: operToken, rightExpr: rightExpr)
-        case .literal(let valueToken, let value):
-            return .literal(valueToken, value)
+        case .boolLiteral(let valueToken, let value):
+            return .boolLiteral(valueToken, value)
+        case .doubleLiteral(let valueToken, let value):
+            return .doubleLiteral(valueToken, value)
         case .list(let leftBracketToken, let elements):
             return try handleList(leftBracketToken: leftBracketToken, elements: elements)
         case .tuple2(let leftParenToken, let expr0, let expr1):

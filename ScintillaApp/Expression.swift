@@ -13,7 +13,8 @@ indirect enum Expression<Location: Equatable>: Equatable {
 
     case binary(Expression, Token, Expression)
     case unary(Token, Expression)
-    case literal(Token, ScintillaValue)
+    case boolLiteral(Token, Bool)
+    case doubleLiteral(Token, Double)
     case variable(Token, Location)
     case list(Token, [Expression])
     case tuple2(Token, Expression, Expression)
@@ -37,7 +38,9 @@ indirect enum Expression<Location: Equatable>: Equatable {
             return operToken
         case .unary(let locToken, _):
             return locToken
-        case .literal(let valueToken, _):
+        case .boolLiteral(let valueToken, _):
+            return valueToken
+        case .doubleLiteral(let valueToken, _):
             return valueToken
         case .variable(let nameToken, _):
             return nameToken
