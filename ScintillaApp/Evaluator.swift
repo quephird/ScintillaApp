@@ -267,6 +267,17 @@ class Evaluator {
         case .builtin(.tanFunc):
             let arg = try evaluateDouble(expr: arguments[0].value)
             return tan(arg)
+        case .userDefinedFunction(let udf) where arguments.count <= 3:
+            func extract(at i: Int) throws -> Double {
+                guard i < arguments.count else { return 0.0 }
+                return try evaluateDouble(expr: arguments[i].value)
+            }
+
+            let a1 = try extract(at: 0)
+            let a2 = try extract(at: 1)
+            let a3 = try extract(at: 2)
+
+            return try udf.call(evaluator: self, argumentValues: a1, a2, a3)
         default:
             let result = try handleCall(calleeExpr: calleeExpr,
                                         arguments: arguments)

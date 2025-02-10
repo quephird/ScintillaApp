@@ -506,23 +506,15 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
 
         let lambda = { (x: Double, y: Double, z: Double) -> Double in
-            let argumentValues: [ScintillaValue] = [
-                .double(x), .double(y), .double(z)
-            ]
-
             // TODO: Figure out how to surface either of these errors _without_ throwing
-            let result: ScintillaValue
+            let result: Double
             do {
-                result = try udf.call(evaluator: evaluator, argumentValues: argumentValues)
+                result = try udf.call(evaluator: evaluator, argumentValues: x, y, z)
             } catch {
                 fatalError("Something bad happened during the execution of the implicit surface lambda")
             }
 
-            guard case .double(let numericResult) = result else {
-                fatalError("Return value of implicit surface lambda was not a double")
-            }
-
-            return numericResult
+            return result
         }
 
         return lambda
@@ -539,21 +531,15 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
 
         let lambda = { (u: Double, v: Double) -> Double in
-            let argumentValues: [ScintillaValue] = [.double(u), .double(v)]
-
             // TODO: Figure out how to surface either of these errors _without_ throwing
-            let result: ScintillaValue
+            let result: Double
             do {
-                result = try udf.call(evaluator: evaluator, argumentValues: argumentValues)
+                result = try udf.call(evaluator: evaluator, argumentValues: u, v, 0.0)
             } catch {
                 fatalError("Something bad happened during the execution of the implicit surface lambda")
             }
 
-            guard case .double(let numericResult) = result else {
-                fatalError("Return value of implicit surface lambda was not a double")
-            }
-
-            return numericResult
+            return result
         }
 
         return lambda
