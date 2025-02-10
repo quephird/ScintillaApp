@@ -11,20 +11,39 @@ import ScintillaLib
 
 class Evaluator {
     var environment: Environment
+    var allEnvironments: [Environment] = []
 
     init() {
         let globalEnvironment = Environment()
-        globalEnvironment.define(name: .variableName("PI"), value: .double(3.1415926))
 
         for builtin in ScintillaBuiltin.allCases {
             let name = builtin.objectName
             globalEnvironment.define(name: name, value: .builtin(builtin))
         }
 
+        globalEnvironment.define(name: .variableName("PI"), value: .double(3.1415926))
+
         self.environment = globalEnvironment
     }
 
-    private func prepareCode(source: String) throws -> Program<Int> {
+    public func recycleEnvironment(enclosingEnvironment: Environment) -> Environment {
+        for index in self.allEnvironments.indices.reversed() {
+            if isKnownUniquelyReferenced(&self.allEnvironments[index]) {
+                let recycledEnvironment = self.allEnvironments[index]
+                recycledEnvironment.enclosingEnvironment = enclosingEnvironment
+                recycledEnvironment.undefineAll()
+
+                return recycledEnvironment
+            }
+        }
+
+        let newEnvironment = Environment(enclosingEnvironment: enclosingEnvironment)
+        self.allEnvironments.append(newEnvironment)
+
+        return newEnvironment
+    }
+
+    private func prepareCode(source: String) throws -> Program<ResolvedLocation> {
         var tokenizer = Tokenizer(source: source)
         let tokens = try tokenizer.scanTokens()
         var parser = Parser(tokens: tokens)
@@ -49,7 +68,7 @@ class Evaluator {
         return world
     }
 
-    func execute(statement: Statement<Int>) throws {
+    func execute(statement: Statement<ResolvedLocation>) throws {
         switch statement {
         case .letDeclaration(let nameToken, let expr):
             try handleLetDeclaration(nameToken: nameToken, expr: expr)
@@ -63,7 +82,7 @@ class Evaluator {
         }
     }
 
-    private func handleLetDeclaration(nameToken: Token, expr: Expression<Int>) throws {
+    private func handleLetDeclaration(nameToken: Token, expr: Expression<ResolvedLocation>) throws {
         let value = try evaluate(expr: expr)
 
         let name: ObjectName = .variableName(nameToken.lexeme)
@@ -72,8 +91,8 @@ class Evaluator {
 
     private func handleFunctionDeclaration(nameToken: Token,
                                            argumentNames: [Token],
-                                           letDecls: [Statement<Int>],
-                                           returnExpr: Expression<Int>) throws {
+                                           letDecls: [Statement<ResolvedLocation>],
+                                           returnExpr: Expression<ResolvedLocation>) throws {
         let environmentWhenDeclared = self.environment
         let function = UserDefinedFunction(name: String(nameToken.lexeme),
                                            argumentNames: argumentNames,
@@ -85,7 +104,7 @@ class Evaluator {
         environment.define(name: name, value: .userDefinedFunction(function))
     }
 
-    public func evaluate(expr: Expression<Int>) throws -> ScintillaValue {
+    public func evaluate(expr: Expression<ResolvedLocation>) throws -> ScintillaValue {
         switch expr {
         case .literal(_, let literal):
             return literal
@@ -93,8 +112,8 @@ class Evaluator {
             return try handleUnaryExpression(oper: oper, expr: expr)
         case .binary(let leftExpr, let oper, let rightExpr):
             return try handleBinaryExpression(leftExpr: leftExpr, oper: oper, rightExpr: rightExpr)
-        case .variable(let varToken, let depth):
-            return try handleVariableExpression(varToken: varToken, depth: depth)
+        case .variable(let varToken, let location):
+            return try handleVariableExpression(varToken: varToken, location: location)
         case .list(_, let elements):
             return try handleListExpression(elements: elements)
         case .tuple2(_, let expr0, let expr1):
@@ -104,10 +123,10 @@ class Evaluator {
             return try handleTuple3Expression(expr0: expr0,
                                               expr1: expr1,
                                               expr2: expr2)
-        case .function(let calleeName, let argumentNames, let depth):
+        case .function(let calleeName, let argumentNames, let location):
             return try handleFunction(calleeToken: calleeName,
                                       argumentNameTokens: argumentNames,
-                                      depth: depth)
+                                      location: location)
         case .lambda(_, let argumentNames, let expression):
             return try handleLambda(argumentNames: argumentNames,
                                     expression: expression)
@@ -121,7 +140,7 @@ class Evaluator {
         }
     }
 
-    private func handleUnaryExpression(oper: Token, expr: Expression<Int>) throws -> ScintillaValue {
+    private func handleUnaryExpression(oper: Token, expr: Expression<ResolvedLocation>) throws -> ScintillaValue {
         let value = try evaluate(expr: expr)
 
         switch oper.type {
@@ -137,9 +156,9 @@ class Evaluator {
         }
     }
 
-    private func handleBinaryExpression(leftExpr: Expression<Int>,
+    private func handleBinaryExpression(leftExpr: Expression<ResolvedLocation>,
                                         oper: Token,
-                                        rightExpr: Expression<Int>) throws -> ScintillaValue {
+                                        rightExpr: Expression<ResolvedLocation>) throws -> ScintillaValue {
         let leftValue = try evaluate(expr: leftExpr)
         let rightValue = try evaluate(expr: rightExpr)
 
@@ -162,28 +181,28 @@ class Evaluator {
         }
     }
 
-    private func handleVariableExpression(varToken: Token, depth: Int) throws -> ScintillaValue {
+    private func handleVariableExpression(varToken: Token, location: ResolvedLocation) throws -> ScintillaValue {
         let name: ObjectName = .variableName(varToken.lexeme)
-        return try environment.getValueAtDepth(name: name, depth: depth)
+        return try environment.getValueAtLocation(name: name, location: location)
     }
 
-    private func handleListExpression(elements: [Expression<Int>]) throws -> ScintillaValue {
+    private func handleListExpression(elements: [Expression<ResolvedLocation>]) throws -> ScintillaValue {
         let elementValues = try elements.map{ try evaluate(expr: $0) }
 
         return .list(elementValues)
     }
 
-    private func handleTuple2Expression(expr0: Expression<Int>,
-                                        expr1: Expression<Int>) throws -> ScintillaValue {
+    private func handleTuple2Expression(expr0: Expression<ResolvedLocation>,
+                                        expr1: Expression<ResolvedLocation>) throws -> ScintillaValue {
         let value0 = try evaluate(expr: expr0)
         let value1 = try evaluate(expr: expr1)
 
         return .tuple2((value0, value1))
     }
 
-    private func handleTuple3Expression(expr0: Expression<Int>,
-                                        expr1: Expression<Int>,
-                                        expr2: Expression<Int>) throws -> ScintillaValue {
+    private func handleTuple3Expression(expr0: Expression<ResolvedLocation>,
+                                        expr1: Expression<ResolvedLocation>,
+                                        expr2: Expression<ResolvedLocation>) throws -> ScintillaValue {
         let value0 = try evaluate(expr: expr0)
         let value1 = try evaluate(expr: expr1)
         let value2 = try evaluate(expr: expr2)
@@ -193,7 +212,7 @@ class Evaluator {
 
     private func handleFunction(calleeToken: Token,
                                 argumentNameTokens: [Token?],
-                                depth: Int) throws -> ScintillaValue {
+                                location: ResolvedLocation) throws -> ScintillaValue {
         let baseName = calleeToken.lexeme
         let argumentNames = argumentNameTokens.map { maybeNameToken in
             if let nameToken = maybeNameToken  {
@@ -203,7 +222,7 @@ class Evaluator {
             return ""
         }
         let calleeName: ObjectName = .functionName(baseName, argumentNames)
-        let callee = try environment.getValueAtDepth(name: calleeName, depth: depth)
+        let callee = try environment.getValueAtLocation(name: calleeName, location: location)
 
         guard callee.isCallable else {
             throw RuntimeError.notAFunction(calleeToken.location, calleeToken.lexeme)
@@ -212,8 +231,8 @@ class Evaluator {
         return callee
     }
 
-    private func handleCall(calleeExpr: Expression<Int>,
-                            arguments: [Expression<Int>.Argument]) throws -> ScintillaValue {
+    private func handleCall(calleeExpr: Expression<ResolvedLocation>,
+                            arguments: [Expression<ResolvedLocation>.Argument]) throws -> ScintillaValue {
         let callee = try evaluate(expr: calleeExpr)
         let argumentValues = try arguments.map { try evaluate(expr: $0.value) }
 
@@ -234,22 +253,8 @@ class Evaluator {
         throw RuntimeError.notCallable(calleeExpr.locationToken.location, calleeExpr.locationToken.lexeme)
     }
 
-    private func reuseOrCreateEnvironment(environment: Environment) -> Environment {
-        var cursor: Environment? = self.environment
-        while cursor != nil {
-            if cursor === environment {
-                return Environment(enclosingEnvironment: environment.enclosingEnvironment)
-            }
-            cursor = cursor!.enclosingEnvironment
-        }
-
-        // Can reuse `environment`
-        environment.undefineAll()
-        return environment
-    }
-
     private func handleLambda(argumentNames: [Token],
-                              expression: Expression<Int>) throws -> ScintillaValue {
+                              expression: Expression<ResolvedLocation>) throws -> ScintillaValue {
         let udf = UserDefinedFunction(name: "",
                                       argumentNames: argumentNames,
                                       enclosingEnvironment: self.environment,
@@ -259,7 +264,7 @@ class Evaluator {
         return .implicitSurfaceLambda(udf)
     }
 
-    private func handleMethod(calleeExpr: Expression<Int>,
+    private func handleMethod(calleeExpr: Expression<ResolvedLocation>,
                               methodToken: Token,
                               argumentNameTokens: [Token?]) throws -> ScintillaValue {
         let callee = try evaluate(expr: calleeExpr)

@@ -11,12 +11,12 @@ struct UserDefinedFunction: Equatable {
     var name: String
     var argumentNames: [Token]
     var enclosingEnvironment: Environment
-    var letDecls: [Statement<Int>]
-    var returnExpr: Expression<Int>
+    var letDecls: [Statement<ResolvedLocation>]
+    var returnExpr: Expression<ResolvedLocation>
     var objectId: UUID = UUID()
 
     func call(evaluator: Evaluator, argumentValues: [ScintillaValue]) throws -> ScintillaValue {
-        let newEnvironment = Environment(enclosingEnvironment: enclosingEnvironment)
+        let newEnvironment = evaluator.recycleEnvironment(enclosingEnvironment: self.enclosingEnvironment)
 
         for (i, argumentName) in argumentNames.enumerated() {
             let argumentValue = argumentValues[i]

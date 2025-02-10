@@ -63,8 +63,8 @@ extension Parser {
 }
 
 extension Parser {
-    mutating func parse() throws -> Program<UnresolvedDepth> {
-        var statements: [Statement<UnresolvedDepth>] = []
+    mutating func parse() throws -> Program<UnresolvedLocation> {
+        var statements: [Statement<UnresolvedLocation>] = []
         while let statement = try parseStatement() {
             statements.append(statement)
         }
@@ -101,7 +101,7 @@ extension Parser {
     //    list           → "[" expression ( "," expression )* "]" ;
     //    lambda         → "{" argList "in" expression "}" ;
 
-    mutating func parseStatement() throws -> Statement<UnresolvedDepth>? {
+    mutating func parseStatement() throws -> Statement<UnresolvedLocation>? {
         if let letDecl = try parseLetDeclaration() {
             return letDecl
         }
@@ -113,7 +113,7 @@ extension Parser {
         return nil
     }
 
-    mutating private func parseLetDeclaration() throws -> Statement<UnresolvedDepth>? {
+    mutating private func parseLetDeclaration() throws -> Statement<UnresolvedLocation>? {
         guard currentTokenMatchesAny(types: [.let]) else {
             return nil
         }
@@ -131,7 +131,7 @@ extension Parser {
         return .letDeclaration(varName, letExpr);
     }
 
-    mutating private func parseFunctionDeclaration() throws -> Statement<UnresolvedDepth>? {
+    mutating private func parseFunctionDeclaration() throws -> Statement<UnresolvedLocation>? {
         guard currentTokenMatchesAny(types: [.func]) else {
             return nil
         }
@@ -161,7 +161,7 @@ extension Parser {
             throw ParseError.missingLeftBrace(currentToken)
         }
 
-        var letDecls: [Statement<UnresolvedDepth>] = []
+        var letDecls: [Statement<UnresolvedLocation>] = []
         while let letDecl = try parseLetDeclaration() {
             letDecls.append(letDecl)
         }
@@ -175,11 +175,11 @@ extension Parser {
         return .functionDeclaration(funcName, argumentNames, letDecls, returnExpr)
     }
 
-    mutating private func parseExpression() throws -> Expression<UnresolvedDepth> {
+    mutating private func parseExpression() throws -> Expression<UnresolvedLocation> {
         return try parseTerm()
     }
 
-    mutating private func parseTerm() throws -> Expression<UnresolvedDepth> {
+    mutating private func parseTerm() throws -> Expression<UnresolvedLocation> {
         var expr = try parseFactor()
 
         while currentTokenMatchesAny(types: [.plus, .minus]) {
@@ -191,7 +191,7 @@ extension Parser {
         return expr
     }
 
-    mutating private func parseFactor() throws -> Expression<UnresolvedDepth> {
+    mutating private func parseFactor() throws -> Expression<UnresolvedLocation> {
         var expr = try parseUnary()
 
         while currentTokenMatchesAny(types: [.slash, .star, .modulus]) {
@@ -203,7 +203,7 @@ extension Parser {
         return expr
     }
 
-    mutating private func parseUnary() throws -> Expression<UnresolvedDepth> {
+    mutating private func parseUnary() throws -> Expression<UnresolvedLocation> {
         // NOTA BENE: For the time being, the onky unary expression allowed is
         // one that involves a single minus sign.
         if currentTokenMatchesAny(types: [.minus]) {
@@ -215,7 +215,7 @@ extension Parser {
         return try parsePostfix()
     }
 
-    mutating private func parsePostfix() throws -> Expression<UnresolvedDepth> {
+    mutating private func parsePostfix() throws -> Expression<UnresolvedLocation> {
         var primary = try parsePrimary()
 
         while true {
@@ -235,7 +235,7 @@ extension Parser {
         return primary
     }
 
-    mutating private func parseMethod(calleeExpr: Expression<UnresolvedDepth>) throws -> Expression<UnresolvedDepth>? {
+    mutating private func parseMethod(calleeExpr: Expression<UnresolvedLocation>) throws -> Expression<UnresolvedLocation>? {
         guard currentTokenMatchesAny(types: [.dot]) else {
             return nil
         }
@@ -247,7 +247,7 @@ extension Parser {
         return .method(calleeExpr, methodName, [])
     }
 
-    mutating private func parseCall(calleeExpr: Expression<UnresolvedDepth>) throws -> Expression<UnresolvedDepth>? {
+    mutating private func parseCall(calleeExpr: Expression<UnresolvedLocation>) throws -> Expression<UnresolvedLocation>? {
         guard let leftParen = consumeToken(type: .leftParen) else {
             return nil
         }
@@ -261,7 +261,7 @@ extension Parser {
         return .call(calleeExpr, leftParen, arguments)
     }
 
-    mutating private func parsePrimary() throws -> Expression<UnresolvedDepth> {
+    mutating private func parsePrimary() throws -> Expression<UnresolvedLocation> {
         if let tupleOrGrouping = try parseTupleOrGrouping() {
             return tupleOrGrouping
         }
@@ -288,13 +288,13 @@ extension Parser {
         }
 
         if let varName = consumeToken(type: .identifier) {
-            return .variable(varName, UnresolvedDepth())
+            return .variable(varName, UnresolvedLocation())
         }
 
         throw ParseError.expectedExpression(currentToken)
     }
 
-    mutating private func parseTupleOrGrouping() throws -> Expression<UnresolvedDepth>? {
+    mutating private func parseTupleOrGrouping() throws -> Expression<UnresolvedLocation>? {
         guard let leftParen = consumeToken(type: .leftParen) else {
             return nil
         }
@@ -331,12 +331,12 @@ extension Parser {
         return .tuple3(leftParen, expr0, expr1, expr2)
     }
 
-    mutating private func parseList() throws -> Expression<UnresolvedDepth>? {
+    mutating private func parseList() throws -> Expression<UnresolvedLocation>? {
         guard let leftBracket = consumeToken(type: .leftBracket) else {
             return nil
         }
 
-        var exprList: [Expression<UnresolvedDepth>] = []
+        var exprList: [Expression<UnresolvedLocation>] = []
         repeat {
             let newExpr = try parseExpression()
             exprList.append(newExpr)
@@ -349,7 +349,7 @@ extension Parser {
         return .list(leftBracket, exprList)
     }
 
-    mutating private func parseLambda() throws -> Expression<UnresolvedDepth>? {
+    mutating private func parseLambda() throws -> Expression<UnresolvedLocation>? {
         guard let leftBrace = consumeToken(type: .leftBrace) else {
             return nil
         }
@@ -376,8 +376,8 @@ extension Parser {
         return .lambda(leftBrace, argumentNames, expression)
     }
 
-    mutating private func parseArguments() throws -> [Expression<UnresolvedDepth>.Argument] {
-        var arguments: [Expression<UnresolvedDepth>.Argument] = []
+    mutating private func parseArguments() throws -> [Expression<UnresolvedLocation>.Argument] {
+        var arguments: [Expression<UnresolvedLocation>.Argument] = []
         if currentToken.type != .rightParen {
             repeat {
                 var argName: Token? = nil
@@ -391,7 +391,7 @@ extension Parser {
                 }
 
                 let argValue = try parseExpression()
-                let newArgument = Expression<UnresolvedDepth>.Argument(name: argName, value: argValue)
+                let newArgument = Expression<UnresolvedLocation>.Argument(name: argName, value: argValue)
                 arguments.append(newArgument)
             } while currentTokenMatchesAny(types: [.comma])
         }

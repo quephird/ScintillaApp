@@ -256,12 +256,12 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let fz = try extractRawParametricSurfaceFunction(evaluator: evaluator,
                                                          argumentValue: argumentValues[6])
 
-        let implicitSurface = ParametricSurface(bottomFrontLeft: bottomFrontLeft,
+        let parametricSurface = ParametricSurface(bottomFrontLeft: bottomFrontLeft,
                                                 topBackRight: topBackRight,
                                                 uRange: uRange,
                                                 vRange: vRange,
                                                 fx: fx, fy: fy, fz: fz)
-        return .shape(implicitSurface)
+        return .shape(parametricSurface)
     }
 
     private func makePrism(argumentValues: [ScintillaValue]) throws -> ScintillaValue {

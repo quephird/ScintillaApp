@@ -7,5 +7,5 @@
 
 // NOTA BENE: This struct is used in the parsing stage so that we
 // can later use that same AST in the resolver with _actual_ depths
-struct UnresolvedDepth: Equatable {
+struct UnresolvedLocation: Equatable {
 }

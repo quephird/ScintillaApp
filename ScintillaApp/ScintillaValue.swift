@@ -12,14 +12,14 @@ import Foundation
 typealias ImplicitSurfaceLambda = (Double, Double, Double) -> Double
 typealias ParametricSurfaceLambda = (Double, Double) -> Double
 
-enum ScintillaValue: Equatable, CustomStringConvertible {
+indirect enum ScintillaValue: Equatable, CustomStringConvertible {
     case boolean(Bool)
     case double(Double)
     case list([ScintillaValue])
-    indirect case tuple2((ScintillaValue, ScintillaValue))
-    indirect case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
+    case tuple2((ScintillaValue, ScintillaValue))
+    case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
     case builtin(ScintillaBuiltin)
-    indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
+    case boundMethod(ScintillaValue, ScintillaBuiltin)
     case implicitSurfaceLambda(UserDefinedFunction)
     case userDefinedFunction(UserDefinedFunction)
     case shape(any Shape)
