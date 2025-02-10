@@ -213,16 +213,7 @@ class Evaluator {
     private func handleFunction(calleeToken: Token,
                                 argumentNameTokens: [Token?],
                                 location: ResolvedLocation) throws -> ScintillaValue {
-        let baseName = calleeToken.lexeme
-        let argumentNames = argumentNameTokens.map { maybeNameToken in
-            if let nameToken = maybeNameToken  {
-                return nameToken.lexeme
-            }
-
-            return ""
-        }
-        let calleeName: ObjectName = .functionName(baseName, argumentNames)
-        let callee = try environment.getValueAtLocation(name: calleeName, location: location)
+        let callee = try environment.getValueAtLocation(location: location)
 
         guard callee.isCallable else {
             throw RuntimeError.notAFunction(calleeToken.location, calleeToken.lexeme)

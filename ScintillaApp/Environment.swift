@@ -16,32 +16,24 @@ class Environment: Equatable {
 
     func define(name: ObjectName, value: ScintillaValue) {
         values.append(value)
-        names[name] = values.count - 1
+
+        // We only need the names dictionary for methods;
+        // everything else is resolved purely by its location
+        if case .methodName = name {
+            names[name] = values.count - 1
+        }
     }
 
     func undefineAll() {
-        values.removeAll(keepingCapacity: true)
-        names.removeAll(keepingCapacity: true)
+        self.values = []
+        self.names = [:]
     }
 
-    func getValueAtLocation(name: ObjectName, location: ResolvedLocation) throws -> ScintillaValue {
+    func getValueAtLocation(location: ResolvedLocation) throws -> ScintillaValue {
         let ancestor = try ancestor(depth: location.depth)
 
-        if location.index < ancestor.values.count {
-            return ancestor.values[location.index]
-        }
-
-        switch name {
-        case .variableName(let variableName):
-            let location = variableName.location()
-            throw RuntimeError.undefinedVariable(location, variableName)
-        case .functionName(let baseName, _):
-            let location = baseName.location()
-            throw RuntimeError.undefinedFunction(location, baseName)
-        case .methodName(_, let methodName, _):
-            let location = methodName.location()
-            throw RuntimeError.undefinedMethod(location, methodName)
-        }
+        assert(location.index < ancestor.values.count)
+        return ancestor.values[location.index]
     }
 
     func getValue(name: ObjectName) throws -> ScintillaValue {
