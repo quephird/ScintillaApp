@@ -18,7 +18,7 @@ class Environment: Equatable {
         self.values.reserveCapacity(capacity)
     }
 
-    func define(name: ObjectName, value: ScintillaValue) {
+    func define(name: ObjectName, value: consuming ScintillaValue) {
         values.append(value)
 
         // We only need the names dictionary for methods;

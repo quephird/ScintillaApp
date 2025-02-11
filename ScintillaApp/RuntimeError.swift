@@ -33,6 +33,9 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case parametricSurfaceLambdaWrongArity
     case missingLastExpression
     case lastExpressionNeedsToBeWorld
+    case couldNotEvaluateVariable(Token)
+    case couldNotEvaluateFunction(Token)
+    case couldNotConstructLambda(Token)
 
     var description: String {
         switch self {
@@ -84,6 +87,12 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[] Error: missing last expression"
         case .lastExpressionNeedsToBeWorld:
             return "[] Error: last expression needs to be world"
+        case .couldNotEvaluateVariable(let nameToken):
+            return "[\(nameToken.location)] Error: could not evaluate variable, \(nameToken.lexeme)"
+        case .couldNotEvaluateFunction(let nameToken):
+            return "[\(nameToken.location)] Error: could not evaluate function, \(nameToken.lexeme)"
+        case .couldNotConstructLambda(let exprToken):
+            return "[\(exprToken.location)] Error: could not evaluate function, \(exprToken.lexeme)"
         }
     }
 }

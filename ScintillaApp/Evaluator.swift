@@ -307,7 +307,7 @@ class Evaluator {
                                       letDecls: [],
                                       returnExpr: expression)
 
-        return .implicitSurfaceLambda(udf)
+        return .lambda(udf)
     }
 
     private func handleMethod(calleeExpr: Expression<ResolvedLocation>,

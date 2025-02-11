@@ -20,7 +20,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     indirect case tuple3((ScintillaValue, ScintillaValue, ScintillaValue))
     case builtin(ScintillaBuiltin)
     indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
-    indirect case implicitSurfaceLambda(UserDefinedFunction)
+    indirect case lambda(UserDefinedFunction)
     indirect case userDefinedFunction(UserDefinedFunction)
     indirect case shape(any Shape)
     indirect case camera(Camera)
@@ -43,8 +43,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return .builtin
         case .boundMethod:
             return .boundMethod
-        case .implicitSurfaceLambda:
-            return .implicitSurfaceLambda
+        case .lambda:
+            return .lambda
         case .userDefinedFunction:
             return .userDefinedFunction
         case .shape(_):
@@ -74,7 +74,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return l == r
         case (.boundMethod(let l1, let l2), .boundMethod(let r1, let r2)):
             return l1 == r1 && l2 == r2
-        case (.implicitSurfaceLambda(let l), .implicitSurfaceLambda(let r)):
+        case (.lambda(let l), .lambda(let r)):
             return l.objectId == r.objectId
         case (.userDefinedFunction(let l), .userDefinedFunction(let r)):
             return l.objectId == r.objectId
@@ -114,7 +114,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "\(builtin.objectName)"
         case .boundMethod(_, let builtin):
             return "\(builtin.objectName)"
-        case .implicitSurfaceLambda(let userDefinedFunction):
+        case .lambda(let userDefinedFunction):
             return "<implicit surface lambda: \(userDefinedFunction.objectId)>"
         case .userDefinedFunction(let userDefinedFunction):
             return "<function: \(userDefinedFunction.name)>"
@@ -131,7 +131,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
 
     var isCallable: Bool {
         switch self {
-        case .builtin, .boundMethod, .implicitSurfaceLambda, .userDefinedFunction:
+        case .builtin, .boundMethod, .lambda, .userDefinedFunction:
             return true
         default:
             return false

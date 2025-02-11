@@ -56,7 +56,6 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("ImplicitSurface", ["bottomFrontLeft", "topBackRight", "function"])
         case .implicitSurface2:
             return .functionName("ImplicitSurface", ["center", "radius", "function"])
-        // TODO: Add second constructor exposing accuracy and maxGradient parameters
         case .parametricSurface1:
             return .functionName("ParametricSurface", ["bottomFrontLeft", "topBackRight",
                                                        "uRange", "vRange",
@@ -266,10 +265,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
                                                          argumentValue: argumentValues[6])
 
         let parametricSurface = ParametricSurface(bottomFrontLeft: bottomFrontLeft,
-                                                topBackRight: topBackRight,
-                                                uRange: uRange,
-                                                vRange: vRange,
-                                                fx: fx, fy: fy, fz: fz)
+                                                  topBackRight: topBackRight,
+                                                  uRange: uRange,
+                                                  vRange: vRange,
+                                                  fx: fx, fy: fy, fz: fz)
         return .shape(parametricSurface)
     }
 
@@ -289,12 +288,12 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
                                                          argumentValue: argumentValues[8])
 
         let parametricSurface = ParametricSurface(bottomFrontLeft: bottomFrontLeft,
-                                                topBackRight: topBackRight,
-                                                uRange: uRange,
-                                                vRange: vRange,
-                                                accuracy: accuracy,
-                                                maxGradient: maxGradient,
-                                                fx: fx, fy: fy, fz: fz)
+                                                  topBackRight: topBackRight,
+                                                  uRange: uRange,
+                                                  vRange: vRange,
+                                                  accuracy: accuracy,
+                                                  maxGradient: maxGradient,
+                                                  fx: fx, fy: fy, fz: fz)
         return .shape(parametricSurface)
     }
 
@@ -529,56 +528,6 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return (rawDouble0, rawDouble1, rawDouble2)
     }
 
-    private func extractRawImplicitSurfaceFunction(evaluator: Evaluator,
-                                                   argumentValue: ScintillaValue) throws -> ImplicitSurfaceLambda {
-        guard case .implicitSurfaceLambda(let udf) = argumentValue else {
-            throw RuntimeError.expectedUserDefinedFunction
-        }
-
-        guard udf.argumentNames.count == 3 else {
-            throw RuntimeError.implicitSurfaceLambdaWrongArity
-        }
-
-        let lambda = { (x: Double, y: Double, z: Double) -> Double in
-            // TODO: Figure out how to surface either of these errors _without_ throwing
-            let result: Double
-            do {
-                result = try udf.call(evaluator: evaluator, argumentValues: x, y, z)
-            } catch {
-                fatalError("Something bad happened during the execution of the implicit surface lambda")
-            }
-
-            return result
-        }
-
-        return lambda
-    }
-
-    private func extractRawParametricSurfaceFunction(evaluator: Evaluator,
-                                                     argumentValue: ScintillaValue) throws -> ParametricSurfaceLambda {
-        guard case .implicitSurfaceLambda(let udf) = argumentValue else {
-            throw RuntimeError.expectedUserDefinedFunction
-        }
-
-        guard udf.argumentNames.count == 2 else {
-            throw RuntimeError.parametricSurfaceLambdaWrongArity
-        }
-
-        let lambda = { (u: Double, v: Double) -> Double in
-            // TODO: Figure out how to surface either of these errors _without_ throwing
-            let result: Double
-            do {
-                result = try udf.call(evaluator: evaluator, argumentValues: u, v, 0.0)
-            } catch {
-                fatalError("Something bad happened during the execution of the implicit surface lambda")
-            }
-
-            return result
-        }
-
-        return lambda
-    }
-
     private func extractRawCamera(argumentValue: ScintillaValue) throws -> Camera {
         guard case .camera(let rawCamera) = argumentValue else {
             throw RuntimeError.expectedCamera
@@ -621,5 +570,126 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
 
         return shape
+    }
+
+    private func extractRawImplicitSurfaceFunction(evaluator: Evaluator,
+                                                   argumentValue: ScintillaValue) throws -> ImplicitSurfaceLambda {
+        guard case .lambda(let udf) = argumentValue else {
+            throw RuntimeError.expectedUserDefinedFunction
+        }
+
+        guard udf.argumentNames.count == 3 else {
+            throw RuntimeError.implicitSurfaceLambdaWrongArity
+        }
+
+        return try makeRawLambda(evaluator: evaluator,
+                                 expression: udf.returnExpr)
+    }
+
+    private func extractRawParametricSurfaceFunction(evaluator: Evaluator,
+                                                     argumentValue: ScintillaValue) throws -> ParametricSurfaceLambda {
+        guard case .lambda(let udf) = argumentValue else {
+            throw RuntimeError.expectedUserDefinedFunction
+        }
+
+        guard udf.argumentNames.count == 2 else {
+            throw RuntimeError.parametricSurfaceLambdaWrongArity
+        }
+
+        let innerLambda = try makeRawLambda(evaluator: evaluator, expression: udf.returnExpr)
+        return { x, y in innerLambda(x, y, 0) }
+    }
+
+    private func makeRawLambda(evaluator: Evaluator,
+                               expression: Expression<ResolvedLocation>) throws -> ImplicitSurfaceLambda {
+        switch expression {
+        case .doubleLiteral(_, let rawDouble):
+            return { _, _, _ in rawDouble }
+        case .variable(let nameToken, let location):
+            switch (location.depth, location.index) {
+            case (0, 0):
+                return { x, _, _ in return x }
+            case (0, 1):
+                return { _, y, _ in return y }
+            case (0, 2):
+                return { _, _, z in return z }
+            default:
+                var copy = location
+                copy.depth -= 1
+                let foo = try evaluator.environment.getValueAtLocation(location: copy)
+                if case .double(let value) = foo {
+                    return { _, _, _ in return value }
+                }
+            }
+
+            throw RuntimeError.couldNotEvaluateVariable(nameToken)
+        case .binary(let leftExpr, let operToken, let rightExpr):
+            let leftValue = try makeRawLambda(evaluator: evaluator, expression: leftExpr)
+            let rightValue = try makeRawLambda(evaluator: evaluator, expression: rightExpr)
+
+            switch operToken.type {
+            case .plus:
+                return { x, y, z in leftValue(x, y, z) + rightValue(x, y, z) }
+            case .minus:
+                return { x, y, z in leftValue(x, y, z) - rightValue(x, y, z) }
+            case .star:
+                return { x, y, z in leftValue(x, y, z) * rightValue(x, y, z) }
+            case .slash:
+                return { x, y, z in leftValue(x, y, z) / rightValue(x, y, z) }
+            default:
+                throw RuntimeError.unsupportedBinaryOperator(operToken.location, operToken.lexeme)
+            }
+        case .call(let calleeExpr, _, let localArguments):
+            guard case .function(_, _, let location) = calleeExpr else {
+                throw RuntimeError.notAFunction(calleeExpr.locationToken.location, calleeExpr.locationToken.lexeme)
+            }
+
+            let firstArgValue = try makeRawLambda(evaluator: evaluator,
+                                                  expression: localArguments[0].value)
+
+            var copy = location
+            copy.depth -= 1
+            let lookedUpFunction = try evaluator.environment.getValueAtLocation(location: copy)
+
+            switch lookedUpFunction {
+            case .builtin(.sinFunc):
+                return { x, y, z in return sin(firstArgValue(x, y, z)) }
+            case .builtin(.cosFunc):
+                return { x, y, z in return cos(firstArgValue(x, y, z)) }
+            case .builtin(.tanFunc):
+                return { x, y, z in return tan(firstArgValue(x, y, z)) }
+            case .userDefinedFunction(let udf):
+                var secondArgValue: ImplicitSurfaceLambda = { _, _, _ in 0.0 }
+                var thirdArgValue: ImplicitSurfaceLambda = { _, _, _ in 0.0 }
+                if localArguments.count == 3 {
+                    thirdArgValue = try makeRawLambda(evaluator: evaluator,
+                                                      expression: localArguments[2].value)
+                }
+
+                if localArguments.count >= 2 {
+                    secondArgValue = try makeRawLambda(evaluator: evaluator,
+                                                       expression: localArguments[1].value)
+                }
+
+                return { (x: Double, y: Double, z: Double) -> Double in
+                    // TODO: Figure out how to surface either of these errors _without_ throwing
+                    let result: Double
+                    do {
+                        result = try udf.call(evaluator: evaluator,
+                                              argumentValues: firstArgValue(x, y, z),
+                                              secondArgValue(x, y, z),
+                                              thirdArgValue(x, y, z))
+                    } catch {
+                        fatalError("Something bad happened during the execution of the lambda")
+                    }
+
+                    return result
+                }
+            default:
+                throw RuntimeError.couldNotEvaluateFunction(calleeExpr.locationToken)
+            }
+        default:
+            throw RuntimeError.couldNotConstructLambda(expression.locationToken)
+        }
     }
 }
