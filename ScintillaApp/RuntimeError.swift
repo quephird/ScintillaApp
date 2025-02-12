@@ -8,15 +8,15 @@
 import Foundation
 
 enum RuntimeError: LocalizedError, CustomStringConvertible {
-    case undefinedVariable(Location, Substring)
-    case undefinedFunction(Location, Substring)
-    case undefinedMethod(Location, Substring)
-    case unsupportedUnaryOperator(Location, Substring)
-    case unaryOperandMustBeNumber(Location, Substring)
-    case unsupportedBinaryOperator(Location, Substring)
-    case binaryOperandsMustBeNumbers(Location, Substring)
-    case notAFunction(Location, Substring)
-    case notCallable(Location, Substring)
+    case undefinedVariable(SourceLocation, Substring)
+    case undefinedFunction(SourceLocation, Substring)
+    case undefinedMethod(SourceLocation, Substring)
+    case unsupportedUnaryOperator(SourceLocation, Substring)
+    case unaryOperandMustBeNumber(SourceLocation, Substring)
+    case unsupportedBinaryOperator(SourceLocation, Substring)
+    case binaryOperandsMustBeNumbers(SourceLocation, Substring)
+    case notAFunction(SourceLocation, Substring)
+    case notCallable(SourceLocation, Substring)
     // TODO: Need to capture location and lexemes for the following three error cases
     case missingArgumentName(Token)
     case incorrectArgument
@@ -28,8 +28,14 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case expectedCamera
     case expectedLight
     case expectedShape
+    case expectedUserDefinedFunction
+    case implicitSurfaceLambdaWrongArity
+    case parametricSurfaceLambdaWrongArity
     case missingLastExpression
     case lastExpressionNeedsToBeWorld
+    case couldNotEvaluateVariable(Token)
+    case couldNotEvaluateFunction(Token)
+    case couldNotConstructLambda(Token)
 
     var description: String {
         switch self {
@@ -71,10 +77,22 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[] Error: expected the argument to be a list of Shapes"
         case .incorrectObject:
             return "[] Error: method does not exist on object"
+        case .expectedUserDefinedFunction:
+            return "[] Error: expected user-defined function"
+        case .implicitSurfaceLambdaWrongArity:
+            return "[] Error: implicit surface lambda must take three arguments"
+        case .parametricSurfaceLambdaWrongArity:
+            return "[] Error: parametric surface lambda must take two arguments"
         case .missingLastExpression:
             return "[] Error: missing last expression"
         case .lastExpressionNeedsToBeWorld:
             return "[] Error: last expression needs to be world"
+        case .couldNotEvaluateVariable(let nameToken):
+            return "[\(nameToken.location)] Error: could not evaluate variable, \(nameToken.lexeme)"
+        case .couldNotEvaluateFunction(let nameToken):
+            return "[\(nameToken.location)] Error: could not evaluate function, \(nameToken.lexeme)"
+        case .couldNotConstructLambda(let exprToken):
+            return "[\(exprToken.location)] Error: could not evaluate function, \(exprToken.lexeme)"
         }
     }
 }

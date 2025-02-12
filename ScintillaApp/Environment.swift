@@ -7,64 +7,42 @@
 
 class Environment: Equatable {
     var enclosingEnvironment: Environment?
-    private var values: [ObjectName: ScintillaValue] = [:]
+    private var values: [ScintillaValue] = []
+    private var names: [ObjectName: Int] = [:]
 
     init(enclosingEnvironment: Environment? = nil) {
         self.enclosingEnvironment = enclosingEnvironment
     }
 
-    func define(name: ObjectName, value: ScintillaValue) {
-        values[name] = value
+    public func reserveCapacity(capacity: Int) {
+        self.values.reserveCapacity(capacity)
+    }
+
+    func define(name: ObjectName, value: consuming ScintillaValue) {
+        values.append(value)
+
+        // We only need the names dictionary for methods;
+        // everything else is resolved purely by its location
+        if case .methodName = name {
+            names[name] = values.count - 1
+        }
     }
 
     func undefineAll() {
-        values.removeAll(keepingCapacity: true)
+        self.values = []
+        self.names = [:]
     }
 
-    func assignAtDepth(name: ObjectName, value: ScintillaValue, depth: Int) throws {
-        let ancestor = try ancestor(depth: depth)
+    func getValueAtLocation(location: ResolvedLocation) throws -> ScintillaValue {
+        let ancestor = try ancestor(depth: location.depth)
 
-        if ancestor.values.keys.contains(name) {
-            ancestor.values[name] = value
-            return
-        }
-
-        switch name {
-        case .variableName(let variableName):
-            let location = variableName.location()
-            throw RuntimeError.undefinedVariable(location, variableName)
-        case .functionName(let baseName, _):
-            let location = baseName.location()
-            throw RuntimeError.undefinedFunction(location, baseName)
-        case .methodName(_, let methodName, _):
-            let location = methodName.location()
-            throw RuntimeError.undefinedMethod(location, methodName)
-        }
-    }
-
-    func getValueAtDepth(name: ObjectName, depth: Int) throws -> ScintillaValue {
-        let ancestor = try ancestor(depth: depth)
-
-        if let value = ancestor.values[name] {
-            return value
-        }
-
-        switch name {
-        case .variableName(let variableName):
-            let location = variableName.location()
-            throw RuntimeError.undefinedVariable(location, variableName)
-        case .functionName(let baseName, _):
-            let location = baseName.location()
-            throw RuntimeError.undefinedFunction(location, baseName)
-        case .methodName(_, let methodName, _):
-            let location = methodName.location()
-            throw RuntimeError.undefinedMethod(location, methodName)
-        }
+        assert(location.index < ancestor.values.count)
+        return ancestor.values[location.index]
     }
 
     func getValue(name: ObjectName) throws -> ScintillaValue {
-        if let value = values[name] {
-            return value
+        if let index = names[name] {
+            return values[index]
         }
 
         if let enclosingEnvironment {

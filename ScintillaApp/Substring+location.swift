@@ -6,7 +6,7 @@
 //
 
 extension Substring {
-    public func location() -> Location {
+    public func location() -> SourceLocation {
         var line: Int = 1
         var column: Int = 1
 
@@ -19,6 +19,6 @@ extension Substring {
             }
         }
 
-        return Location(line: line, column: column)
+        return SourceLocation(line: line, column: column)
     }
 }

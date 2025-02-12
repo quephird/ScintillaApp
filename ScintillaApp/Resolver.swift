@@ -19,15 +19,16 @@ struct Resolver {
         case methodCall
     }
 
-    private var scopeStack: [[ObjectName: Bool]]
+    private var scopeStack: [[ObjectName: (index: Int, isDefined: Bool)]]
+
     private var currentFunctionType: FunctionType = .none
     private var currentArgumentListType: ArgumentListType = .none
 
     init() {
-        var builtins = ScintillaBuiltin.allCases.map{ builtin in
-            (builtin.objectName, true)
+        var builtins = ScintillaBuiltin.allCases.enumerated().map{ (i, builtin) in
+            (builtin.objectName, (i, true))
         }
-        builtins.append((.variableName("PI"), true))
+        builtins.append((.variableName("PI"), (builtins.count, true)))
 
         self.scopeStack = [Dictionary(uniqueKeysWithValues: builtins)]
     }
@@ -78,7 +79,8 @@ extension Resolver {
             throw ResolverError.variableAlreadyDefined(objectName)
         }
 
-        scopeStack.lastMutable[objectName] = false
+        let index = scopeStack.last!.count
+        scopeStack.lastMutable[objectName] = (index, false)
     }
 
     mutating private func defineObject(objectName: ObjectName) {
@@ -90,14 +92,15 @@ extension Resolver {
             return
         }
 
-        scopeStack.lastMutable[objectName] = true
+        scopeStack.lastMutable[objectName]!.isDefined = true
     }
 
-    private func getDepth(name: ObjectName, nameToken: Token) throws -> Int {
+    private func getLocation(name: ObjectName, nameToken: Token) throws -> ResolvedLocation {
         var i = scopeStack.count - 1
         while i >= 0 {
-            if let _ = scopeStack[i][name] {
-                return scopeStack.count - 1 - i
+            if let (index, _) = scopeStack[i][name] {
+                let depth = scopeStack.count - 1 - i
+                return ResolvedLocation(depth: depth, index: index)
             }
 
             i = i - 1
@@ -127,7 +130,7 @@ extension Resolver {
 
 extension Resolver {
     // Main point of entry
-    mutating func resolve(program: Program<UnresolvedDepth>) throws -> Program<Int> {
+    mutating func resolve(program: Program<UnresolvedLocation>) throws -> Program<ResolvedLocation> {
         let resolvedStatements = try program.statements.map { statement in
             return try resolve(statement: statement)
         }
@@ -137,7 +140,7 @@ extension Resolver {
         return Program(statements: resolvedStatements, finalExpression: resolvedFinalExpression)
     }
 
-    private mutating func resolve(statement: Statement<UnresolvedDepth>) throws -> Statement<Int> {
+    private mutating func resolve(statement: Statement<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
         switch statement {
         case .letDeclaration(let nameToken, let initializeExpr):
             return try handleLetDeclaration(nameToken: nameToken, initializeExpr: initializeExpr)
@@ -152,7 +155,7 @@ extension Resolver {
     }
 
     mutating private func handleLetDeclaration(nameToken: Token,
-                                               initializeExpr: Expression<UnresolvedDepth>) throws -> Statement<Int> {
+                                               initializeExpr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
         try declareVariable(variableToken: nameToken)
 
         let resolvedInitializerExpr = try resolve(expression: initializeExpr)
@@ -163,8 +166,8 @@ extension Resolver {
 
     mutating private func handleFunctionDeclaration(nameToken: Token,
                                                     argumentNames: [Token],
-                                                    letDecls: [Statement<UnresolvedDepth>],
-                                                    returnExpr: Expression<UnresolvedDepth>) throws -> Statement<Int> {
+                                                    letDecls: [Statement<UnresolvedLocation>],
+                                                    returnExpr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
         try declareFunction(nameToken: nameToken, argumentNameTokens: argumentNames)
         defineFunction(nameToken: nameToken, argumentNameTokens: argumentNames)
 
@@ -187,13 +190,13 @@ extension Resolver {
         return .functionDeclaration(nameToken, argumentNames, resolvedLetDecls, resolvedReturnExpr)
     }
 
-    mutating private func handleExpressionStatement(expr: Expression<UnresolvedDepth>) throws -> Statement<Int> {
+    mutating private func handleExpressionStatement(expr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
         let resolvedExpression = try resolve(expression: expr)
         return .expression(resolvedExpression)
     }
 
     // Resolver for expressions
-    mutating private func resolve(expression: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+    mutating private func resolve(expression: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
         switch expression {
         case .variable(let nameToken, _):
             return try handleVariable(nameToken: nameToken)
@@ -201,8 +204,10 @@ extension Resolver {
             return try handleBinary(leftExpr: leftExpr, operToken: operToken, rightExpr: rightExpr)
         case .unary(let operToken, let rightExpr):
             return try handleUnary(operToken: operToken, rightExpr: rightExpr)
-        case .literal(let valueToken, let value):
-            return .literal(valueToken, value)
+        case .boolLiteral(let valueToken, let value):
+            return .boolLiteral(valueToken, value)
+        case .doubleLiteral(let valueToken, let value):
+            return .doubleLiteral(valueToken, value)
         case .list(let leftBracketToken, let elements):
             return try handleList(leftBracketToken: leftBracketToken, elements: elements)
         case .tuple2(let leftParenToken, let expr0, let expr1):
@@ -232,19 +237,20 @@ extension Resolver {
         }
     }
 
-    mutating private func handleVariable(nameToken: Token) throws -> Expression<Int> {
+    mutating private func handleVariable(nameToken: Token) throws -> Expression<ResolvedLocation> {
         let name: ObjectName = .variableName(nameToken.lexeme)
-        if !scopeStack.isEmpty && scopeStack.lastMutable[name] == false {
+        // TODO: Look into this later because this may be wrong
+        if !scopeStack.isEmpty && scopeStack.lastMutable[name]?.isDefined == false {
             throw ResolverError.variableAccessedBeforeInitialization(nameToken)
         }
 
-        let depth = try getDepth(name: name, nameToken: nameToken)
-        return .variable(nameToken, depth)
+        let location = try getLocation(name: name, nameToken: nameToken)
+        return .variable(nameToken, location)
     }
 
-    mutating private func handleBinary(leftExpr: Expression<UnresolvedDepth>,
+    mutating private func handleBinary(leftExpr: Expression<UnresolvedLocation>,
                                        operToken: Token,
-                                       rightExpr: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+                                       rightExpr: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
         let resolvedLeftExpr = try resolve(expression: leftExpr)
         let resolvedRightExpr = try resolve(expression: rightExpr)
 
@@ -252,14 +258,14 @@ extension Resolver {
     }
 
     mutating private func handleUnary(operToken: Token,
-                                      rightExpr: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+                                      rightExpr: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
         let resolvedRightExpr = try resolve(expression: rightExpr)
 
         return .unary(operToken, resolvedRightExpr)
     }
 
     mutating private func handleList(leftBracketToken: Token,
-                                     elements: [Expression<UnresolvedDepth>]) throws -> Expression<Int> {
+                                     elements: [Expression<UnresolvedLocation>]) throws -> Expression<ResolvedLocation> {
         let resolvedElements = try elements.map { element in
             return try resolve(expression: element)
         }
@@ -268,8 +274,8 @@ extension Resolver {
     }
 
     mutating private func handleTuple2(leftParenToken: Token,
-                                       expr0: Expression<UnresolvedDepth>,
-                                       expr1: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+                                       expr0: Expression<UnresolvedLocation>,
+                                       expr1: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
         let resolvedExpr0 = try resolve(expression: expr0)
         let resolvedExpr1 = try resolve(expression: expr1)
 
@@ -277,9 +283,9 @@ extension Resolver {
     }
 
     mutating private func handleTuple3(leftParenToken: Token,
-                                       expr0: Expression<UnresolvedDepth>,
-                                       expr1: Expression<UnresolvedDepth>,
-                                       expr2: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+                                       expr0: Expression<UnresolvedLocation>,
+                                       expr1: Expression<UnresolvedLocation>,
+                                       expr2: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
         let resolvedExpr0 = try resolve(expression: expr0)
         let resolvedExpr1 = try resolve(expression: expr1)
         let resolvedExpr2 = try resolve(expression: expr2)
@@ -288,7 +294,7 @@ extension Resolver {
     }
 
     mutating private func handleFunction(calleeToken: Token,
-                                         argumentNameTokens: [Token?]) throws -> Expression<Int> {
+                                         argumentNameTokens: [Token?]) throws -> Expression<ResolvedLocation> {
         let baseName = calleeToken.lexeme
         let argumentNames = argumentNameTokens.map { maybeNameToken in
             if let nameToken = maybeNameToken {
@@ -298,14 +304,14 @@ extension Resolver {
             return ""
         }
         let name: ObjectName = .functionName(baseName, argumentNames)
-        let depth = try getDepth(name: name, nameToken: calleeToken)
+        let location = try getLocation(name: name, nameToken: calleeToken)
 
-        return .function(calleeToken, argumentNameTokens, depth)
+        return .function(calleeToken, argumentNameTokens, location)
     }
 
-    mutating private func handleCall(calleeExpr: Expression<UnresolvedDepth>,
+    mutating private func handleCall(calleeExpr: Expression<UnresolvedLocation>,
                                      leftParenToken: Token,
-                                     arguments: [Expression<UnresolvedDepth>.Argument]) throws -> Expression<Int> {
+                                     arguments: [Expression<UnresolvedLocation>.Argument]) throws -> Expression<ResolvedLocation> {
         let previousArgumentListType = currentArgumentListType
         defer {
             currentArgumentListType = previousArgumentListType
@@ -315,7 +321,7 @@ extension Resolver {
         let argumentNames = arguments.map { $0.name }
         if case .variable(let baseNameToken, _) = calleeExpr {
             currentArgumentListType = .functionCall
-            newCalleeExpr = .function(baseNameToken, argumentNames, UnresolvedDepth())
+            newCalleeExpr = .function(baseNameToken, argumentNames, UnresolvedLocation())
         } else if case .method(let innerCalleeExpr, let baseNameToken, _) = calleeExpr {
             currentArgumentListType = .methodCall
             newCalleeExpr = .method(innerCalleeExpr, baseNameToken, argumentNames)
@@ -333,7 +339,7 @@ extension Resolver {
 
     mutating private func handleLambda(leftBraceToken: Token,
                                        argumentNames: [Token],
-                                       expression: Expression<UnresolvedDepth>) throws -> Expression<Int> {
+                                       expression: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
         beginScope()
         let previousFunctionType = currentFunctionType
         currentFunctionType = .lambda
@@ -352,9 +358,9 @@ extension Resolver {
         return .lambda(leftBraceToken, argumentNames, resolvedExpr)
     }
 
-    mutating private func handleMethod(calleeExpr: Expression<UnresolvedDepth>,
+    mutating private func handleMethod(calleeExpr: Expression<UnresolvedLocation>,
                                        methodName: Token,
-                                       argumentNameTokens: [Token?]) throws -> Expression<Int> {
+                                       argumentNameTokens: [Token?]) throws -> Expression<ResolvedLocation> {
         let resolvedCalleeExpr = try resolve(expression: calleeExpr)
 
         return .method(resolvedCalleeExpr, methodName, argumentNameTokens)

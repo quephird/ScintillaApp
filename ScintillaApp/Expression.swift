@@ -5,16 +5,17 @@
 //  Created by Danielle Kefford on 1/23/25.
 //
 
-indirect enum Expression<Depth: Equatable>: Equatable {
+indirect enum Expression<Location: Equatable>: Equatable {
     public struct Argument: Equatable {
         public var name: Token?
-        public var value: Expression<Depth>
+        public var value: Expression<Location>
     }
 
     case binary(Expression, Token, Expression)
     case unary(Token, Expression)
-    case literal(Token, ScintillaValue)
-    case variable(Token, Depth)
+    case boolLiteral(Token, Bool)
+    case doubleLiteral(Token, Double)
+    case variable(Token, Location)
     case list(Token, [Expression])
     case tuple2(Token, Expression, Expression)
     case tuple3(Token, Expression, Expression, Expression)
@@ -23,7 +24,7 @@ indirect enum Expression<Depth: Equatable>: Equatable {
     // * Builtin constructors of Scintilla objects, such as `Camera`, `ImplicitSurface`, etc.
     // * Native standalone functions "registered" in the environment, such as `sin()`, `cos()`, etc.
     // * User-defined functions
-    case function(Token, [Token?], Depth)
+    case function(Token, [Token?], Location)
     // ... whereas this case handles only one kind of object:
     //
     // * Builtin methods of Scintilla objects, such as `Shape.translate()`, `Shape.rotateX()`, etc.
@@ -37,7 +38,9 @@ indirect enum Expression<Depth: Equatable>: Equatable {
             return operToken
         case .unary(let locToken, _):
             return locToken
-        case .literal(let valueToken, _):
+        case .boolLiteral(let valueToken, _):
+            return valueToken
+        case .doubleLiteral(let valueToken, _):
             return valueToken
         case .variable(let nameToken, _):
             return nameToken

@@ -18,7 +18,7 @@ struct Token: CustomStringConvertible, Equatable, Hashable {
         return "Location: \(self.location), type: \(self.type), lexeme: \(self.lexeme)"
     }
 
-    var location: Location {
+    var location: SourceLocation {
         self.lexeme.location()
     }
 }
