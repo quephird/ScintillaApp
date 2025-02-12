@@ -33,7 +33,7 @@ extension ObjectName: CustomStringConvertible {
 }
 
 extension ObjectName {
-    public func location() -> Location {
+    public func location() -> SourceLocation {
         switch self {
         case .variableName(let name):
             return name.location()

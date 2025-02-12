@@ -8,15 +8,15 @@
 import Foundation
 
 enum RuntimeError: LocalizedError, CustomStringConvertible {
-    case undefinedVariable(Location, Substring)
-    case undefinedFunction(Location, Substring)
-    case undefinedMethod(Location, Substring)
-    case unsupportedUnaryOperator(Location, Substring)
-    case unaryOperandMustBeNumber(Location, Substring)
-    case unsupportedBinaryOperator(Location, Substring)
-    case binaryOperandsMustBeNumbers(Location, Substring)
-    case notAFunction(Location, Substring)
-    case notCallable(Location, Substring)
+    case undefinedVariable(SourceLocation, Substring)
+    case undefinedFunction(SourceLocation, Substring)
+    case undefinedMethod(SourceLocation, Substring)
+    case unsupportedUnaryOperator(SourceLocation, Substring)
+    case unaryOperandMustBeNumber(SourceLocation, Substring)
+    case unsupportedBinaryOperator(SourceLocation, Substring)
+    case binaryOperandsMustBeNumbers(SourceLocation, Substring)
+    case notAFunction(SourceLocation, Substring)
+    case notCallable(SourceLocation, Substring)
     // TODO: Need to capture location and lexemes for the following three error cases
     case missingArgumentName(Token)
     case incorrectArgument
