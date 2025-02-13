@@ -84,7 +84,8 @@ extension Parser {
     //    argList        → IDENTIFIER ("," IDENTIFIER)*
     //    expression     → term ;
     //    term           → factor ( ( "-" | "+" ) factor )* ;
-    //    factor         → unary ( ( "/" | "*" | "%" ) unary )* ;
+    //    factor         → exponent ( ( "/" | "*" ) exponent )* ;
+    //    exponent       → unary ( ( "^" unary )* ;
     //    unary          → ( "!" | "-" | "*" ) unary
     //                   | postfix ;
     //    postfix        → primary | method | call ;
