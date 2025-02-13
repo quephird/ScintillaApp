@@ -117,7 +117,7 @@ struct Tokenizer {
             "+": .plus,
             "-": .minus,
             "*": .star,
-            "%": .modulus,
+            "^": .caret,
         ]) {
             return handleSingleCharacterLexeme(type: type)
         }

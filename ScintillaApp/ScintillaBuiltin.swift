@@ -41,6 +41,11 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case sinFunc
     case cosFunc
     case tanFunc
+    case arcsinFunc
+    case arccosFunc
+    case arctanFunc
+    case expFunc
+    case logFunc
 
     var objectName: ObjectName {
         switch self {
@@ -111,6 +116,16 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("cos", [""])
         case .tanFunc:
             return .functionName("tan", [""])
+        case .arcsinFunc:
+            return .functionName("arcsin", [""])
+        case .arccosFunc:
+            return .functionName("arccos", [""])
+        case .arctanFunc:
+            return .functionName("arctan", [""])
+        case .expFunc:
+            return .functionName("exp", [""])
+        case .logFunc:
+            return .functionName("log", [""])
         }
     }
 
@@ -152,14 +167,29 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .world:
             return try makeWorld(argumentValues: argumentValues)
         case .sinFunc:
-            return try handleTrigFunction(argumentValues: argumentValues,
-                                          nativeTrigFunction: sin)
+            return try handleUnaryFunction(argumentValues: argumentValues,
+                                           nativeFunction: sin)
         case .cosFunc:
-            return try handleTrigFunction(argumentValues: argumentValues,
-                                          nativeTrigFunction: cos)
+            return try handleUnaryFunction(argumentValues: argumentValues,
+                                           nativeFunction: cos)
         case .tanFunc:
-            return try handleTrigFunction(argumentValues: argumentValues,
-                                          nativeTrigFunction: tan)
+            return try handleUnaryFunction(argumentValues: argumentValues,
+                                           nativeFunction: tan)
+        case .arcsinFunc:
+            return try handleUnaryFunction(argumentValues: argumentValues,
+                                           nativeFunction: asin)
+        case .arccosFunc:
+            return try handleUnaryFunction(argumentValues: argumentValues,
+                                           nativeFunction: acos)
+        case .arctanFunc:
+            return try handleUnaryFunction(argumentValues: argumentValues,
+                                           nativeFunction: atan)
+        case .expFunc:
+            return try handleUnaryFunction(argumentValues: argumentValues,
+                                           nativeFunction: exp)
+        case .logFunc:
+            return try handleUnaryFunction(argumentValues: argumentValues,
+                                           nativeFunction: log)
         default:
             fatalError("Internal error: method calls should not get here")
         }
@@ -469,11 +499,11 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
-    private func handleTrigFunction(argumentValues: [ScintillaValue],
-                                    nativeTrigFunction: (Double) -> Double) throws -> ScintillaValue {
+    private func handleUnaryFunction(argumentValues: [ScintillaValue],
+                                     nativeFunction: (Double) -> Double) throws -> ScintillaValue {
         let rawArgumentValue = try extractRawDouble(argumentValue: argumentValues[0])
 
-        return .double(nativeTrigFunction(rawArgumentValue))
+        return .double(nativeFunction(rawArgumentValue))
     }
 
     private func extractRawBoolean(argumentValue: ScintillaValue) throws -> Bool {
@@ -624,18 +654,23 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
             throw RuntimeError.couldNotEvaluateVariable(nameToken)
         case .binary(let leftExpr, let operToken, let rightExpr):
-            let leftValue = try makeRawLambda(evaluator: evaluator, expression: leftExpr)
-            let rightValue = try makeRawLambda(evaluator: evaluator, expression: rightExpr)
+            let leftLambda = try makeRawLambda(evaluator: evaluator, expression: leftExpr)
+            let rightLambda = try makeRawLambda(evaluator: evaluator, expression: rightExpr)
 
             switch operToken.type {
             case .plus:
-                return { x, y, z in leftValue(x, y, z) + rightValue(x, y, z) }
+                return { x, y, z in leftLambda(x, y, z) + rightLambda(x, y, z) }
             case .minus:
-                return { x, y, z in leftValue(x, y, z) - rightValue(x, y, z) }
+                return { x, y, z in leftLambda(x, y, z) - rightLambda(x, y, z) }
             case .star:
-                return { x, y, z in leftValue(x, y, z) * rightValue(x, y, z) }
+                return { x, y, z in leftLambda(x, y, z) * rightLambda(x, y, z) }
             case .slash:
-                return { x, y, z in leftValue(x, y, z) / rightValue(x, y, z) }
+                return { x, y, z in leftLambda(x, y, z) / rightLambda(x, y, z) }
+            case .caret:
+                return { x, y, z in
+                    let leftValue = leftLambda(x, y, z)
+                    let rightValue = rightLambda(x, y, z)
+                    return pow(leftValue, rightValue) }
             default:
                 throw RuntimeError.unsupportedBinaryOperator(operToken.location, operToken.lexeme)
             }

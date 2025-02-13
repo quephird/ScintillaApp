@@ -84,7 +84,8 @@ extension Parser {
     //    argList        → IDENTIFIER ("," IDENTIFIER)*
     //    expression     → term ;
     //    term           → factor ( ( "-" | "+" ) factor )* ;
-    //    factor         → unary ( ( "/" | "*" | "%" ) unary )* ;
+    //    factor         → exponent ( ( "/" | "*" ) exponent )* ;
+    //    exponent       → unary ( ( "^" unary )* ;
     //    unary          → ( "!" | "-" | "*" ) unary
     //                   | postfix ;
     //    postfix        → primary | method | call ;
@@ -192,9 +193,21 @@ extension Parser {
     }
 
     mutating private func parseFactor() throws -> Expression<UnresolvedLocation> {
+        var expr = try parseExponent()
+
+        while currentTokenMatchesAny(types: [.slash, .star]) {
+            let oper = previousToken
+            let rightExpr = try parseExponent()
+            expr = .binary(expr, oper, rightExpr)
+        }
+
+        return expr
+    }
+
+    mutating private func parseExponent() throws -> Expression<UnresolvedLocation> {
         var expr = try parseUnary()
 
-        while currentTokenMatchesAny(types: [.slash, .star, .modulus]) {
+        while currentTokenMatchesAny(types: [.caret]) {
             let oper = previousToken
             let rightExpr = try parseUnary()
             expr = .binary(expr, oper, rightExpr)
@@ -204,7 +217,7 @@ extension Parser {
     }
 
     mutating private func parseUnary() throws -> Expression<UnresolvedLocation> {
-        // NOTA BENE: For the time being, the onky unary expression allowed is
+        // NOTA BENE: For the time being, the only unary expression allowed is
         // one that involves a single minus sign.
         if currentTokenMatchesAny(types: [.minus]) {
             let oper = previousToken
