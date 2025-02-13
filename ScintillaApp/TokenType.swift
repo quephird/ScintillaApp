@@ -22,7 +22,7 @@ enum TokenType: Equatable {
     case minus
     case star
     case slash
-    case modulus
+    case caret
 
     // Literals
     case identifier

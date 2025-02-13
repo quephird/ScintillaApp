@@ -188,6 +188,8 @@ class Evaluator {
             return leftNumber * rightNumber
         case .slash:
             return leftNumber / rightNumber
+        case .caret:
+            return pow(leftNumber, rightNumber)
         default:
             throw RuntimeError.unsupportedBinaryOperator(oper.location, oper.lexeme)
         }
