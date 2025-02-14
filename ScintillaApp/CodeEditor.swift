@@ -41,10 +41,12 @@ extension CodeEditor {
 
     private func highlightKeywords(textStorage: NSTextStorage) {
         // TODO: Need to build these regexes dynamically somehow from ScintillaBuiltin!
+        let worldKeyword = /World/
         let cameraKeyword = /Camera/
         let lightKeywords = /AreaLight|PointLight/
         let shapeKeywords = /ParametricSurface|Plane|Cone|Cube|Cylinder|Group|ImplicitSurface|Prism|Sphere|Superellipsoid|SurfaceOfRevolution|Torus/
         let regexColorMappings: [(Regex<Substring>, NSColor)] = [
+            (worldKeyword, NSColor(named: "WorldKeyword")!),
             (cameraKeyword, NSColor(named: "CameraKeyword")!),
             (lightKeywords, NSColor(named: "LightKeyword")!),
             (shapeKeywords, NSColor(named: "ShapeKeyword")!),
@@ -83,7 +85,7 @@ extension CodeEditor {
     }
 
     private func highlightPunctuation(textStorage: NSTextStorage) {
-        let punctuationRegex = /\.|:|\(|\)|\{|\}|,/
+        let punctuationRegex = /\.|:|\(|\)|\{|\}|\[|\]|,/
         self.highlight(textStorage: textStorage,
                        regex: punctuationRegex,
                        color: NSColor(named: "Punctuation")!)
