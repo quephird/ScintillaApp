@@ -40,12 +40,16 @@ extension CodeEditor {
     }
 
     private func highlightKeywords(textStorage: NSTextStorage) {
+        let languageKeywords = /\b(?:let|func|true|false|in)\b/
+        let operators = /\+|\-|\*|\/|\^|=/
         // TODO: Need to build these regexes dynamically somehow from ScintillaBuiltin!
-        let worldKeyword = /World/
-        let cameraKeyword = /Camera/
-        let lightKeywords = /AreaLight|PointLight/
-        let shapeKeywords = /ParametricSurface|Plane|Cone|Cube|Cylinder|Group|ImplicitSurface|Prism|Sphere|Superellipsoid|SurfaceOfRevolution|Torus/
+        let worldKeyword = /\bWorld\b/
+        let cameraKeyword = /\bCamera\b/
+        let lightKeywords = /\b(?:AreaLight|PointLight)\b/
+        let shapeKeywords = /\b(?:ParametricSurface|Plane|Cone|Cube|Cylinder|Group|ImplicitSurface|Prism|Sphere|Superellipsoid|SurfaceOfRevolution|Torus)\b/
         let regexColorMappings: [(Regex<Substring>, NSColor)] = [
+            (languageKeywords, NSColor(named: "LanguageKeyword")!),
+            (operators, NSColor(named: "Operator")!),
             (worldKeyword, NSColor(named: "WorldKeyword")!),
             (cameraKeyword, NSColor(named: "CameraKeyword")!),
             (lightKeywords, NSColor(named: "LightKeyword")!),
