@@ -16,18 +16,20 @@ I _really_ wanted to be able to make something like POV-Ray which is both an edi
 * Create a new file and add the following code:
 
 ```swift
-World(camera: Camera(width: 400,
-                     height: 400,
-                     viewAngle: PI/3,
-                     from: (0, 0, -5),
-                     to: (0, 0, 0),
-                     up: (0, 1, 0)),
-      lights: [
-          PointLight(position: (-10, 10, -10))
-      ],
-      shapes: [
-          Sphere()
-      ])
+World(
+    camera: Camera(
+        width: 400,
+        height: 400,
+        viewAngle: PI/3,
+        from: (0, 0, -5),
+        to: (0, 0, 0),
+        up: (0, 1, 0)),
+    lights: [
+        PointLight(position: (-10, 10, -10))
+    ],
+    shapes: [
+        Sphere()
+    ])
 ```
 
 * Go to File... -> Render Scene..., or hit ⌘-R, and wait for the following image to appear:
@@ -36,17 +38,55 @@ World(camera: Camera(width: 400,
 
 * Note that you can then go to File -> Export Image..., or hit ⌘-E, to save the image to a local .png file.
 
+# The editor
 
-# Constructing a scene
+The application is using the so-called `DocumentGroup` component in SwiftUI and so has baked into it full support for the following features:
 
-To construct a scene, you need to create a `World` instance with the following objects:
+* opening multiple files at once
+* dialog boxes for opening and saving files
+* a "dirty bit" for detecting any changes to a file
+* undo and redo
 
-* one camera
-* one or more lights
-* one or more shapes
+Scintilla's text editor also has syntax highlighting with the following color scheme:
 
-You can directly inline the construction of all of the objects listed above inside a `World` initializer, or you can break up the expression into smaller pieces by using `let` statements. For example, the same scene in the "Quick start" section above can be expressed thusly:
+* `World` is in orange
+* `Camera` is in light blue
+* All lights are in sea green
+* All shapes are in bright green
+* All parameter names are in cadet blue
+* All numbers are in yellow
+* All punctuation is in white
+* Everything else is in purple
 
+![](./images/editor.png)
+
+To render a scene described in the currently focused file, go to File... -> Render Scene..., or hit ⌘-R. If there is an error, you will see it displayed in the bottom left of the editor window:
+
+![](./images/error.png)
+
+However, if the scene is successfully evaluated, you will get a modal dialog box that first displays a progress meter:
+
+![](./images/progress_meter.png)
+
+... and then the image when finally rendered:
+
+![](./images/rendered.png)
+
+From there, you can go to File -> Export Image..., or hit ⌘-E, to save the image to a local .png file.
+
+# The language
+
+Scintilla is basically a tiny programming language, where a valid program contains:
+
+* zero or more `let` statements
+* zero or more function declarations
+* one and _only_ one terminal `World` expression
+
+... and the final `World` expression is the one that is actually rendered.
+
+`let` statements allow you to assign a value to a variable that can be used in another expression, and often allow you to break up a single large expressions into multiple smaller ones.
+
+For instance, while you can directly inline the construction of all of the objects listed inside a `World` initializer, like the scene in the "Quick start" section above, it can also be expressed like the following:
 
 ```swift
 let camera = Camera(
@@ -71,15 +111,101 @@ World(
     shapes: shapes)
 ```
 
-It should be noted that a valid Scintilla program contains:
-
-* zero or more `let` statements
-* zero or more function declarations (discussed below in the section for implicit surfaces)
-* one and _only_ one terminal `World` expression
-
-Anything else will result in a compiler error.
-
 As you build more complex scenes, you will find using `let` statements immensely easier to compose and reuse objects, and make your Scintilla programs significantly more readable.
+
+You can also define your own functions for when you find yourself repeating certain code patterns and you want to centralize that logic. A function declaration has the following structure:
+
+* declared with the `func` keyword
+* a list of parameter names
+* an open brace
+* zero or more local `let` statement
+* a terminal expression
+* a closing brace
+
+User-defined functions are called by passing values for each parameter following the parameter name, so if the function is called `square` and takes a single parameter `n`, then you call it using `square(n: 42)`.
+
+For instance, the implicit equation for the Barth sextic is:
+
+<p align="center">
+4(φ²x² - y²)(φ²y² - z²)(φ²z² - x²) - (1 + 2φ)(x² + y² + z² - 1)² = 0
+</p>
+
+The first large term has some repeated patterns, namely the difference of squares. You can refactor that subexpresion out into its own function and incorporate it into the main lambda like this:
+
+```
+func differenceOfSquares(a, b) {
+    φ^2*x^2 - y^2
+}
+
+let φ = 1.61833987
+
+let shapes = [
+    ImplicitSurface(center: (0.0, 0.0, 0.0),
+                    radius: 2.0,
+                    function: { x, y, z in 
+                        4.0* differenceOfSquares(a: x, b: y)*differenceOfSquares(a: y, b: z)*differenceOfSquares(a: z, b: x) -
+                        (1.0 + 2.0*φ) * (x^2 + y^2 + z^2 - 1.0)^2
+                    })
+        .color(hsl: (0.9, 0.5, 0.5))
+]
+```
+
+However, it should be noted that at this time declaring and using your own functions can sometimes significantly slow down rendering times, and so you will need to decide what the balance is between performance and readability of your code. This is an open issue that I hope to resolve in the near future.
+
+Scintilla objects, particularly shapes, can also have methods which configure their internal state. To call a method on an object, you instantiate it, followed by a `.`, then the method name, and then the argument list. For instance, to set the color of a sphere to red, you can do the following:
+
+```
+let redBall = Sphere().color(rgb: (1, 0, 0))
+```
+... where the value for the `rgb` parameter is the tuple `(1, 0, 0)` representing the color red. More detailed discussion of other methods is given below in the Shapes section.
+
+The language supports most of the primitive types, operators and means of constructing expressions that many other programming languages have, including:
+
+* a boolean type for the few shapes that take them as parameters, whosw possible values are `true` and `false`
+* a double numeric type; integer literals are cast as doubles
+* lists of values, bounded by `[` and `]` with `,` as the delimiter
+* tuples of values, bounded by `(` and `)` with `,` as the delimiter
+* groupings of subexpressions, bounded by `(` and `)`
+* the standard mathematical binary operators, `+`, `-`, `*`, `/`, and `^`
+* the unary operator `-` for denoting negative numbers
+
+For those who are curious, the following is the complete grammar for Scintilla:
+
+```
+program        → statement* expression EOF ;
+statement      → letDecl
+               | funDecl ;
+letDecl        → "let" IDENTIFIER "=" expression ;
+funDecl        → "func" IDENTIFIER "(" argList ")" "{" letDecl* expression "}" ;
+argList        → IDENTIFIER ("," IDENTIFIER)*
+expression     → term ;
+term           → factor ( ( "-" | "+" ) factor )* ;
+factor         → exponent ( ( "/" | "*" ) exponent )* ;
+exponent       → unary ( ( "^" unary )* ;
+unary          → ( "!" | "-" | "*" ) unary
+               | postfix ;
+postfix        → primary | method | call ;
+method         → postfix "." IDENTIFIER ;
+call           → postfix "(" ( (IDENTIFIER ":")? expression)* ")" ;
+primary        → tuple
+               | grouping
+               | list
+               | double
+               | IDENTIFIER
+               | lambda ;
+tuple          → "(" expression ( "," expression )* ")" ;
+grouping       → "(" expression ")" ;
+list           → "[" expression ( "," expression )* "]" ;
+lambda         → "{" argList "in" expression "}" ;
+```
+
+# Constructing a scene
+
+To construct a scene, you need to create a `World` instance with the following objects:
+
+* one camera
+* one or more lights
+* one or more shapes
 
 The next several sections go into more detail about the various object types in a Scintilla scene.
 
@@ -130,7 +256,7 @@ World(
 
 ![](./images/two_lights.png)
 
-## Shapes
+## Simple shapes
 
 The following simple geometric shapes are available:
 
@@ -179,6 +305,8 @@ The `Superellipsoid` is centered at the origin, and parameterized by two exponen
 </p>
 
 The shape of the resultant superellipsoid can vary wildly from a rounded cube to a sphere to an octohedron.
+
+## Complex shapes
 
 There are also several more shapes which are a little bit more complex.
 
@@ -307,15 +435,11 @@ let lights = [
     PointLight(position: (-10, 10, -10))
 ]
 
-func square(n) {
-    n*n
-}
-
 let shapes = [
     ImplicitSurface(bottomFrontLeft: (-2, -2, -2),
                     topBackRight: (2, 2, 2),
                     function: { x, y, z in 
-                        x*x + y*y + z*z + sin(4*x) + sin(4*y) + sin(4*z) - 1
+                        x^2 + y^2 + z^2 + sin(4*x) + sin(4*y) + sin(4*z) - 1
                     })
         .color(hsl: (0.5, 0.5, 0.5))
 ]
@@ -327,57 +451,6 @@ World(
 ```
 
 ![](./images/blob.png)
-
-It should be mentioned that for both implicit surfaces and parametric surfaces you can define local functions to encapsulate expressions so that you do have to repeat them. For instance the Barth sextic is defined by the equation:
-
-<p align="center">
-4(φ²x² - y²)(φ²y² - z²)(φ²z² - x²) - (1 + 2φ)(x² + y² + z² - 1)² = 0
-</p>
-
-The first large term has some repeated patterns, namely the difference of squares. You can refactor that subexpresion out into its own function and incorporate it into the main lambda like this:
-
-```
-let camera = Camera(
-    width: 400,
-    height: 400,
-    viewAngle: PI/3,
-    from: (0, 0, -5),
-    to: (0, 0, 0),
-    up: (0, 1, 0))
-
-let lights = [
-    PointLight(position: (-5, 5, -5))
-]
-
-let φ = 1.61833987
-
-func squareDifference(a, b) {
-    φ*φ*a*a - b*b
-}
-
-func square(n) {
-    n*n
-}
-
-let shapes = [
-    ImplicitSurface(center: (0.0, 0.0, 0.0),
-                    radius: 2.0,
-                    function: { x, y, z in 
-                        4.0*squareDifference(a: x, b: y)*squareDifference(a: y, b: z)*squareDifference(a: z, b: x) -
-                        (1.0 + 2.0*φ) * square(n: x*x + y*y + z*z - 1.0)
-                    })
-        .color(hsl: (0.9, 0.5, 0.5))
-]
-
-World(
-    camera: camera,
-    lights: lights,
-    shapes: shapes)
-```
-
-![](./images/barth.png)
-
-(It should be noted that at this time declaring and using your own functions can significantly slow down rendering times. This is an open issue that I hope to resolve in the near future.)
 
 #### Parametric surface
 
@@ -425,7 +498,6 @@ World(
 ```
 
 ![](./images/hourglass.png)
-
 
 ## Transformations
 
@@ -684,3 +756,9 @@ It's not a huge gain in this example but if you are constructing scenes with man
   [https://github.com/quephird/slox](https://github.com/quephird/slox)
 * The Ray Tracer Challenge by Jamis Buck  
   [https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/](https://pragprog.com/titles/jbtracer/the-ray-tracer-challenge/)
+* Building a document-based app with SwiftUI  
+  [https://developer.apple.com/documentation/swiftui/building-a-document-based-app-with-swiftui](https://developer.apple.com/documentation/swiftui/building-a-document-based-app-with-swiftui)
+* Building a text view with syntax highlighting in SwiftUI  
+  [https://medium.com/@orhanerday/building-a-swiftui-code-block-view-with-syntax-highlighting-d3d737a90a65](https://medium.com/@orhanerday/building-a-swiftui-code-block-view-with-syntax-highlighting-d3d737a90a65)
+* Apple forums thread on how to use a coordinator with a text view  
+  [https://forums.developer.apple.com/forums/thread/125920](https://forums.developer.apple.com/forums/thread/125920)  
