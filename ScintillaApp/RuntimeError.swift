@@ -92,7 +92,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
         case .couldNotEvaluateFunction(let nameToken):
             return "[\(nameToken.location)] Error: could not evaluate function, \(nameToken.lexeme)"
         case .couldNotConstructLambda(let exprToken):
-            return "[\(exprToken.location)] Error: could not evaluate function, \(exprToken.lexeme)"
+            return "[\(exprToken.location)] Error: could not construct lambda, \(exprToken.lexeme)"
         }
     }
 }
