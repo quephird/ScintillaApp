@@ -653,6 +653,15 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             }
 
             throw RuntimeError.couldNotEvaluateVariable(nameToken)
+        case .unary(let operToken, let expr):
+            let lambda = try makeRawLambda(evaluator: evaluator, expression: expr)
+
+            switch operToken.type {
+            case .minus:
+                return { x, y, z in -lambda(x, y, z) }
+            default:
+                throw RuntimeError.unsupportedUnaryOperator(operToken.location, operToken.lexeme)
+            }
         case .binary(let leftExpr, let operToken, let rightExpr):
             let leftLambda = try makeRawLambda(evaluator: evaluator, expression: leftExpr)
             let rightLambda = try makeRawLambda(evaluator: evaluator, expression: rightExpr)
