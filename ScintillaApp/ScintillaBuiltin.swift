@@ -129,6 +129,42 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
+    var isNativeMathematicalFunction: Bool {
+        switch self {
+        case .sinFunc, .cosFunc, .tanFunc,
+                .arcsinFunc, .arccosFunc, .arctanFunc,
+                .expFunc, .logFunc:
+            return true
+        default:
+            return false
+        }
+    }
+
+    public func call(_ argValue: Double) -> Double {
+        precondition(self.isNativeMathematicalFunction)
+
+        switch self {
+        case .sinFunc:
+            return sin(argValue)
+        case .cosFunc:
+            return cos(argValue)
+        case .tanFunc:
+            return tan(argValue)
+        case .arcsinFunc:
+            return asin(argValue)
+        case .arccosFunc:
+            return acos(argValue)
+        case .arctanFunc:
+            return atan(argValue)
+        case .expFunc:
+            return exp(argValue)
+        case .logFunc:
+            return log(argValue)
+        default:
+            fatalError("We should never get here as we already checked if function was a methematical one")
+        }
+    }
+
     public func call(evaluator: Evaluator,
                      argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
@@ -166,30 +202,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makePointLight(argumentValues: argumentValues)
         case .world:
             return try makeWorld(argumentValues: argumentValues)
-        case .sinFunc:
-            return try handleUnaryFunction(argumentValues: argumentValues,
-                                           nativeFunction: sin)
-        case .cosFunc:
-            return try handleUnaryFunction(argumentValues: argumentValues,
-                                           nativeFunction: cos)
-        case .tanFunc:
-            return try handleUnaryFunction(argumentValues: argumentValues,
-                                           nativeFunction: tan)
-        case .arcsinFunc:
-            return try handleUnaryFunction(argumentValues: argumentValues,
-                                           nativeFunction: asin)
-        case .arccosFunc:
-            return try handleUnaryFunction(argumentValues: argumentValues,
-                                           nativeFunction: acos)
-        case .arctanFunc:
-            return try handleUnaryFunction(argumentValues: argumentValues,
-                                           nativeFunction: atan)
-        case .expFunc:
-            return try handleUnaryFunction(argumentValues: argumentValues,
-                                           nativeFunction: exp)
-        case .logFunc:
-            return try handleUnaryFunction(argumentValues: argumentValues,
-                                           nativeFunction: log)
+        case .sinFunc, .cosFunc, .tanFunc, .arcsinFunc, .arccosFunc, .arctanFunc, .expFunc, .logFunc:
+            return try handleUnaryFunction(argumentValues: argumentValues)
         default:
             fatalError("Internal error: method calls should not get here")
         }
@@ -499,11 +513,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
-    private func handleUnaryFunction(argumentValues: [ScintillaValue],
-                                     nativeFunction: (Double) -> Double) throws -> ScintillaValue {
+    private func handleUnaryFunction(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let rawArgumentValue = try extractRawDouble(argumentValue: argumentValues[0])
 
-        return .double(nativeFunction(rawArgumentValue))
+        return .double(self.call(rawArgumentValue))
     }
 
     private func extractRawBoolean(argumentValue: ScintillaValue) throws -> Bool {
@@ -696,12 +709,12 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             let lookedUpFunction = try evaluator.environment.getValueAtLocation(location: copy)
 
             switch lookedUpFunction {
-            case .builtin(.sinFunc):
-                return { x, y, z in return sin(firstArgValue(x, y, z)) }
-            case .builtin(.cosFunc):
-                return { x, y, z in return cos(firstArgValue(x, y, z)) }
-            case .builtin(.tanFunc):
-                return { x, y, z in return tan(firstArgValue(x, y, z)) }
+            case .builtin(let builtin):
+                if builtin.isNativeMathematicalFunction {
+                    return { x, y, z in return builtin.call(firstArgValue(x, y, z)) }
+                }
+
+                throw RuntimeError.notAPureMathFunction(builtin.objectName)
             case .userDefinedFunction(let udf):
                 var secondArgValue: ImplicitSurfaceLambda = { _, _, _ in 0.0 }
                 var thirdArgValue: ImplicitSurfaceLambda = { _, _, _ in 0.0 }

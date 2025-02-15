@@ -36,6 +36,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
     case couldNotEvaluateVariable(Token)
     case couldNotEvaluateFunction(Token)
     case couldNotConstructLambda(Token)
+    case notAPureMathFunction(ObjectName)
 
     var description: String {
         switch self {
@@ -93,6 +94,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible {
             return "[\(nameToken.location)] Error: could not evaluate function, \(nameToken.lexeme)"
         case .couldNotConstructLambda(let exprToken):
             return "[\(exprToken.location)] Error: could not construct lambda, \(exprToken.lexeme)"
+        case .notAPureMathFunction(let objectName):
+            return "[\(objectName.location())] Error: not a pure mathematical function, \(objectName)"
         }
     }
 }
