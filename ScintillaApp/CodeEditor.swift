@@ -25,8 +25,8 @@ struct CodeEditor: View {
 }
 
 extension CodeEditor {
-    public func highlightCode(textStorage: NSTextStorage) {
-        let highlighters: [(NSTextStorage) -> Void] = [
+    public func highlightCode(layoutManager: NSLayoutManager) {
+        let highlighters: [(NSLayoutManager) -> Void] = [
             self.highlightKeywords,
             self.highlightParameterNames,
             self.highlightNumbers,
@@ -35,11 +35,11 @@ extension CodeEditor {
         ]
 
         for highlighter in highlighters {
-            highlighter(textStorage)
+            highlighter(layoutManager)
         }
     }
 
-    private func highlightKeywords(textStorage: NSTextStorage) {
+    private func highlightKeywords(layoutManager: NSLayoutManager) {
         let languageKeywords = /\b(?:let|func|true|false|in)\b/
         let operators = /\+|\-|\*|\/|\^|=/
         // TODO: Need to build these regexes dynamically somehow from ScintillaBuiltin!
@@ -57,25 +57,26 @@ extension CodeEditor {
         ]
 
         for (regex, color) in regexColorMappings {
-            self.highlight(textStorage: textStorage, regex: regex, color: color)
+            self.highlight(layoutManager: layoutManager, regex: regex, color: color)
         }
     }
 
-    private func highlightParameterNames(textStorage: NSTextStorage) {
+    private func highlightParameterNames(layoutManager: NSLayoutManager) {
         let parameterNameRegex = /\p{ID_Start}\p{ID_Continue}*(?=\s*:)/
-        self.highlight(textStorage: textStorage,
+        self.highlight(layoutManager: layoutManager,
                        regex: parameterNameRegex,
                        color: NSColor(named: "ParameterName")!)
     }
 
-    private func highlightNumbers(textStorage: NSTextStorage) {
+    private func highlightNumbers(layoutManager: NSLayoutManager) {
         let numberRegex = /-?(\d+.)?\d+/
-        self.highlight(textStorage: textStorage,
+        self.highlight(layoutManager: layoutManager,
                        regex: numberRegex,
                        color: NSColor(named: "Number")!)
     }
 
-    private func highlightMethodNames(textStorage: NSTextStorage) {
+    private func highlightMethodNames(layoutManager: NSLayoutManager) {
+        let textStorage = layoutManager.textStorage!
         let methodAttributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: NSColor(named: "MethodName")!,
         ]
@@ -84,25 +85,26 @@ extension CodeEditor {
         for match in methodMatches {
             let swiftRange = match.method.startIndex ..< match.method.endIndex
             let nsRange = NSRange(swiftRange, in: textStorage.string)
-            textStorage.addAttributes(methodAttributes, range: nsRange)
+            layoutManager.setTemporaryAttributes(methodAttributes, forCharacterRange: nsRange)
         }
     }
 
-    private func highlightPunctuation(textStorage: NSTextStorage) {
+    private func highlightPunctuation(layoutManager: NSLayoutManager) {
         let punctuationRegex = /\.|:|\(|\)|\{|\}|\[|\]|,/
-        self.highlight(textStorage: textStorage,
+        self.highlight(layoutManager: layoutManager,
                        regex: punctuationRegex,
                        color: NSColor(named: "Punctuation")!)
     }
 
-    private func highlight<T>(textStorage: NSTextStorage,
+    private func highlight<T>(layoutManager: NSLayoutManager,
                               regex: Regex<T>,
                               color: NSColor) {
+        let textStorage = layoutManager.textStorage!
         let punctuationAttributes: [NSAttributedString.Key: Any] = [.foregroundColor: color]
         let punctuationRanges = textStorage.string.ranges(of: regex)
         for range in punctuationRanges {
             let nsRange = NSRange(range, in: textStorage.string)
-            textStorage.addAttributes(punctuationAttributes, range: nsRange)
+            layoutManager.setTemporaryAttributes(punctuationAttributes, forCharacterRange: nsRange)
         }
     }
 }

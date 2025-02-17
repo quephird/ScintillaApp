@@ -10,7 +10,7 @@ import SwiftUI
 
 struct AttributedTextEditor: NSViewRepresentable {
     @Binding public var attributedString: NSAttributedString
-    private var highlighter: (NSTextStorage) -> Void
+    public var highlighter: (NSLayoutManager) -> Void
 
     private static var defaultFont: NSFont = NSFont(
         descriptor: .preferredFontDescriptor(
@@ -22,7 +22,7 @@ struct AttributedTextEditor: NSViewRepresentable {
     )!
 
     public init(text: Binding<NSAttributedString>,
-                highlighter: @escaping (NSTextStorage) -> Void) {
+                highlighter: @escaping (NSLayoutManager) -> Void) {
         self._attributedString = text
         self.highlighter = highlighter
     }
@@ -47,6 +47,18 @@ struct AttributedTextEditor: NSViewRepresentable {
 
     public func makeCoordinator() -> AttributedTextViewDelegate {
         return AttributedTextViewDelegate(attributedTextEditor: self)
+    }
+
+    private func updateText(attributedTextView: AttributedTextView) {
+        if self.attributedStringWithDefaults.string != attributedTextView.attributedString.string {
+            let currentCursorRange = attributedTextView.selectedRanges
+            defer {
+                attributedTextView.selectedRanges = currentCursorRange
+            }
+
+            attributedTextView.attributedString = self.attributedStringWithDefaults
+            self.highlighter(attributedTextView.layoutManager!)
+        }
     }
 
     public func makeNSView(context: Context) -> NSView {
