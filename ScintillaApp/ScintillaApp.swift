@@ -13,6 +13,10 @@ struct ScintillaApp: App {
     @FocusedBinding(\.document) var document: ScintillaDocument?
     @FocusedBinding(\.viewModel) var viewModel: ViewModel?
 
+    init() {
+        UserDefaults.standard.set(false, forKey: "NSAutomaticPeriodSubstitutionEnabled")
+    }
+
     var currentErrorMessage: String {
         if let viewModel {
             if let error = viewModel.currentEvaluatorError {

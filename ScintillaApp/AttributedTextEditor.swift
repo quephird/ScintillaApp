@@ -10,7 +10,7 @@ import SwiftUI
 
 struct AttributedTextEditor: NSViewRepresentable {
     @Binding public var attributedString: NSAttributedString
-    private var highlighter: (NSTextStorage) -> Void
+    public var highlighter: (NSLayoutManager) -> Void
 
     private static var defaultFont: NSFont = NSFont(
         descriptor: .preferredFontDescriptor(
@@ -22,7 +22,7 @@ struct AttributedTextEditor: NSViewRepresentable {
     )!
 
     public init(text: Binding<NSAttributedString>,
-                highlighter: @escaping (NSTextStorage) -> Void) {
+                highlighter: @escaping (NSLayoutManager) -> Void) {
         self._attributedString = text
         self.highlighter = highlighter
     }
@@ -49,12 +49,28 @@ struct AttributedTextEditor: NSViewRepresentable {
         return AttributedTextViewDelegate(attributedTextEditor: self)
     }
 
+    private func updateText(attributedTextView: AttributedTextView) {
+        if self.attributedStringWithDefaults.string != attributedTextView.attributedString.string {
+            let currentCursorRange = attributedTextView.selectedRanges
+            defer {
+                attributedTextView.selectedRanges = currentCursorRange
+            }
+
+            attributedTextView.attributedString = self.attributedStringWithDefaults
+            self.highlighter(attributedTextView.layoutManager!)
+        }
+    }
+
     public func makeNSView(context: Context) -> NSView {
         let scrollView = AttributedTextView.scrollableTextView()
-        let textView = scrollView.documentView as! AttributedTextView
-        textView.delegate = context.coordinator
-        textView.backgroundColor = NSColor(named: "EditorBackground")!
-        textView.drawsBackground = true
+        let attributedTextView = scrollView.documentView as! AttributedTextView
+        self.updateText(attributedTextView: attributedTextView)
+
+        attributedTextView.isAutomaticTextReplacementEnabled = false
+        attributedTextView.delegate = context.coordinator
+        attributedTextView.backgroundColor = NSColor(named: "EditorBackground")!
+        attributedTextView.typingAttributes = defaultAttributes
+        attributedTextView.drawsBackground = true
 
         scrollView.backgroundColor = NSColor(named: "EditorBackground")!
         scrollView.drawsBackground = true
@@ -63,10 +79,7 @@ struct AttributedTextEditor: NSViewRepresentable {
     }
 
     public func updateNSView(_ view: NSView, context: Context) {
-        let view = (view as! NSScrollView).documentView as! AttributedTextView
-        let currentCursorRange = view.selectedRanges
-        view.attributedString = attributedStringWithDefaults
-        self.highlighter(view.textStorage!)
-        view.selectedRanges = currentCursorRange
+        let attributedTextView = (view as! NSScrollView).documentView as! AttributedTextView
+        self.updateText(attributedTextView: attributedTextView)
     }
 }
