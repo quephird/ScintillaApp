@@ -112,7 +112,6 @@ struct Tokenizer {
             ",": .comma,
             ".": .dot,
             ":": .colon,
-            ";": .semicolon,
             "=": .equal,
             "+": .plus,
             "-": .minus,
