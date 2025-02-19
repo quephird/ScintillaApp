@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum ParseError: CustomStringConvertible, LocalizedError {
+enum ParseError: CustomStringConvertible, Equatable, LocalizedError {
     case missingVariableName(Token)
     case missingFunctionName(Token)
     case missingEquals(Token)
