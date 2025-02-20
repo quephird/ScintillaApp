@@ -459,6 +459,6 @@ World(
                 ])
         )
 
-        #expect(actual.statements[2] == expected.statements[2])
+        #expect(actual.statements == expected.statements)
     }
 }
