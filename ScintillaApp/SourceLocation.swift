@@ -5,7 +5,7 @@
 //  Created by Danielle Kefford on 1/22/25.
 //
 
-public struct SourceLocation: CustomStringConvertible {
+public struct SourceLocation: CustomStringConvertible, Equatable {
     public let line: Int
     public let column: Int
 
