@@ -6,7 +6,7 @@
 //
 
 extension Character {
-    var isLoxDigit: Bool {
+    var isScintillaDigit: Bool {
         return self.isASCII && self.isNumber
     }
 }

@@ -176,7 +176,7 @@ extension Parser {
         return .functionDeclaration(funcName, argumentNames, letDecls, returnExpr)
     }
 
-    mutating private func parseExpression() throws -> Expression<UnresolvedLocation> {
+    mutating func parseExpression() throws -> Expression<UnresolvedLocation> {
         return try parseTerm()
     }
 

@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum RuntimeError: LocalizedError, CustomStringConvertible {
+enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
     case undefinedVariable(SourceLocation, Substring)
     case undefinedFunction(SourceLocation, Substring)
     case undefinedMethod(SourceLocation, Substring)

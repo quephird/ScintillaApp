@@ -140,7 +140,7 @@ extension Resolver {
         return Program(statements: resolvedStatements, finalExpression: resolvedFinalExpression)
     }
 
-    private mutating func resolve(statement: Statement<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
+    mutating public func resolve(statement: Statement<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
         switch statement {
         case .letDeclaration(let nameToken, let initializeExpr):
             return try handleLetDeclaration(nameToken: nameToken, initializeExpr: initializeExpr)
@@ -196,7 +196,7 @@ extension Resolver {
     }
 
     // Resolver for expressions
-    mutating private func resolve(expression: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
+    mutating public func resolve(expression: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
         switch expression {
         case .variable(let nameToken, _):
             return try handleVariable(nameToken: nameToken)

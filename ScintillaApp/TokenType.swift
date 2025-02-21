@@ -16,7 +16,6 @@ enum TokenType: Equatable {
     case comma
     case dot
     case colon
-    case semicolon
     case equal
     case plus
     case minus

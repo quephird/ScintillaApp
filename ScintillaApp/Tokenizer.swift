@@ -112,7 +112,6 @@ struct Tokenizer {
             ",": .comma,
             ".": .dot,
             ":": .colon,
-            ";": .semicolon,
             "=": .equal,
             "+": .plus,
             "-": .minus,
@@ -134,7 +133,7 @@ struct Tokenizer {
             return
         }
 
-        if tryScan(where: \.isLoxDigit) {
+        if tryScan(where: \.isScintillaDigit) {
             return try handleNumber()
         }
 
@@ -166,13 +165,13 @@ struct Tokenizer {
     }
 
     mutating private func handleNumber() throws {
-        try repeatedly { tryScan(where: \.isLoxDigit) }
+        try repeatedly { tryScan(where: \.isScintillaDigit) }
 
         var tokenType: TokenType = .double
         if tryScan(".") {
             tokenType = .double
 
-            try repeatedly { tryScan(where: \.isLoxDigit) }
+            try repeatedly { tryScan(where: \.isScintillaDigit) }
         }
 
         addToken(type: tokenType)

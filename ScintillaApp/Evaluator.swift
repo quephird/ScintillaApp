@@ -21,7 +21,7 @@ class Evaluator {
             globalEnvironment.define(name: name, value: .builtin(builtin))
         }
 
-        globalEnvironment.define(name: .variableName("PI"), value: .double(3.1415926))
+        globalEnvironment.define(name: .variableName("PI"), value: .double(PI))
 
         self.environment = globalEnvironment
     }
@@ -54,18 +54,23 @@ class Evaluator {
     }
 
     func interpret(source: String) throws -> World {
+        let finalExpr = try interpretRaw(source: source)
+
+        guard case .world(let world) = finalExpr else {
+            throw RuntimeError.lastExpressionNeedsToBeWorld
+        }
+
+        return world
+    }
+
+    func interpretRaw(source: String) throws -> ScintillaValue {
         let program = try prepareCode(source: source)
 
         for statement in program.statements {
             try execute(statement: statement)
         }
 
-        let finalExpr = try evaluate(expr: program.finalExpression)
-        guard case .world(let world) = finalExpr else {
-            throw RuntimeError.lastExpressionNeedsToBeWorld
-        }
-
-        return world
+        return try evaluate(expr: program.finalExpression)
     }
 
     func execute(statement: Statement<ResolvedLocation>) throws {
