@@ -25,7 +25,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case surfaceOfRevolution
     case torus
     case world
-    case camera
+    case camera1
+    case camera2
     case pointLight
     case colorRgb
     case colorHsl
@@ -84,8 +85,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Torus", ["majorRadius", "minorRadius"])
         case .world:
             return .functionName("World", ["camera", "lights", "shapes"])
-        case .camera:
+        case .camera1:
             return .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up"])
+        case .camera2:
+            return .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up", "antialiasing"])
         case .pointLight:
             return .functionName("PointLight", ["position"])
         case .colorRgb:
@@ -196,7 +199,9 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeSurfaceOfRevolution(argumentValues: argumentValues)
         case .torus:
             return try makeTorus(argumentValues: argumentValues)
-        case .camera:
+        case .camera1:
+            return try makeCamera(argumentValues: argumentValues)
+        case .camera2:
             return try makeCamera(argumentValues: argumentValues)
         case .pointLight:
             return try makePointLight(argumentValues: argumentValues)
@@ -390,13 +395,18 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let (fromX, fromY, fromZ) = try extractRawTuple3(argumentValue: argumentValues[3])
         let (toX, toY, toZ) = try extractRawTuple3(argumentValue: argumentValues[4])
         let (upX, upY, upZ) = try extractRawTuple3(argumentValue: argumentValues[5])
+        var antialiasing = false
+        if argumentValues.count > 6 {
+            antialiasing = try extractRawBoolean(argumentValue: argumentValues[6])
+        }
 
         return .camera(Camera(width: Int(width),
                               height: Int(height),
                               viewAngle: viewAngle,
                               from: Point(fromX, fromY, fromZ),
                               to: Point(toX, toY, toZ),
-                              up: Vector(upX, upY, upZ)))
+                              up: Vector(upX, upY, upZ),
+                              antialiasing: antialiasing))
     }
 
     private func makePointLight(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
