@@ -32,6 +32,8 @@ extension CodeEditor {
             self.highlightNumbers,
             self.highlightMethodNames,
             self.highlightPunctuation,
+            self.highlightEndOfLineComments,
+            self.highlightMultiLineComments,
         ]
 
         for highlighter in highlighters {
@@ -94,6 +96,20 @@ extension CodeEditor {
         self.highlight(layoutManager: layoutManager,
                        regex: punctuationRegex,
                        color: NSColor(named: "Punctuation")!)
+    }
+
+    private func highlightEndOfLineComments(layoutManager: NSLayoutManager) {
+        let commentRegex = /\/\/.*/
+        self.highlight(layoutManager: layoutManager,
+                       regex: commentRegex,
+                       color: NSColor(named: "Comment")!)
+    }
+
+    private func highlightMultiLineComments(layoutManager: NSLayoutManager) {
+        let commentRegex = /\/\*(?:.|\n)*?\*\//
+        self.highlight(layoutManager: layoutManager,
+                       regex: commentRegex,
+                       color: NSColor(named: "Comment")!)
     }
 
     private func highlight<T>(layoutManager: NSLayoutManager,
