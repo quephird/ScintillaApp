@@ -213,16 +213,127 @@ The next several sections go into more detail about the various object types in 
 
 The construction of a camera requires six pieces of information:
 
-* `width`: the width of the rendered image in pixels
-* `height`: the height of the rendered image in pixels
-* `viewAngle`: the horizontal viewing angle of the camera in radians
-* `from`: a tuple of `Double`s representing the point in the xyz coordinate system where the camera is located
-* `to`: a tuple of `Double`s representing the point in the xyz coordinate system that the camera is looking at
-* `up`: a tuple of `Double`s representing the _vector_ in the xyz coordinate system designating which way is "up"
+| Parameter name | Description |
+| --- | --- |
+| `width` | the width of the rendered image in pixels |
+| `height` | the height of the rendered image in pixels |
+| `viewAngle` | the horizontal viewing angle of the camera in radians |
+| `from` | a tuple of `Double`s representing the point in the xyz coordinate system where the camera is located |
+| `to` | a tuple of `Double`s representing the point in the xyz coordinate system that the camera is looking at |
+| `up` | a tuple of `Double`s representing the _vector_ in the xyz coordinate system designating which way is "up" |
+
+You can also render a scene with antialiasing by passing in a `true` value to the optional `antialiasing` parameter. In the image below, you can see that the various edges of the object and its shadow are pretty jagged:
+
+![](./images/antialiasing_off.png)
+
+But by setting antialiasing to `true`, we can improve its quality:
+
+```
+let camera = Camera(
+    width: 400,
+    height: 400,
+    viewAngle: PI/3,
+    from: (0, 2, -5),
+    to: (0, 1, 0),
+    up: (0, 1, 0),
+    antialiasing: true)
+
+let lights = [
+    PointLight(position: (-5, 5, -5))
+]
+
+let shapes = [
+    Sphere()
+        .translate(x: 0, y: 1, z: 0)
+        .color(rgb: (1, 0, 0)),
+    Plane()
+]
+
+World(
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
+
+```
+
+![](./images/antialiasing_on.png)
+
+**NOTA BENE** Rendering times are significantly slower with antialiasing turned on.
 
 ## Lights
 
-Scintilla currently supports one kind of `Light`, namely the `PointLight`. (`AreaLight` is coming soon!) `PointLight` only requires a position to be constructed, namely a tuple of `Double`s representing the point in the xyz coordinate system where the light source is located and defaults to a white color if no other one is specified. Light rays emanate from a single point, the `PointLight`'s position, and are cast on the world.
+Scintilla currently supports two kinds of `Light`s, namely `PointLight` and `AreaLight`. `PointLight` only requires a position, namely a tuple of `Double`s representing the point in the xyz coordinate system where the light source is located, in order to be constructed. Light rays emanate from that single point, and are cast onto the world.
+
+The examples above all use `PointLight`, which you can see results in shadows with sharp edges, like the image above. For more realistic shadows, you can use an `AreaLight`. `AreaLight`s require more information in order to be constructed:
+
+| Parameter name | Description |
+| --- | --- |
+| `corner` | a tuple which represents the x, y, and z coordinates of the corner of the light source |
+| `uVector` | a tuple representing a vector whose direction and size comprise one dimension of the light source |
+| `uSteps` | the number of subdivisions along the vector defined by `uVector` | 
+| `vVector` | a tuple representing a vector whose direction and size comprise the second dimension of the light source |
+| `vSteps` | the number of subdivisions along the vector defined by `vVector` | 
+
+The following diagram might make it clearer to understand what the parameters represent:
+
+```
+                            --------- vvector -------->
+
+                    ^      ┌------┬------┬------┬------┐
+                    |      |      | *    |      |  *   |
+                    |      | *    |      |   *  |      |
+                    |      |------┼------┼------┼------|
+                    |      |      |      |  *   |     *|
+                 uVector   |    * |  *   |      |      |
+                    |      |------┼------┼------┼------|
+                    |      |      |   *  |   *  |      |
+                    |      |  *   |      |      |*     |
+                    |      └------┴------┴------┴------┘
+
+                        corner
+
+```
+
+Instead of a single point source of light, an `AreaLight` can be thought of as a quadrilateral one being composed of multiple cells, `uSteps`*`vSteps` in number, each of which contains a distinct source of light whose position is "jittered" from the center of its cell. The diagram above depcits these light sources as asterisks.
+
+For each pixel to be rendered in the scene, a ray is cast from each of the cells' light sources. The colors associated with each light ray are then averaged and assigned to each pixel in the scene, the primary result of which is softer shadows of objects. 
+
+As an example, here is a scene rendered with an area light with 5 subdivisions along each of the two dimensions:
+
+```swift
+let camera = Camera(
+    width: 400,
+    height: 400,
+    viewAngle: PI/3,
+    from: (0, 2, -5),
+    to: (0, 1, 0),
+    up: (0, 1, 0))
+
+let lights = [
+    AreaLight(
+        corner: (-5, 5, -5),
+        uVector: (2, 0, 0),
+        uSteps: 5,
+        vVector: (0, 2, 0),
+        vSteps: 5)
+]
+
+let shapes = [
+    Sphere()
+        .translate(x: 0, y: 1, z: 0)
+        .color(rgb: (1, 0, 0)),
+    Plane()
+]
+
+World(
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
+```
+
+![](./images/area_light.png)
+
+**NOTA BENE**: Using an `AreaLight` results in longer rendering times that are proportional to the values of the `uSteps` and `vSteps` parameters.
 
 You can also have multiple lights, which you can use to create scenes with multiple shadows and/or give shapes more highlights. Below is a slightly different version of the scene above but with _two_ lights, a plane, and the camera moved up a little:
 
@@ -241,7 +352,8 @@ let lights = [
 ]
 
 let shapes = [
-    Sphere(),
+    Sphere()
+        .color(rgb: (1, 0, 0)),
     Plane()
         .translate(x: 0.0, y: -1.0, z: 0.0)
 ]
