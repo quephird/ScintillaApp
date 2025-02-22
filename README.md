@@ -133,11 +133,11 @@ For instance, the implicit equation for the Barth sextic is:
 The first large term has some repeated patterns, namely the difference of squares. You can refactor that subexpresion out into its own function and incorporate it into the main lambda like this:
 
 ```
+let φ = 1.61833987
+
 func differenceOfSquares(a, b) {
     φ^2*x^2 - y^2
 }
-
-let φ = 1.61833987
 
 let shapes = [
     ImplicitSurface(center: (0.0, 0.0, 0.0),
@@ -197,6 +197,20 @@ tuple          → "(" expression ( "," expression )* ")" ;
 grouping       → "(" expression ")" ;
 list           → "[" expression ( "," expression )* "]" ;
 lambda         → "{" argList "in" expression "}" ;
+```
+
+You can also add comments to your code. They can either be at the end of a line by using two slashes like this:
+
+```
+let answer = 42 // This is an important variable.
+```
+... or you can have comments span multiple lines by using `/*` and `*/` like this:
+
+```
+/*
+ * This is the golden ratio.
+ */
+let φ = 1.61833987
 ```
 
 # Constructing a scene
