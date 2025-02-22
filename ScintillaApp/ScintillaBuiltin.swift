@@ -28,6 +28,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case camera1
     case camera2
     case pointLight
+    case areaLight
     case colorRgb
     case colorHsl
     case translate
@@ -91,6 +92,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up", "antialiasing"])
         case .pointLight:
             return .functionName("PointLight", ["position"])
+        case .areaLight:
+            return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps"])
         case .colorRgb:
             return .methodName(.shape, "color", ["rgb"])
         case .colorHsl:
@@ -205,6 +208,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeCamera(argumentValues: argumentValues)
         case .pointLight:
             return try makePointLight(argumentValues: argumentValues)
+        case .areaLight:
+            return try makeAreaLight(argumentValues: argumentValues)
         case .world:
             return try makeWorld(argumentValues: argumentValues)
         case .sinFunc, .cosFunc, .tanFunc, .arcsinFunc, .arccosFunc, .arctanFunc, .expFunc, .logFunc:
@@ -414,6 +419,24 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
         let point = Point(x, y, z)
         return .light(PointLight(position: point))
+    }
+
+    private func makeAreaLight(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let (cornerX, cornerY, cornerZ) = try extractRawTuple3(argumentValue: argumentValues[0])
+        let corner = Point(cornerX, cornerY, cornerZ)
+        let (uVectorX, uVectorY, uVectorZ) = try extractRawTuple3(argumentValue: argumentValues[1])
+        let uVector = Vector(uVectorX, uVectorY, uVectorZ)
+        let uSteps = Int(try extractRawDouble(argumentValue: argumentValues[2]))
+        let (vVectorX, vVectorY, vVectorZ) = try extractRawTuple3(argumentValue: argumentValues[3])
+        let vVector = Vector(vVectorX, vVectorY, vVectorZ)
+        let vSteps = Int(try extractRawDouble(argumentValue: argumentValues[4]))
+
+        return .light(AreaLight(
+            corner: corner,
+            uVec: uVector,
+            uSteps: uSteps,
+            vVec: vVector,
+            vSteps: vSteps))
     }
 
     private func makeColorRgb(object: ScintillaValue,
