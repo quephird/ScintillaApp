@@ -10,6 +10,8 @@ import Darwin
 import ScintillaLib
 
 enum ScintillaBuiltin: CaseIterable, Equatable {
+    case color1
+    case color2
     case cone
     case cube
     case cylinder
@@ -51,6 +53,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     var objectName: ObjectName {
         switch self {
+        case .color1:
+            return .functionName("Color", ["r", "g", "b"])
+        case .color2:
+            return .functionName("Color", ["h", "s", "l"])
         case .cone:
             return .functionName("Cone", ["bottomY", "topY", "isCapped"])
         case .cube:
@@ -174,6 +180,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     public func call(evaluator: Evaluator,
                      argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
+        case .color1:
+            return try makeColor1(argumentValues: argumentValues)
+        case .color2:
+            return try makeColor2(argumentValues: argumentValues)
         case .cone:
             return try makeCone(argumentValues: argumentValues)
         case .cube:
@@ -252,6 +262,24 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         default:
             fatalError("Internal error: only method calls should ever get here")
         }
+    }
+
+    private func makeColor1(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let r = try extractRawDouble(argumentValue: argumentValues[0])
+        let g = try extractRawDouble(argumentValue: argumentValues[1])
+        let b = try extractRawDouble(argumentValue: argumentValues[2])
+
+        let color = Color(r, g, b)
+        return .color(color)
+    }
+
+    private func makeColor2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let h = try extractRawDouble(argumentValue: argumentValues[0])
+        let s = try extractRawDouble(argumentValue: argumentValues[1])
+        let l = try extractRawDouble(argumentValue: argumentValues[2])
+
+        let color = Color.fromHsl(h, s, l)
+        return .color(color)
     }
 
     private func makeCone(argumentValues: [ScintillaValue]) throws -> ScintillaValue {

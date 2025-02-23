@@ -15,6 +15,7 @@ enum ScintillaType {
     case boundMethod
     case lambda
     case userDefinedFunction
+    case color
     case shape
     case camera
     case light

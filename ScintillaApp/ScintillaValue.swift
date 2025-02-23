@@ -22,6 +22,7 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
     indirect case lambda(UserDefinedFunction)
     indirect case userDefinedFunction(UserDefinedFunction)
+    case color(Color)
     indirect case shape(any Shape)
     indirect case camera(Camera)
     indirect case light(Light)
@@ -47,6 +48,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return .lambda
         case .userDefinedFunction:
             return .userDefinedFunction
+        case .color:
+            return .color
         case .shape(_):
             return .shape
         case .camera(_):
@@ -78,6 +81,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return l.objectId == r.objectId
         case (.userDefinedFunction(let l), .userDefinedFunction(let r)):
             return l.objectId == r.objectId
+        case (.color(let l), .color(let r)):
+            return l == r
         case (.shape(let l), .shape(let r)):
             return l == r
         case (.camera(let l), .camera(let r)):
@@ -118,6 +123,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "<implicit surface lambda: \(userDefinedFunction.objectId)>"
         case .userDefinedFunction(let userDefinedFunction):
             return "<function: \(userDefinedFunction.name)>"
+        case .color(let color):
+            return "\(color)"
         case .shape(let shape):
             return "\(shape)"
         case .camera(let camera):
