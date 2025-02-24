@@ -32,6 +32,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case pointLight
     case areaLight
     case uniform
+    case checkered3D
     case materialMethodCall
     case colorRgb
     case colorHsl
@@ -104,8 +105,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps"])
         case .uniform:
             return .functionName("Uniform", ["color"])
+        case .checkered3D:
+            return .functionName("Checkered3D", ["firstColor", "secondColor"])
         case .materialMethodCall:
-            return .methodName(.shape, "material", ["uniform"])
+            return .methodName(.shape, "material", [""])
         case .colorRgb:
             return .methodName(.shape, "color", ["rgb"])
         case .colorHsl:
@@ -228,6 +231,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeAreaLight(argumentValues: argumentValues)
         case .uniform:
             return try makeUniform(argumentValues: argumentValues)
+        case .checkered3D:
+            return try makeCheckered3D(argumentValues: argumentValues)
         case .world:
             return try makeWorld(argumentValues: argumentValues)
         case .sinFunc, .cosFunc, .tanFunc, .arcsinFunc, .arccosFunc, .arctanFunc, .expFunc, .logFunc:
@@ -481,6 +486,13 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let color = try extractRawColor(argumentValue: argumentValues[0])
         let uniform: Material = .uniform(color)
         return .material(uniform)
+    }
+
+    private func makeCheckered3D(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let firstColor = try extractRawColor(argumentValue: argumentValues[0])
+        let secondColor = try extractRawColor(argumentValue: argumentValues[1])
+        let checkered3D = Checkered3D(firstColor, secondColor, .identity)
+        return .material(checkered3D)
     }
 
     private func makeMaterialMethodCall(object: ScintillaValue,

@@ -322,11 +322,12 @@ class Evaluator {
                               argumentNameTokens: [Token?]) throws -> ScintillaValue {
         let callee = try evaluate(expr: calleeExpr)
         let methodName = methodToken.lexeme
-        let argumentNames = try argumentNameTokens.map { maybeNameToken in
-            guard let nameToken = maybeNameToken else {
-                throw RuntimeError.missingArgumentName(methodToken)
+        let argumentNames = argumentNameTokens.map { nameToken in
+            if let nameToken {
+                return nameToken.lexeme
             }
-            return nameToken.lexeme
+
+            return ""
         }
         let methodObjectName: ObjectName = .methodName(callee.type, methodName, argumentNames)
 
