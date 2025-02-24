@@ -27,6 +27,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
     case expectedLambda
     case expectedCamera
     case expectedLight
+    case expectedColor
+    case expectedMaterial
     case expectedShape
     case expectedUserDefinedFunction
     case implicitSurfaceLambdaWrongArity
@@ -74,6 +76,10 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
             return "[] Error: expected a camera for the argument"
         case .expectedLight:
             return "[] Error: expected the argument to be a list of Lights"
+        case .expectedColor:
+            return "[] Error: expected the argument to be a color"
+        case .expectedMaterial:
+            return "[] Error: expected the argument to be a material"
         case .expectedShape:
             return "[] Error: expected the argument to be a list of Shapes"
         case .incorrectObject:
