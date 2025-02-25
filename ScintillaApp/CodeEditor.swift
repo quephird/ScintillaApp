@@ -28,6 +28,8 @@ extension CodeEditor {
     public func highlightCode(layoutManager: NSLayoutManager) {
         let highlighters: [(NSLayoutManager) -> Void] = [
             self.highlightKeywords,
+            self.highlightConstructors,
+            self.highlightBuiltinFunctions,
             self.highlightParameterNames,
             self.highlightNumbers,
             self.highlightMethodNames,
@@ -41,21 +43,45 @@ extension CodeEditor {
         }
     }
 
-    private func highlightKeywords(layoutManager: NSLayoutManager) {
-        let languageKeywords = /\b(?:let|func|true|false|in)\b/
-        let operators = /\+|\-|\*|\/|\^|=/
+    private func highlightConstructors(layoutManager: NSLayoutManager) {
         // TODO: Need to build these regexes dynamically somehow from ScintillaBuiltin!
         let worldKeyword = /\bWorld\b/
         let cameraKeyword = /\bCamera\b/
         let lightKeywords = /\b(?:AreaLight|PointLight)\b/
+        let colorKeyword = /\bColor\b/
+        let materialKeywords = /\b(?:Uniform|Striped|Checkered2D|Checkered3D|Gradient|ColorFunction)\b/
         let shapeKeywords = /\b(?:ParametricSurface|Plane|Cone|Cube|Cylinder|Group|ImplicitSurface|Prism|Sphere|Superellipsoid|SurfaceOfRevolution|Torus)\b/
+
+        let regexes: [Regex<Substring>] = [
+            worldKeyword,
+            cameraKeyword,
+            lightKeywords,
+            colorKeyword,
+            materialKeywords,
+            shapeKeywords,
+        ]
+
+        for regex in regexes {
+            self.highlight(layoutManager: layoutManager,
+                           regex: regex,
+                           color: NSColor(named: "Constructor")!)
+        }
+    }
+
+    private func highlightBuiltinFunctions(layoutManager: NSLayoutManager) {
+        let regex = /\b(?:sin|cos|tan|arcsin|arccos|arctan|arctan2)\b/
+
+        self.highlight(layoutManager: layoutManager,
+                       regex: regex,
+                       color: NSColor(named: "BuiltinFunction")!)
+    }
+
+    private func highlightKeywords(layoutManager: NSLayoutManager) {
+        let languageKeywords = /\b(?:let|func|true|false|in)\b/
+        let operators = /\+|\-|\*|\/|\^|=/
         let regexColorMappings: [(Regex<Substring>, NSColor)] = [
             (languageKeywords, NSColor(named: "LanguageKeyword")!),
             (operators, NSColor(named: "Operator")!),
-            (worldKeyword, NSColor(named: "WorldKeyword")!),
-            (cameraKeyword, NSColor(named: "CameraKeyword")!),
-            (lightKeywords, NSColor(named: "LightKeyword")!),
-            (shapeKeywords, NSColor(named: "ShapeKeyword")!),
         ]
 
         for (regex, color) in regexColorMappings {
@@ -71,7 +97,7 @@ extension CodeEditor {
     }
 
     private func highlightNumbers(layoutManager: NSLayoutManager) {
-        let numberRegex = /-?(\d+.)?\d+/
+        let numberRegex = /\b-?(\d+.)?\d+\b/
         self.highlight(layoutManager: layoutManager,
                        regex: numberRegex,
                        color: NSColor(named: "Number")!)

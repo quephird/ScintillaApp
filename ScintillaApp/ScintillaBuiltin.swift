@@ -50,6 +50,13 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case rotateZMaterial
     case shearShape
     case shearMaterial
+    case ambient
+    case diffuse
+    case specular
+    case shininess
+    case reflective
+    case transparency
+    case refractive
     case difference
     case intersection
     case union
@@ -150,6 +157,20 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .methodName(.shape, "shear", ["xy", "xz", "yx", "yz", "zx", "zy"])
         case .shearMaterial:
             return .methodName(.material, "shear", ["xy", "xz", "yx", "yz", "zx", "zy"])
+        case .ambient:
+            return .methodName(.material, "ambient", [""])
+        case .diffuse:
+            return .methodName(.material, "diffuse", [""])
+        case .specular:
+            return .methodName(.material, "specular", [""])
+        case .shininess:
+            return .methodName(.material, "shininess", [""])
+        case .reflective:
+            return .methodName(.material, "reflective", [""])
+        case .transparency:
+            return .methodName(.material, "transparency", [""])
+        case .refractive:
+            return .methodName(.material, "refractive", [""])
         case .difference:
             return .methodName(.shape, "difference", ["shapes"])
         case .intersection:
@@ -318,6 +339,20 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeShearShape(object: object, argumentValues: argumentValues)
         case .shearMaterial:
             return try makeShearMaterial(object: object, argumentValues: argumentValues)
+        case .ambient:
+            return try makeAmbient(object: object, argumentValues: argumentValues)
+        case .diffuse:
+            return try makeDiffuse(object: object, argumentValues: argumentValues)
+        case .specular:
+            return try makeSpecular(object: object, argumentValues: argumentValues)
+        case .shininess:
+            return try makeShininess(object: object, argumentValues: argumentValues)
+        case .reflective:
+            return try makeReflective(object: object, argumentValues: argumentValues)
+        case .transparency:
+            return try makeTransparency(object: object, argumentValues: argumentValues)
+        case .refractive:
+            return try makeRefractive(object: object, argumentValues: argumentValues)
         case .difference:
             return try makeCSG(object: object,
                                argumentValues: argumentValues,
@@ -762,6 +797,65 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .z:
             .material(material.rotateZ(theta))
         }
+    }
+
+    private func makeAmbient(object: ScintillaValue,
+                             argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let material = try extractRawMaterial(argumentValue: object)
+        let n = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return .material(material.ambient(n))
+    }
+
+    private func makeDiffuse(object: ScintillaValue,
+                             argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let material = try extractRawMaterial(argumentValue: object)
+        let n = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return .material(material.diffuse(n))
+    }
+
+
+    private func makeSpecular(object: ScintillaValue,
+                              argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let material = try extractRawMaterial(argumentValue: object)
+        let n = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return .material(material.specular(n))
+    }
+
+
+    private func makeShininess(object: ScintillaValue,
+                               argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let material = try extractRawMaterial(argumentValue: object)
+        let n = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return .material(material.shininess(n))
+    }
+
+
+    private func makeReflective(object: ScintillaValue,
+                                argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let material = try extractRawMaterial(argumentValue: object)
+        let n = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return .material(material.reflective(n))
+    }
+
+    private func makeTransparency(object: ScintillaValue,
+                                  argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let material = try extractRawMaterial(argumentValue: object)
+        let n = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return .material(material.transparency(n))
+    }
+
+    private func makeRefractive(object: ScintillaValue,
+                                argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let material = try extractRawMaterial(argumentValue: object)
+        let n = try extractRawDouble(argumentValue: argumentValues[0])
+
+        return .material(material.refractive(n))
     }
 
     private func handleUnaryFunction(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
