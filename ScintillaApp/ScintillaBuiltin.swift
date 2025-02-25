@@ -113,7 +113,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .areaLight:
             return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps"])
         case .uniform:
-            return .functionName("Uniform", ["color"])
+            return .functionName("Uniform", [""])
         case .checkered3D:
             return .functionName("Checkered3D", ["firstColor", "secondColor"])
         case .colorfunctionRgb:
