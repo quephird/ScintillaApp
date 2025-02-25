@@ -33,6 +33,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case areaLight
     case uniform
     case checkered3D
+    case colorfunctionRgb
+    case colorfunctionHsl
     case materialMethodCall
     case colorRgb
     case colorHsl
@@ -57,6 +59,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case arcsinFunc
     case arccosFunc
     case arctanFunc
+    case arctan2Func
     case expFunc
     case logFunc
 
@@ -113,6 +116,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Uniform", ["color"])
         case .checkered3D:
             return .functionName("Checkered3D", ["firstColor", "secondColor"])
+        case .colorfunctionRgb:
+            return .functionName("ColorFunction", ["fr", "fg", "fb"])
+        case .colorfunctionHsl:
+            return .functionName("ColorFunction", ["fh", "fs", "fl"])
         case .materialMethodCall:
             return .methodName(.shape, "material", [""])
         case .colorRgb:
@@ -161,6 +168,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("arccos", [""])
         case .arctanFunc:
             return .functionName("arctan", [""])
+        case .arctan2Func:
+            return .functionName("arctan2", ["", ""])
         case .expFunc:
             return .functionName("exp", [""])
         case .logFunc:
@@ -171,7 +180,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     var isNativeMathematicalFunction: Bool {
         switch self {
         case .sinFunc, .cosFunc, .tanFunc,
-                .arcsinFunc, .arccosFunc, .arctanFunc,
+                .arcsinFunc, .arccosFunc, .arctanFunc, .arctan2Func,
                 .expFunc, .logFunc:
             return true
         default:
@@ -199,6 +208,17 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return exp(argValue)
         case .logFunc:
             return log(argValue)
+        default:
+            fatalError("We should never get here as we already checked if function was a methematical one")
+        }
+    }
+
+    public func call(_ argValue1: Double, _ argValue2: Double) -> Double {
+        precondition(self.isNativeMathematicalFunction)
+
+        switch self {
+        case .arctan2Func:
+            return atan2(argValue1, argValue2)
         default:
             fatalError("We should never get here as we already checked if function was a methematical one")
         }
@@ -251,10 +271,16 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeUniform(argumentValues: argumentValues)
         case .checkered3D:
             return try makeCheckered3D(argumentValues: argumentValues)
+        case .colorfunctionRgb:
+            return try makeColorFunctionRgb(evaluator: evaluator, argumentValues: argumentValues)
+        case .colorfunctionHsl:
+            return try makeColorFunctionHsl(evaluator: evaluator, argumentValues: argumentValues)
         case .world:
             return try makeWorld(argumentValues: argumentValues)
         case .sinFunc, .cosFunc, .tanFunc, .arcsinFunc, .arccosFunc, .arctanFunc, .expFunc, .logFunc:
             return try handleUnaryFunction(argumentValues: argumentValues)
+        case .arctan2Func:
+            return try handleArctan2(argumentValues: argumentValues)
         default:
             fatalError("Internal error: method calls should not get here")
         }
@@ -525,6 +551,34 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .material(checkered3D)
     }
 
+    private func makeColorFunctionRgb(evaluator: Evaluator,
+                                      argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let fr = try extractRawImplicitSurfaceFunction(evaluator: evaluator,
+                                                       argumentValue: argumentValues[0])
+        let fg = try extractRawImplicitSurfaceFunction(evaluator: evaluator,
+                                                       argumentValue: argumentValues[0])
+        let fb = try extractRawImplicitSurfaceFunction(evaluator: evaluator,
+                                                       argumentValue: argumentValues[0])
+
+        let colorFunction = { x, y, z in (fr(x, y, z), fg(x, y, z), fb(x, y, z))}
+        let colorFunctionRgb = ColorFunction(.rgb, colorFunction)
+        return .material(colorFunctionRgb)
+    }
+
+    private func makeColorFunctionHsl(evaluator: Evaluator,
+                                      argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let fh = try extractRawImplicitSurfaceFunction(evaluator: evaluator,
+                                                       argumentValue: argumentValues[0])
+        let fs = try extractRawImplicitSurfaceFunction(evaluator: evaluator,
+                                                       argumentValue: argumentValues[1])
+        let fl = try extractRawImplicitSurfaceFunction(evaluator: evaluator,
+                                                       argumentValue: argumentValues[2])
+
+        let colorFunction = { x, y, z in (fh(x, y, z), fs(x, y, z), fl(x, y, z))}
+        let colorFunctionHsl = ColorFunction(.hsl, colorFunction)
+        return .material(colorFunctionHsl)
+    }
+
     private func makeMaterialMethodCall(object: ScintillaValue,
                                         argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let shape = try extractRawShape(argumentValue: object)
@@ -714,6 +768,13 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let rawArgumentValue = try extractRawDouble(argumentValue: argumentValues[0])
 
         return .double(self.call(rawArgumentValue))
+    }
+
+    private func handleArctan2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let rawY = try extractRawDouble(argumentValue: argumentValues[0])
+        let rawX = try extractRawDouble(argumentValue: argumentValues[1])
+
+        return .double(atan2(rawY, rawX))
     }
 
     private func extractRawBoolean(argumentValue: ScintillaValue) throws -> Bool {
@@ -924,6 +985,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             switch lookedUpFunction {
             case .builtin(let builtin):
                 if builtin.isNativeMathematicalFunction {
+                    if localArguments.count == 2 {
+                        let secondArgValue = try makeRawLambda(evaluator: evaluator,
+                                                               expression: localArguments[1].value)
+                        return { x, y, z in
+                            return builtin.call(firstArgValue(x, y, z), secondArgValue(x, y, z))
+                        }
+                    }
+
                     return { x, y, z in return builtin.call(firstArgValue(x, y, z)) }
                 }
 
