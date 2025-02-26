@@ -49,14 +49,13 @@ The application is using the so-called `DocumentGroup` component in SwiftUI and 
 
 Scintilla's text editor also has syntax highlighting with the following color scheme:
 
-* `World` is in orange
-* `Camera` is in light blue
-* All lights are in sea green
-* All shapes are in bright green
+* All object constructors (e.g., `Sphere()`) are in bright green
+* All methods (e.g., `translate()`) are in dark green
+* All builtin functions (e.g., `sin()`) are in orange
 * All parameter names are in cadet blue
 * All numbers are in yellow
 * All punctuation is in white
-* Everything else is in purple
+* Everything else is in light blue
 
 ![](./images/editor.png)
 
