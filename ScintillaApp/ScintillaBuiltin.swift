@@ -32,6 +32,9 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case pointLight
     case areaLight
     case uniform
+    case striped
+    case gradient
+    case checkered2D
     case checkered3D
     case colorfunctionRgb
     case colorfunctionHsl
@@ -121,6 +124,12 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps"])
         case .uniform:
             return .functionName("Uniform", [""])
+        case .striped:
+            return .functionName("Striped", ["firstColor", "secondColor"])
+        case .gradient:
+            return .functionName("Gradient", ["firstColor", "secondColor"])
+        case .checkered2D:
+            return .functionName("Checkered2D", ["firstColor", "secondColor"])
         case .checkered3D:
             return .functionName("Checkered3D", ["firstColor", "secondColor"])
         case .colorfunctionRgb:
@@ -290,8 +299,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeAreaLight(argumentValues: argumentValues)
         case .uniform:
             return try makeUniform(argumentValues: argumentValues)
-        case .checkered3D:
-            return try makeCheckered3D(argumentValues: argumentValues)
+        case .gradient, .striped, .checkered2D, .checkered3D:
+            return try makePattern(argumentValues: argumentValues)
         case .colorfunctionRgb:
             return try makeColorFunctionRgb(evaluator: evaluator, argumentValues: argumentValues)
         case .colorfunctionHsl:
@@ -579,11 +588,24 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .material(uniform)
     }
 
-    private func makeCheckered3D(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func makePattern(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let firstColor = try extractRawColor(argumentValue: argumentValues[0])
         let secondColor = try extractRawColor(argumentValue: argumentValues[1])
-        let checkered3D = Checkered3D(firstColor, secondColor, .identity)
-        return .material(checkered3D)
+
+        var pattern: Pattern
+        switch self {
+        case .gradient:
+            pattern = Gradient(firstColor, secondColor, .identity)
+        case .striped:
+            pattern = Striped(firstColor, secondColor, .identity)
+        case .checkered2D:
+            pattern = Checkered2D(firstColor, secondColor, .identity)
+        case .checkered3D:
+            pattern = Checkered3D(firstColor, secondColor, .identity)
+        default:
+            fatalError("Unable to make a pattern object: \(self)")
+        }
+        return .material(pattern)
     }
 
     private func makeColorFunctionRgb(evaluator: Evaluator,
