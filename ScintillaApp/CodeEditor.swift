@@ -69,7 +69,7 @@ extension CodeEditor {
     }
 
     private func highlightBuiltinFunctions(layoutManager: NSLayoutManager) {
-        let regex = /\b(?:sin|cos|tan|arcsin|arccos|arctan|arctan2)\b/
+        let regex = /\b(?:sin|cos|tan|arcsin|arccos|arctan|arctan2|exp|log)\b/
 
         self.highlight(layoutManager: layoutManager,
                        regex: regex,
