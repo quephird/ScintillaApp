@@ -45,6 +45,22 @@ public func resolveProgram(source: String) throws -> Program<ResolvedLocation> {
 }
 
 extension ScintillaValue {
+    func getColor() -> Color? {
+        guard case .color(let color) = self else {
+            return nil
+        }
+
+        return color
+    }
+
+    func getMaterial<M: Material>(materialType: M.Type) -> M? {
+        guard case .material(let material) = self else {
+            return nil
+        }
+
+        return material as? M
+    }
+
     func getShape<S: Shape>(shapeType: S.Type) -> S? {
         guard case .shape(let shape) = self else {
             return nil

@@ -146,9 +146,12 @@ let lights = [
     PointLight(position: (10, 10, 10))
 ]
 
+let turquoise = Uniform(
+    Color(h: 0.5, s: 0.7, l: 0.8))
+
 let shapes = [
     Sphere()
-        .color(hsl: (0.5, 0.7, 0.8))
+        .material(turquoise)
 ]
 
 World(
