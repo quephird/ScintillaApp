@@ -87,8 +87,15 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
         case (.color(let l), .color(let r)):
             return l == r
         case (.material(let l), .material(let r)):
-            // TODO: Return to this and actually implement this!
-            return true
+            if let l = l as? Uniform, let r = r as? Uniform {
+                return l == r
+            } else if let l = l as? Pattern, let r = r as? Pattern {
+                return l == r
+            } else if let l = l as? ColorFunction, let r = r as? ColorFunction {
+                return l == r
+            } else {
+                return false
+            }
         case (.shape(let l), .shape(let r)):
             return l == r
         case (.camera(let l), .camera(let r)):
