@@ -10,8 +10,8 @@ import Darwin
 import ScintillaLib
 
 enum ScintillaBuiltin: CaseIterable, Equatable {
-    case color1
-    case color2
+    case colorRgb
+    case colorHsl
     case cone
     case cube
     case cylinder
@@ -39,8 +39,6 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case colorfunctionRgb
     case colorfunctionHsl
     case materialMethodCall
-    case colorRgb
-    case colorHsl
     case translateShape
     case translateMaterial
     case scaleShape
@@ -75,9 +73,9 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     var objectName: ObjectName {
         switch self {
-        case .color1:
+        case .colorRgb:
             return .functionName("Color", ["r", "g", "b"])
-        case .color2:
+        case .colorHsl:
             return .functionName("Color", ["h", "s", "l"])
         case .cone:
             return .functionName("Cone", ["bottomY", "topY", "isCapped"])
@@ -138,10 +136,6 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("ColorFunction", ["fh", "fs", "fl"])
         case .materialMethodCall:
             return .methodName(.shape, "material", [""])
-        case .colorRgb:
-            return .methodName(.shape, "color", ["rgb"])
-        case .colorHsl:
-            return .methodName(.shape, "color", ["hsl"])
         case .translateShape:
             return .methodName(.shape, "translate", ["x", "y", "z"])
         case .translateMaterial:
@@ -257,10 +251,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     public func call(evaluator: Evaluator,
                      argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
-        case .color1:
-            return try makeColor1(argumentValues: argumentValues)
-        case .color2:
-            return try makeColor2(argumentValues: argumentValues)
+        case .colorRgb:
+            return try makeColorRgb(argumentValues: argumentValues)
+        case .colorHsl:
+            return try makeColorHsl(argumentValues: argumentValues)
         case .cone:
             return try makeCone(argumentValues: argumentValues)
         case .cube:
@@ -320,10 +314,6 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         switch self {
         case .materialMethodCall:
             return try makeMaterialMethodCall(object: object, argumentValues: argumentValues)
-        case .colorRgb:
-            return try makeColorRgb(object: object, argumentValues: argumentValues)
-        case .colorHsl:
-            return try makeColorHsl(object: object, argumentValues: argumentValues)
         case .translateShape:
             return try makeTranslateShape(object: object, argumentValues: argumentValues)
         case .translateMaterial:
@@ -379,7 +369,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
-    private func makeColor1(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func makeColorRgb(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let r = try extractRawDouble(argumentValue: argumentValues[0])
         let g = try extractRawDouble(argumentValue: argumentValues[1])
         let b = try extractRawDouble(argumentValue: argumentValues[2])
@@ -388,7 +378,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .color(color)
     }
 
-    private func makeColor2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func makeColorHsl(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let h = try extractRawDouble(argumentValue: argumentValues[0])
         let s = try extractRawDouble(argumentValue: argumentValues[1])
         let l = try extractRawDouble(argumentValue: argumentValues[2])
@@ -642,30 +632,6 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let material = try extractRawMaterial(argumentValue: argumentValues[0])
 
         return .shape(shape.material(material))
-    }
-
-    private func makeColorRgb(object: ScintillaValue,
-                              argumentValues: [ScintillaValue]) throws -> ScintillaValue {
-        return try makeColorFunctionCall(object: object,
-                                         argumentValues: argumentValues,
-                                         colorSpace: .rgb)
-    }
-
-    private func makeColorHsl(object: ScintillaValue,
-                              argumentValues: [ScintillaValue]) throws -> ScintillaValue {
-        return try makeColorFunctionCall(object: object,
-                                         argumentValues: argumentValues,
-                                         colorSpace: .hsl)
-    }
-
-    private func makeColorFunctionCall(object: ScintillaValue,
-                                       argumentValues: [ScintillaValue],
-                                       colorSpace: ColorSpace) throws -> ScintillaValue {
-        let shape = try extractRawShape(argumentValue: object)
-        let (colorComponent0, colorComponent1, colorComponent2) = try extractRawTuple3(argumentValue: argumentValues[0])
-
-        let solidColor: Material = .uniform(colorComponent0, colorComponent1, colorComponent2, colorSpace)
-        return .shape(shape.material(solidColor))
     }
 
     private func makeTranslateShape(object: ScintillaValue,
