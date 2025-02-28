@@ -22,6 +22,8 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
     indirect case boundMethod(ScintillaValue, ScintillaBuiltin)
     indirect case lambda(UserDefinedFunction)
     indirect case userDefinedFunction(UserDefinedFunction)
+    case color(Color)
+    case material(Material)
     indirect case shape(any Shape)
     indirect case camera(Camera)
     indirect case light(Light)
@@ -47,6 +49,10 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return .lambda
         case .userDefinedFunction:
             return .userDefinedFunction
+        case .color:
+            return .color
+        case .material(_):
+            return .material
         case .shape(_):
             return .shape
         case .camera(_):
@@ -78,6 +84,18 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return l.objectId == r.objectId
         case (.userDefinedFunction(let l), .userDefinedFunction(let r)):
             return l.objectId == r.objectId
+        case (.color(let l), .color(let r)):
+            return l == r
+        case (.material(let l), .material(let r)):
+            if let l = l as? Uniform, let r = r as? Uniform {
+                return l == r
+            } else if let l = l as? Pattern, let r = r as? Pattern {
+                return l == r
+            } else if let l = l as? ColorFunction, let r = r as? ColorFunction {
+                return l == r
+            } else {
+                return false
+            }
         case (.shape(let l), .shape(let r)):
             return l == r
         case (.camera(let l), .camera(let r)):
@@ -118,6 +136,10 @@ enum ScintillaValue: Equatable, CustomStringConvertible {
             return "<implicit surface lambda: \(userDefinedFunction.objectId)>"
         case .userDefinedFunction(let userDefinedFunction):
             return "<function: \(userDefinedFunction.name)>"
+        case .color(let color):
+            return "\(color)"
+        case .material(let material):
+            return "\(material)"
         case .shape(let shape):
             return "\(shape)"
         case .camera(let camera):

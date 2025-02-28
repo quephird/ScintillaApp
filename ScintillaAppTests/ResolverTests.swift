@@ -146,9 +146,12 @@ let lights = [
     PointLight(position: (10, 10, 10))
 ]
 
+let turquoise = Uniform(
+    Color(h: 0.5, s: 0.7, l: 0.8))
+
 let shapes = [
     Sphere()
-        .color(hsl: (0.5, 0.7, 0.8))
+        .material(turquoise)
 ]
 
 World(
@@ -188,7 +191,7 @@ World(
                                     type: .identifier,
                                     lexeme: makeLexeme(source: source, offset: 119, length: 2)),
                             ],
-                            ResolvedLocation(depth: 0, index: 15)),
+                            ResolvedLocation(depth: 0, index: 17)),
                         Token(
                             type: .leftParen,
                             lexeme: makeLexeme(source: source, offset: 19, length: 1)),
@@ -220,7 +223,7 @@ World(
                                         Token(
                                             type: .identifier,
                                             lexeme: makeLexeme(source: source, offset: 69, length: 2)),
-                                        ResolvedLocation(depth: 0, index: 36)),
+                                        ResolvedLocation(depth: 0, index: 60)),
                                     Token(
                                         type: .slash,
                                         lexeme: makeLexeme(source: source, offset: 71, length: 1)),
@@ -318,7 +321,7 @@ World(
                                             type: .identifier,
                                             lexeme: makeLexeme(source: source, offset: 165, length: 8)),
                                     ],
-                                    ResolvedLocation(depth: 0, index: 16)),
+                                    ResolvedLocation(depth: 0, index: 19)),
                                 Token(
                                     type: .leftParen,
                                     lexeme: makeLexeme(source: source, offset: 164, length: 1)),
@@ -351,11 +354,78 @@ World(
                 .letDeclaration(
                     Token(
                         type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 196, length: 6)),
+                        lexeme: makeLexeme(source: source, offset: 196, length: 9)),
+                    .call(
+                        .function(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 208, length: 7)),
+                            [nil],
+                            ResolvedLocation(depth: 0, index: 21)),
+                        Token(
+                            type: .leftParen,
+                            lexeme: makeLexeme(source: source, offset: 215, length: 1)),
+                        [
+                            Expression<ResolvedLocation>.Argument(
+                                name: nil,
+                                value: .call(
+                                    .function(
+                                        Token(
+                                            type: .identifier,
+                                            lexeme: makeLexeme(source: source, offset: 221, length: 5)),
+                                        [
+                                            Token(
+                                                type: .identifier,
+                                                lexeme: makeLexeme(source: source, offset: 227, length: 1)),
+                                            Token(
+                                                type: .identifier,
+                                                lexeme: makeLexeme(source: source, offset: 235, length: 1)),
+                                            Token(
+                                                type: .identifier,
+                                                lexeme: makeLexeme(source: source, offset: 243, length: 1)),
+                                        ],
+                                        ResolvedLocation(depth: 0, index: 1)),
+                                    Token(
+                                        type: .leftParen,
+                                        lexeme: makeLexeme(source: source, offset: 226, length: 1)),
+                                    [
+                                        Expression<ResolvedLocation>.Argument(
+                                            name: Token(
+                                                type: .identifier,
+                                                lexeme: makeLexeme(source: source, offset: 227, length: 1)),
+                                            value: .doubleLiteral(
+                                                Token(
+                                                    type: .double,
+                                                    lexeme: makeLexeme(source: source, offset: 230, length: 3)),
+                                                0.5)),
+                                        Expression<ResolvedLocation>.Argument(
+                                            name: Token(
+                                                type: .identifier,
+                                                lexeme: makeLexeme(source: source, offset: 235, length: 1)),
+                                            value: .doubleLiteral(
+                                                Token(
+                                                    type: .double,
+                                                    lexeme: makeLexeme(source: source, offset: 238, length: 3)),
+                                                0.7)),
+                                        Expression<ResolvedLocation>.Argument(
+                                            name: Token(
+                                                type: .identifier,
+                                                lexeme: makeLexeme(source: source, offset: 243, length: 1)),
+                                            value: .doubleLiteral(
+                                                Token(
+                                                    type: .double,
+                                                    lexeme: makeLexeme(source: source, offset: 246, length: 3)),
+                                                0.8)),
+                                    ]))
+                        ])),
+                .letDeclaration(
+                    Token(
+                        type: .identifier,
+                        lexeme: makeLexeme(source: source, offset: 257, length: 6)),
                     .list(
                         Token(
                             type: .leftBracket,
-                            lexeme: makeLexeme(source: source, offset: 205, length: 1)),
+                            lexeme: makeLexeme(source: source, offset: 266, length: 1)),
                         [
                             .call(
                                 .method(
@@ -363,48 +433,28 @@ World(
                                         .function(
                                             Token(
                                                 type: .identifier,
-                                                lexeme: makeLexeme(source: source, offset: 211, length: 6)),
+                                                lexeme: makeLexeme(source: source, offset: 272, length: 6)),
                                             [],
-                                            ResolvedLocation(depth: 0, index: 10)),
+                                            ResolvedLocation(depth: 0, index: 12)),
                                         Token(
                                             type: .leftParen,
-                                            lexeme: makeLexeme(source: source, offset: 217, length: 1)),
+                                            lexeme: makeLexeme(source: source, offset: 278, length: 1)),
                                         []),
                                     Token(
                                         type: .identifier,
-                                        lexeme: makeLexeme(source: source, offset: 229, length: 5)),
-                                    [
-                                        Token(
-                                            type: .identifier,
-                                            lexeme: makeLexeme(source: source, offset: 235, length: 3)),
-                                    ]),
+                                        lexeme: makeLexeme(source: source, offset: 290, length: 8)),
+                                    [nil]),
                                 Token(
                                     type: .leftParen,
-                                    lexeme: makeLexeme(source: source, offset: 234, length: 1)),
+                                    lexeme: makeLexeme(source: source, offset: 298, length: 1)),
                                 [
                                     Expression<ResolvedLocation>.Argument(
-                                        name: Token(
-                                            type: .identifier,
-                                            lexeme: makeLexeme(source: source, offset: 235, length: 3)),
-                                        value: .tuple3(
+                                        name: nil,
+                                        value: .variable(
                                             Token(
-                                                type: .leftParen,
-                                                lexeme: makeLexeme(source: source, offset: 240, length: 1)),
-                                            .doubleLiteral(
-                                                Token(
-                                                    type: .double,
-                                                    lexeme: makeLexeme(source: source, offset: 241, length: 3)),
-                                                0.5),
-                                            .doubleLiteral(
-                                                Token(
-                                                    type: .double,
-                                                    lexeme: makeLexeme(source: source, offset: 246, length: 3)),
-                                                0.7),
-                                            .doubleLiteral(
-                                                Token(
-                                                    type: .double,
-                                                    lexeme: makeLexeme(source: source, offset: 251, length: 3)),
-                                                0.8)))
+                                                type: .identifier,
+                                                lexeme: makeLexeme(source: source, offset: 299, length: 9)),
+                                            ResolvedLocation(depth: 0, index: 63)))
                                 ])
                         ])),
             ],
@@ -412,53 +462,54 @@ World(
                 .function(
                     Token(
                         type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 260, length: 5)),
+                        lexeme: makeLexeme(source: source, offset: 313, length: 5)),
                     [
                         Token(
                             type: .identifier,
-                            lexeme: makeLexeme(source: source, offset: 271, length: 6)),
+                            lexeme: makeLexeme(source: source, offset: 324, length: 6)),
                         Token(
                             type: .identifier,
-                            lexeme: makeLexeme(source: source, offset: 291, length: 6)),
+                            lexeme: makeLexeme(source: source, offset: 344, length: 6)),
                         Token(
                             type: .identifier,
-                            lexeme: makeLexeme(source: source, offset: 311, length: 6)),
+                            lexeme: makeLexeme(source: source, offset: 364, length: 6)),
                     ],
-                    ResolvedLocation(depth: 0, index: 14)),
+                    ResolvedLocation(depth: 0, index: 16)),
                 Token(
                     type: .leftParen,
-                    lexeme: makeLexeme(source: source, offset: 265, length: 1)),
+                    lexeme: makeLexeme(source: source, offset: 318, length: 1)),
                 [
                     Expression<ResolvedLocation>.Argument(
                         name: Token(
                             type: .identifier,
-                            lexeme: makeLexeme(source: source, offset: 271, length: 6)),
+                            lexeme: makeLexeme(source: source, offset: 324, length: 6)),
                         value: .variable(
                             Token(
                                 type: .identifier,
-                                lexeme: makeLexeme(source: source, offset: 279, length: 6)),
-                            ResolvedLocation(depth: 0, index: 37))),
+                                lexeme: makeLexeme(source: source, offset: 332, length: 6)),
+                            ResolvedLocation(depth: 0, index: 61))),
                     Expression<ResolvedLocation>.Argument(
                         name: Token(
                             type: .identifier,
-                            lexeme: makeLexeme(source: source, offset: 291, length: 6)),
+                            lexeme: makeLexeme(source: source, offset: 344, length: 6)),
                         value: .variable(
                             Token(
                                 type: .identifier,
-                                lexeme: makeLexeme(source: source, offset: 299, length: 6)),
-                            ResolvedLocation(depth: 0, index: 38))),
+                                lexeme: makeLexeme(source: source, offset: 352, length: 6)),
+                            ResolvedLocation(depth: 0, index: 62))),
                     Expression<ResolvedLocation>.Argument(
                         name: Token(
                             type: .identifier,
-                            lexeme: makeLexeme(source: source, offset: 311, length: 6)),
+                            lexeme: makeLexeme(source: source, offset: 364, length: 6)),
                         value: .variable(
                             Token(
                                 type: .identifier,
-                                lexeme: makeLexeme(source: source, offset: 319, length: 6)),
-                            ResolvedLocation(depth: 0, index: 39))),
+                                lexeme: makeLexeme(source: source, offset: 372, length: 6)),
+                            ResolvedLocation(depth: 0, index: 64))),
                 ])
         )
 
         #expect(actual.statements == expected.statements)
+        #expect(actual.finalExpression == expected.finalExpression)
     }
 }

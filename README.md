@@ -2,11 +2,11 @@
 
 I already had completed work on a ray tracer a while back, namely ScintillaLib... but it bothered me a lot that in order to use it, you needed to:
 
-• Clone my git repo  
-• Open it up in Xcode  
-• Create a new project importing the package  
-• Embed a scene DSL in a SwiftUI app  
-• Run the app in Xcode to render the scene  
+* Clone my git repo  
+* Open it up in Xcode  
+* Create a new project importing the package  
+* Embed a scene DSL in a SwiftUI app  
+* Run the app in Xcode to render the scene  
 
 I _really_ wanted to be able to make something like POV-Ray which is both an editor _and_ runtime environment... but I just didn't have the skillset required to build one of my own on top of my ray tracing library. At that time, I didn't know if it were possible to take a file containing _only_ a subset of Swift code and somehow run it from within Swift, _or_ define my _own_ programming language and be able to run programs expressed in it. But after working on my slox project, an interpreter for a Ruby-like language based on the amazing book, "Crafting Interpreters", by Robert Nystrom, I now know _significantly_ more about how to accomplish the latter. And so, after feeling like I didn't have much more to do with my emulator project and wanting to keep going on something else, I finally decided to take the plunge to create a full-fledged _application_ for my ray tracer. Indeed, quite a few of the techniques used in slox for deisgning a new little programming language, and for tokenizing, parsing, resolving, and executing that code are implemented here.
 
@@ -49,14 +49,13 @@ The application is using the so-called `DocumentGroup` component in SwiftUI and 
 
 Scintilla's text editor also has syntax highlighting with the following color scheme:
 
-* `World` is in orange
-* `Camera` is in light blue
-* All lights are in sea green
-* All shapes are in bright green
+* All object constructors (e.g., `Sphere()`) are in bright green
+* All methods (e.g., `translate()`) are in dark green
+* All builtin functions (e.g., `sin()`) are in orange
 * All parameter names are in cadet blue
 * All numbers are in yellow
 * All punctuation is in white
-* Everything else is in purple
+* Everything else is in light blue
 
 ![](./images/editor.png)
 
@@ -146,18 +145,17 @@ let shapes = [
                         4.0* differenceOfSquares(a: x, b: y)*differenceOfSquares(a: y, b: z)*differenceOfSquares(a: z, b: x) -
                         (1.0 + 2.0*φ) * (x^2 + y^2 + z^2 - 1.0)^2
                     })
-        .color(hsl: (0.9, 0.5, 0.5))
 ]
 ```
 
 However, it should be noted that at this time declaring and using your own functions can sometimes significantly slow down rendering times, and so you will need to decide what the balance is between performance and readability of your code. This is an open issue that I hope to resolve in the near future.
 
-Scintilla objects, particularly shapes, can also have methods which configure their internal state. To call a method on an object, you instantiate it, followed by a `.`, then the method name, and then the argument list. For instance, to set the color of a sphere to red, you can do the following:
+Scintilla objects, particularly shapes, can also have methods which configure their internal state. To call a method on an object, you instantiate it, followed by a `.`, then the method name, and then the argument list. For instance, to move a a sphere two units to the right, you can do the following:
 
 ```
-let redBall = Sphere().color(rgb: (1, 0, 0))
+let ball = Sphere().translate(x: 2.0, y: 0.0, z: 0.0)
 ```
-... where the value for the `rgb` parameter is the tuple `(1, 0, 0)` representing the color red. More detailed discussion of other methods is given below in the Shapes section.
+... where the value for the `x` parameter is `2.0`, the `y` parameter 0.0, and the `z` parameter 0.0. More detailed discussion of other methods is given below in the Shapes section.
 
 The language supports most of the primitive types, operators and means of constructing expressions that many other programming languages have, including:
 
@@ -256,10 +254,13 @@ let lights = [
     PointLight(position: (-5, 5, -5))
 ]
 
+let red = Uniform(
+    Color(r: 1.0, g: 0.0, b: 0.0))
+
 let shapes = [
     Sphere()
         .translate(x: 0, y: 1, z: 0)
-        .color(rgb: (1, 0, 0)),
+        .material(red),
     Plane()
 ]
 
@@ -332,10 +333,13 @@ let lights = [
         vSteps: 5)
 ]
 
+let red = Uniform(
+    Color(r: 1.0, g: 0.0, b: 0.0))
+
 let shapes = [
     Sphere()
         .translate(x: 0, y: 1, z: 0)
-        .color(rgb: (1, 0, 0)),
+        .material(red)
     Plane()
 ]
 
@@ -365,9 +369,12 @@ let lights = [
     PointLight(position: (10, 10, -10))
 ]
 
+let red = Uniform(
+    Color(r: 1.0, g: 0.0, b: 0.0))
+
 let shapes = [
     Sphere()
-        .color(rgb: (1, 0, 0)),
+        .material(red),
     Plane()
         .translate(x: 0.0, y: -1.0, z: 0.0)
 ]
@@ -458,15 +465,17 @@ let lights = [
     PointLight(position: (-10, 10, -10))
 ]
 
+let lavender = Uniform(
+    Color(r: 0.5, g: 0.6, b: 0.8))
+
 let shapes = [
     SurfaceOfRevolution(
         yzPoints: [
             (0.0, 2.0), (1.0, 2.0), (2.0, 1.0),
             (3.0, 0.5), (6.0, 0.5)],
         isCapped: false)
-        .color(rgb: (0.5, 0.6, 0.8)),
+        .material(lavender),
     Plane()
-        .color(rgb: (1, 1, 1))
 ]
 
 World(
@@ -500,6 +509,9 @@ let lights = [
     PointLight(position: (-10, 10, -10))
 ]
 
+let orange = Uniform(
+    Color(r: 1.0, g: 0.5, b: 0.8))
+
 let shapes = [
     Prism(
         bottomY: 0.0,
@@ -509,9 +521,8 @@ let shapes = [
             (0.0, 1.0), (-0.5, 0.5), (-1.5, 0.5),
             (-1.0, 0.0), (-1.0, -1.0), (0.0, -0.5),
             (1.0, -1.0)])
-        .color(rgb: (1, 0.5, 0)),
+        .material(orange),
     Plane()
-        .color(rgb: (1, 1, 1))
 ]
 
 World(
@@ -561,13 +572,16 @@ let lights = [
     PointLight(position: (-10, 10, -10))
 ]
 
+let turquoise = Uniform(
+    Color(h: 0.5, s: 0.5, l: 0.5))
+
 let shapes = [
     ImplicitSurface(bottomFrontLeft: (-2, -2, -2),
                     topBackRight: (2, 2, 2),
                     function: { x, y, z in 
                         x^2 + y^2 + z^2 + sin(4*x) + sin(4*y) + sin(4*z) - 1
                     })
-        .color(hsl: (0.5, 0.5, 0.5))
+        .material(turquoise)
 ]
 
 World(
@@ -603,6 +617,9 @@ let lights = [
     PointLight(position: (-10, 10, -10))
 ]
 
+let lightBrown = Uniform(
+    Color(h: 0.05, s: 0.7, l: 0.5))
+
 let shapes = [
     ParametricSurface(
         bottomFrontLeft: (-1, -1, -1),
@@ -612,7 +629,7 @@ let shapes = [
         fx: { u, v in cos(u)*sin(2*v) },
         fy: { u, v in sin(v) },
         fz: { u, v in sin(u)*sin(2*v) })
-        .color(hsl: (0.05, 0.7, 0.5)),
+        .material(lightBrown),
     Plane()
         .translate(x: 0.0, y: -1.0, z: 0.0)    
 ]
@@ -677,12 +694,97 @@ The implementation applies the underlying transformation matrices in reverse ord
 
 ## Materials
 
-All shapes are constructed with a default material, which among other properties includes the shape's color, which is white. At this time, the only default attribute that can be overridden is the shape's color, and only solid colors are supported. You can specify colors in either the RGB or HSL space by calling either of these two methods on a shape:
+`Material`s represent the optical characteristics of shapes. There are currently three distinct categories of materials supported in Scintilla:
 
-* `.color(rgb: (Double, Double, Double))`
-* `.color(hsl: (Double, Double, Double))`
+* materials with a single uniform color  
+* materials with a repeating pattern  
+* materials that take three lambdas which map x, y, and z values to the components of a color
 
-Setting of other material properties, including patterns, are coming soon!
+All shapes can be constructed with a default material, which among other properties includes the shape's primary color, which is white. You already saw in several of the code snippets above the usage of the `Uniform` material, which is what you can use to specify the color of a shape.
+
+`Color`s are constructed in the RGB color space or the HSL space, using either of the following:
+
+* `Color(r: Double, g: Double, b: Double)`
+* `Color(h: Double, s: Double, l: Double)`
+
+A `Uniform` material takes a single parameter, the primary color, and so a red material is constructed like so:
+
+```
+Uniform(Color(r: 1.0, g: 0.0, b: 0.0))
+```
+
+There are a few patterns included with Scintilla, each of which takes two colors in their respective constructors:
+
+* `Striped(firstColor: Color, secondColor: Color)`
+* `Checkered2D(firstColor: Color, secondColor: Color)`
+* `Checkered3D(firstColor: Color, secondColor: Color)`
+* `Gradient(firstColor: Color, secondColor: Color)`
+
+The `ColorFunction` material has two constructors, both of which take three lambda functions, one for each of either the RGB or HSL components of the output color:
+
+* `ColorFunction(fr: , fg: , fb:)`
+* `ColorFunction(fh: , fs: , fl:)`
+
+Like shapes, patterns can be transformed via method calls and their transformations chained together:
+
+* `translate(x: Double, y: Double, z: Double)`: moves the _pattern_ by the specified anounts in the x, y, and z directions
+* `scale(x: Double, y: Double, z: Double)`: makes the _pattern_ larger or smaller along the x, y, and z axes
+* `rotateX(theta: Double)`: rotates the _pattern_ about the x-axis
+* `rotateY(theta: Double)`: rotates the _pattern_ about the y-axis
+* `rotateZ(theta: Double)`: rotates the _pattern_ about the z-axis
+* `shear(xy: Double, xz: Double, yx: Double, yz: Double, zx: Double, zy: Double)`: deforms the _pattern_ by altering the proportion of x with respect to y, proportion of x with respect to z, etc. 
+
+Here is an example using one of each of the material types:
+
+```
+let camera = Camera(
+    width: 400,
+    height: 400,
+    viewAngle: PI/3,
+    from: (0, 2, -7),
+    to: (0, 0, 0),
+    up: (0, 1, 0))
+
+let lights = [
+    PointLight(position: (-10, 10, -10))
+]
+
+let solidPurple = Uniform(
+    Color(h: 0.8, s: 0.8, l: 0.5))
+
+let checkered = Checkered3D(
+    firstColor: Color(r: 1, g: 1, b: 1),
+    secondColor: Color(r: 0, g: 0, b: 0))
+    .scale(x: 0.5, y: 0.5, z: 0.5)
+    .rotateZ(theta: PI/8)
+
+let rainbow = ColorFunction(
+    fh: { x, y, z in (arctan2(z, x)+PI)/PI/2.0 },
+    fs: { x, y, z in 1.0 },
+    fl: { x, y, z in 0.5 })
+    .rotateX(theta: -PI/4)
+
+let shapes = [
+    Sphere()
+        .material(solidPurple)
+        .translate(x: -2.5, y: 0.0, z: 0.0),
+    Sphere()
+        .material(checkered),
+    Sphere()
+        .material(rainbow)
+        .translate(x: 2.5, y: 0.0, z: 0.0),
+    Plane()
+        .translate(x: 0.0, y: -1.0, z: 0.0)
+]
+
+World(
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
+```
+
+![](./images/three_materials.png)
+
 
 ## Constructive solid geometry
 
@@ -707,9 +809,12 @@ let lights = [
     PointLight(position: (-5, 10, -10))
 ]
 
+let white = Uniform(
+    Color(r: 1.0, g: 1.0, b: 1.0))
+
 let dimple = 
     Sphere()
-        .color(rgb: (1.0, 1.0, 1.0))
+        .material(white)
         .scale(x: 0.2, y: 0.2, z: 0.2)
 
 let allDimples = [
@@ -726,16 +831,17 @@ let allDimples = [
     dimple
         .translate(x: 0.5, y: 0.5, z: -1.0)]
 
+let orange = Uniform(
+    Color(h: 0.1, s: 1.0, l: 0.5))
+
 let die = 
     Superellipsoid(e: 0.15, n: 0.15)
-        .color(hsl: (0.1, 1.0, 0.5))
+        .material(orange)
         .translate(x: 0.0, y: 1.0, z: 0.0)
         .difference(shapes: dimples)
         .rotateY(theta: PI/4)
 
-let plane =
-    Plane()
-        .color(rgb: (0.9, 0.9, 0.9))
+let plane = Plane()
 
 let shapes = [
     die,
@@ -767,16 +873,22 @@ let lights = [
     PointLight(position: (-10, 10, -10))
 ]
 
+let red = Uniform(
+    Color(r: 1.0, g: 0.0, b: 0.0))
+
 let redCube =
     Cube()
-        .color(rgb: (1, 0, 0))
+        .material(red)
         .scale(x: 0.8, y: 0.8, z: 0.8)
+
+let green = Uniform(
+    Color(r: 0.0, g: 1.0, b: 0.0))
 
 let greenCylinder =
     Cylinder(bottomY: -1.0,
              topY: 1.0,
              isCapped: true)
-        .color(rgb: (0, 1, 0))
+        .material(green)
         .scale(x: 0.5, y: 1.0, z: 0.5)
 
 let greenCylinders = [
@@ -787,9 +899,12 @@ let greenCylinders = [
         .rotateX(theta: PI/2)
 ]
 
+let blue = Uniform(
+    Color(r: 0.0, g: 0.0, b: 1.0))
+
 let shapes = [
     Sphere()
-        .color(rgb: (0, 0, 1))
+        .material(blue)
         .intersection(shapes: [redCube])
         .difference(shapes: greenCylinders)
         .rotateY(theta: PI/8)
@@ -820,13 +935,19 @@ let lights = [
     PointLight(position: (-10, 10, -10))
 ]
 
+let red = Uniform(
+    Color(r: 1.0, g: 0.0, b: 0.0))
+
+let green = Uniform(
+    Color(r: 0.0, g: 1.0, b: 0.0))
+
 let twoSpheres = [
     Sphere()
-        .color(rgb: (1, 0, 0))
+        .material(red)
         .translate(x: -1, y: 0, z: 0)
         .rotateZ(theta: PI/2),
     Sphere()
-        .color(rgb: (0, 1, 0))
+        .material(green)
         .translate(x: 1, y: 0, z: 0)
         .rotateZ(theta: PI/2)
 ]
@@ -854,13 +975,19 @@ let lights = [
     PointLight(position: (-10, 10, -10))
 ]
 
+let red = Uniform(
+    Color(r: 1.0, g: 0.0, b: 0.0))
+
+let green = Uniform(
+    Color(r: 0.0, g: 1.0, b: 0.0))
+
 let twoSpheres = [
     Group(children: [
         Sphere()
-            .color(rgb: (1, 0, 0))
+            .material(red)
             .translate(x: -1, y: 0, z: 0),
         Sphere()
-            .color(rgb: (0, 1, 0))
+            .material(green)
             .translate(x: 1, y: 0, z: 0)
     ])
         .rotateZ(theta: PI/2)

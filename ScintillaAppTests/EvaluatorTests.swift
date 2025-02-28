@@ -95,10 +95,54 @@ multiply(a: 6, b: 7)
         #expect(0.5 == actualValue)
     }
 
+    @Test func evaluateSingleColor() throws {
+        let source = """
+Color(r: 0.2, g: 0.3, b: 0.4))
+"""
+
+        let evaluator = Evaluator()
+        let actualResult = try evaluator.interpretRaw(source: source)
+        let actualColor = try #require(actualResult.getColor())
+
+        #expect(actualColor.r == 0.2)
+        #expect(actualColor.g == 0.3)
+        #expect(actualColor.b == 0.4)
+    }
+
+    @Test func evaluateUniformMaterial() throws {
+        let source = """
+Uniform(
+    Color(h: 0.2, s: 0.3, l: 0.4))
+"""
+
+        let evaluator = Evaluator()
+        let actualResult = try evaluator.interpretRaw(source: source)
+        let actualMaterial = try #require(actualResult.getMaterial(materialType: Uniform.self))
+
+        #expect(actualMaterial.color == .fromHsl(0.2, 0.3, 0.4))
+    }
+
+    @Test func evaluateCheckered3DMaterialWithTransform() throws {
+        let source = """
+Checkered3D(
+    firstColor: Color(r: 0.0, g: 0.0, b: 0.0),
+    secondColor: Color(r: 1.0, g: 1.0, b: 1.0))
+    .rotateY(theta: PI/4)
+"""
+
+        let evaluator = Evaluator()
+        let actualResult = try evaluator.interpretRaw(source: source)
+        let actualMaterial = try #require(actualResult.getMaterial(materialType: Checkered3D.self))
+
+        #expect(actualMaterial.firstColor == Color(0.0, 0.0, 0.0))
+        #expect(actualMaterial.secondColor == Color(1.0, 1.0, 1.0))
+        #expect(actualMaterial.transform == .rotationY(PI/4))
+    }
+
     @Test func evaluateSphereWithMethodCalls() throws {
         let source = """
 Sphere()
-    .color(hsl: (0.2, 0.3, 0.4))
+    .material(Uniform(Color(h: 0.2, s: 0.3, l: 0.4)))
     .translate(x: 1.0, y: 2.0, z: 3.0)
 """
 
@@ -106,7 +150,7 @@ Sphere()
         let actualResult = try evaluator.interpretRaw(source: source)
         let actualShape = try #require(actualResult.getShape(shapeType: Sphere.self))
 
-        let material = try #require(actualShape.material as? SolidColor)
+        let material = try #require(actualShape.material as? Uniform)
         #expect(material.color == .fromHsl(0.2, 0.3, 0.4))
 
         let transform = try #require(actualShape.transform)
@@ -123,7 +167,6 @@ PointLight(position: (-5.0, 0.0, 3.0))
         let actualLight = try #require(actualResult.getLight(lightType: PointLight.self))
 
         #expect(actualLight.position == Point(-5.0, 0.0, 3.0))
-
     }
 
     @Test func evaluateSingleCamera() throws {
@@ -166,9 +209,12 @@ let lights = [
     PointLight(position: (10, 10, 10))
 ]
 
+let turquoise = Uniform(
+    Color(h: 0.5, s: 0.7, l: 0.8))
+
 let shapes = [
     Sphere()
-        .color(hsl: (0.5, 0.7, 0.8))
+        .material(turquoise)
 ]
 
 World(
@@ -193,8 +239,11 @@ World(
 
     @Test func evaluateBadProgram() throws {
         let source = """
+let olive = Uniform(
+    Color(h: 0.2, s: 0.3, l: 0.4))
+
 Sphere()
-    .color(hsl: (0.2, 0.3, 0.4))
+    .material(olive)
 """
 
         let evaluator = Evaluator()
