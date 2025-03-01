@@ -70,6 +70,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case arctan2Func
     case expFunc
     case logFunc
+    case maxFunc
+    case absFunc
 
     var objectName: ObjectName {
         switch self {
@@ -198,6 +200,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("exp", [""])
         case .logFunc:
             return .functionName("log", [""])
+        case .maxFunc:
+            return .functionName("max", ["", ""])
+        case .absFunc:
+            return .functionName("abs", [""])
         }
     }
 
@@ -205,7 +211,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         switch self {
         case .sinFunc, .cosFunc, .tanFunc,
                 .arcsinFunc, .arccosFunc, .arctanFunc, .arctan2Func,
-                .expFunc, .logFunc:
+                .expFunc, .logFunc, .maxFunc, .absFunc:
             return true
         default:
             return false
@@ -232,6 +238,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return exp(argValue)
         case .logFunc:
             return log(argValue)
+        case .absFunc:
+            return abs(argValue)
         default:
             fatalError("We should never get here as we already checked if function was a methematical one")
         }
@@ -243,6 +251,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         switch self {
         case .arctan2Func:
             return atan2(argValue1, argValue2)
+        case .maxFunc:
+            return max(argValue1, argValue2)
         default:
             fatalError("We should never get here as we already checked if function was a methematical one")
         }
@@ -301,10 +311,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeColorFunctionHsl(evaluator: evaluator, argumentValues: argumentValues)
         case .world:
             return try makeWorld(argumentValues: argumentValues)
-        case .sinFunc, .cosFunc, .tanFunc, .arcsinFunc, .arccosFunc, .arctanFunc, .expFunc, .logFunc:
+        case .sinFunc, .cosFunc, .tanFunc, .arcsinFunc, .arccosFunc, .arctanFunc, .expFunc, .logFunc, .absFunc:
             return try handleUnaryFunction(argumentValues: argumentValues)
-        case .arctan2Func:
-            return try handleArctan2(argumentValues: argumentValues)
+        case .arctan2Func, .maxFunc:
+            return try handleBinaryFunction(argumentValues: argumentValues)
         default:
             fatalError("Internal error: method calls should not get here")
         }
@@ -852,11 +862,18 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         return .double(self.call(rawArgumentValue))
     }
 
-    private func handleArctan2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func handleBinaryFunction(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let rawY = try extractRawDouble(argumentValue: argumentValues[0])
         let rawX = try extractRawDouble(argumentValue: argumentValues[1])
 
-        return .double(atan2(rawY, rawX))
+        switch self {
+        case .arctan2Func:
+            return .double(atan2(rawY, rawX))
+        case .maxFunc:
+            return .double(max(rawY, rawX))
+        default:
+            fatalError("Unable to handle binary function, \(self)")
+        }
     }
 
     private func extractRawBoolean(argumentValue: ScintillaValue) throws -> Bool {
