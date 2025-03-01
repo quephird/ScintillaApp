@@ -6,6 +6,7 @@
 //
 
 import Darwin
+import Foundation
 
 import ScintillaLib
 
@@ -71,7 +72,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case expFunc
     case logFunc
     case maxFunc
+    case minFunc
     case absFunc
+    case truncFunc
+    case roundFunc
 
     var objectName: ObjectName {
         switch self {
@@ -200,10 +204,16 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("exp", [""])
         case .logFunc:
             return .functionName("log", [""])
+        case .minFunc:
+            return .functionName("min", ["", ""])
         case .maxFunc:
             return .functionName("max", ["", ""])
         case .absFunc:
             return .functionName("abs", [""])
+        case .truncFunc:
+            return .functionName("trunc", [""])
+        case .roundFunc:
+            return .functionName("round", [""])
         }
     }
 
@@ -211,7 +221,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         switch self {
         case .sinFunc, .cosFunc, .tanFunc,
                 .arcsinFunc, .arccosFunc, .arctanFunc, .arctan2Func,
-                .expFunc, .logFunc, .maxFunc, .absFunc:
+                .expFunc, .logFunc, .minFunc, .maxFunc, .absFunc, .truncFunc, .roundFunc:
             return true
         default:
             return false
@@ -240,6 +250,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return log(argValue)
         case .absFunc:
             return abs(argValue)
+        case .truncFunc:
+            return trunc(argValue)
+        case .roundFunc:
+            return round(argValue)
         default:
             fatalError("We should never get here as we already checked if function was a methematical one")
         }
@@ -251,6 +265,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         switch self {
         case .arctan2Func:
             return atan2(argValue1, argValue2)
+        case .minFunc:
+            return min(argValue1, argValue2)
         case .maxFunc:
             return max(argValue1, argValue2)
         default:
@@ -712,7 +728,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
     private func makeCSG(object: ScintillaValue,
                          argumentValues: [ScintillaValue],
-                         operation: Operation) throws -> ScintillaValue {
+                         operation: ScintillaLib.Operation) throws -> ScintillaValue {
         let shape = try extractRawShape(argumentValue: object)
         let rightShapes = try extractRawShapeList(argumentValue: argumentValues[0])
 
