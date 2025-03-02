@@ -31,6 +31,8 @@ class ViewModel {
             }
             let canvas = try await renderTask!.value
             self.renderedImage = canvas.toCGImage()
+        } catch is CancellationError {
+            // Do nothing!
         } catch {
             self.currentEvaluatorError = error
         }
