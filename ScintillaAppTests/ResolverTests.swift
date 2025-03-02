@@ -223,7 +223,7 @@ World(
                                         Token(
                                             type: .identifier,
                                             lexeme: makeLexeme(source: source, offset: 69, length: 2)),
-                                        ResolvedLocation(depth: 0, index: 60)),
+                                        ResolvedLocation(depth: 0, index: 65)),
                                     Token(
                                         type: .slash,
                                         lexeme: makeLexeme(source: source, offset: 71, length: 1)),
@@ -454,7 +454,7 @@ World(
                                             Token(
                                                 type: .identifier,
                                                 lexeme: makeLexeme(source: source, offset: 299, length: 9)),
-                                            ResolvedLocation(depth: 0, index: 63)))
+                                            ResolvedLocation(depth: 0, index: 68)))
                                 ])
                         ])),
             ],
@@ -487,7 +487,7 @@ World(
                             Token(
                                 type: .identifier,
                                 lexeme: makeLexeme(source: source, offset: 332, length: 6)),
-                            ResolvedLocation(depth: 0, index: 61))),
+                            ResolvedLocation(depth: 0, index: 66))),
                     Expression<ResolvedLocation>.Argument(
                         name: Token(
                             type: .identifier,
@@ -496,7 +496,7 @@ World(
                             Token(
                                 type: .identifier,
                                 lexeme: makeLexeme(source: source, offset: 352, length: 6)),
-                            ResolvedLocation(depth: 0, index: 62))),
+                            ResolvedLocation(depth: 0, index: 67))),
                     Expression<ResolvedLocation>.Argument(
                         name: Token(
                             type: .identifier,
@@ -505,7 +505,7 @@ World(
                             Token(
                                 type: .identifier,
                                 lexeme: makeLexeme(source: source, offset: 372, length: 6)),
-                            ResolvedLocation(depth: 0, index: 64))),
+                            ResolvedLocation(depth: 0, index: 69))),
                 ])
         )
 

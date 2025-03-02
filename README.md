@@ -139,12 +139,13 @@ func differenceOfSquares(a, b) {
 }
 
 let shapes = [
-    ImplicitSurface(center: (0.0, 0.0, 0.0),
-                    radius: 2.0,
-                    function: { x, y, z in 
-                        4.0* differenceOfSquares(a: x, b: y)*differenceOfSquares(a: y, b: z)*differenceOfSquares(a: z, b: x) -
-                        (1.0 + 2.0*φ) * (x^2 + y^2 + z^2 - 1.0)^2
-                    })
+    ImplicitSurface(
+        center: (0.0, 0.0, 0.0),
+        radius: 2.0,
+        function: { x, y, z in
+            4.0* differenceOfSquares(a: x, b: y)*differenceOfSquares(a: y, b: z)*differenceOfSquares(a: z, b: x) -
+            (1.0 + 2.0*φ) * (x^2 + y^2 + z^2 - 1.0)^2
+        })
 ]
 ```
 
@@ -297,10 +298,10 @@ The following diagram might make it clearer to understand what the parameters re
                     ^      ┌------┬------┬------┬------┐
                     |      |      | *    |      |  *   |
                     |      | *    |      |   *  |      |
-                    |      |------┼------┼------┼------|
+                    |      ├------┼------┼------┼------┤
                     |      |      |      |  *   |     *|
                  uVector   |    * |  *   |      |      |
-                    |      |------┼------┼------┼------|
+                    |      ├------┼------┼------┼------┤
                     |      |      |   *  |   *  |      |
                     |      |  *   |      |      |*     |
                     |      └------┴------┴------┴------┘
@@ -576,11 +577,12 @@ let turquoise = Uniform(
     Color(h: 0.5, s: 0.5, l: 0.5))
 
 let shapes = [
-    ImplicitSurface(bottomFrontLeft: (-2, -2, -2),
-                    topBackRight: (2, 2, 2),
-                    function: { x, y, z in 
-                        x^2 + y^2 + z^2 + sin(4*x) + sin(4*y) + sin(4*z) - 1
-                    })
+    ImplicitSurface(
+        bottomFrontLeft: (-2, -2, -2),
+        topBackRight: (2, 2, 2),
+        function: { x, y, z in
+            x^2 + y^2 + z^2 + sin(4*x) + sin(4*y) + sin(4*z) - 1
+        })
         .material(turquoise)
 ]
 
@@ -648,9 +650,9 @@ All shapes can be transformed by calling methods on them.
 
 * `translate(x: Double, y: Double, z: Double)`: moves the shape by the specified anounts in the x, y, and z directions
 * `scale(x: Double, y: Double, z: Double)`: makes the shape larger or smaller along the x, y, and z axes
-* `rotateX(theta: Double)`: rotates the shape about the x-axis
-* `rotateY(theta: Double)`: rotates the shape about the y-axis
-* `rotateZ(theta: Double)`: rotates the shape about the z-axis
+* `rotateX(Double)`: rotates the shape about the x-axis
+* `rotateY(Double)`: rotates the shape about the y-axis
+* `rotateZ(Double)`: rotates the shape about the z-axis
 * `shear(xy: Double, xz: Double, yx: Double, yz: Double, zx: Double, zy: Double)`: deforms the shape by altering the proportion of x with respect to y, proportion of x with respect to z, etc. 
 
 You can chain multiple operations together in a logical manner and not have to explicitly `let` out a transformation matrix incorporating then all, and then pass it in to the shape's constructor. For example,
@@ -672,9 +674,9 @@ let shapes = [
     Cube()
         .shear(xy: 1, xz: 0, yx: 0, yz: 0, zx: 0, zy: 0)
         .scale(x: 1, y: 2, z: 3)
-        .rotateX(theta: PI/8)
-        .rotateY(theta: PI/8)
-        .rotateZ(theta: PI/8)
+        .rotateX(PI/8)
+        .rotateY(PI/8)
+        .rotateZ(PI/8)
         .translate(x: 0, y: 1, z: 2),
     Plane()
         .translate(x: 0.0, y: -2.5, z: 0.0)
@@ -729,9 +731,9 @@ Like shapes, patterns can be transformed via method calls and their transformati
 
 * `translate(x: Double, y: Double, z: Double)`: moves the _pattern_ by the specified anounts in the x, y, and z directions
 * `scale(x: Double, y: Double, z: Double)`: makes the _pattern_ larger or smaller along the x, y, and z axes
-* `rotateX(theta: Double)`: rotates the _pattern_ about the x-axis
-* `rotateY(theta: Double)`: rotates the _pattern_ about the y-axis
-* `rotateZ(theta: Double)`: rotates the _pattern_ about the z-axis
+* `rotateX(Double)`: rotates the _pattern_ about the x-axis
+* `rotateY(Double)`: rotates the _pattern_ about the y-axis
+* `rotateZ(Double)`: rotates the _pattern_ about the z-axis
 * `shear(xy: Double, xz: Double, yx: Double, yz: Double, zx: Double, zy: Double)`: deforms the _pattern_ by altering the proportion of x with respect to y, proportion of x with respect to z, etc. 
 
 Here is an example using one of each of the material types:
@@ -756,13 +758,13 @@ let checkered = Checkered3D(
     firstColor: Color(r: 1, g: 1, b: 1),
     secondColor: Color(r: 0, g: 0, b: 0))
     .scale(x: 0.5, y: 0.5, z: 0.5)
-    .rotateZ(theta: PI/8)
+    .rotateZ(PI/8)
 
 let rainbow = ColorFunction(
     fh: { x, y, z in (arctan2(z, x)+PI)/PI/2.0 },
     fs: { x, y, z in 1.0 },
     fl: { x, y, z in 0.5 })
-    .rotateX(theta: -PI/4)
+    .rotateX(-PI/4)
 
 let shapes = [
     Sphere()
@@ -839,7 +841,7 @@ let die =
         .material(orange)
         .translate(x: 0.0, y: 1.0, z: 0.0)
         .difference(shapes: dimples)
-        .rotateY(theta: PI/4)
+        .rotateY(PI/4)
 
 let plane = Plane()
 
@@ -876,27 +878,29 @@ let lights = [
 let red = Uniform(
     Color(r: 1.0, g: 0.0, b: 0.0))
 
-let redCube =
+let redCube = [
     Cube()
         .material(red)
         .scale(x: 0.8, y: 0.8, z: 0.8)
+]
 
 let green = Uniform(
     Color(r: 0.0, g: 1.0, b: 0.0))
 
 let greenCylinder =
-    Cylinder(bottomY: -1.0,
-             topY: 1.0,
-             isCapped: true)
+    Cylinder(
+        bottomY: -1.0,
+        topY: 1.0,
+        isCapped: true)
         .material(green)
         .scale(x: 0.5, y: 1.0, z: 0.5)
 
 let greenCylinders = [
     greenCylinder,
     greenCylinder
-        .rotateZ(theta: PI/2),
+        .rotateZ(PI/2),
     greenCylinder
-        .rotateX(theta: PI/2)
+        .rotateX(PI/2)
 ]
 
 let blue = Uniform(
@@ -905,9 +909,9 @@ let blue = Uniform(
 let shapes = [
     Sphere()
         .material(blue)
-        .intersection(shapes: [redCube])
-        .difference(shapes: greenCylinders)
-        .rotateY(theta: PI/8)
+        .intersection(redCube)
+        .difference(greenCylinders)
+        .rotateY(PI/8)
 ]
 
 World(
@@ -945,11 +949,11 @@ let twoSpheres = [
     Sphere()
         .material(red)
         .translate(x: -1, y: 0, z: 0)
-        .rotateZ(theta: PI/2),
+        .rotateZ(PI/2),
     Sphere()
         .material(green)
         .translate(x: 1, y: 0, z: 0)
-        .rotateZ(theta: PI/2)
+        .rotateZ(PI/2)
 ]
 
 World(
@@ -982,7 +986,7 @@ let green = Uniform(
     Color(r: 0.0, g: 1.0, b: 0.0))
 
 let twoSpheres = [
-    Group(children: [
+    Group([
         Sphere()
             .material(red)
             .translate(x: -1, y: 0, z: 0),
@@ -990,7 +994,7 @@ let twoSpheres = [
             .material(green)
             .translate(x: 1, y: 0, z: 0)
     ])
-        .rotateZ(theta: PI/2)
+        .rotateZ(PI/2)
 ]
 
 World(

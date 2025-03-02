@@ -127,7 +127,7 @@ Uniform(
 Checkered3D(
     firstColor: Color(r: 0.0, g: 0.0, b: 0.0),
     secondColor: Color(r: 1.0, g: 1.0, b: 1.0))
-    .rotateY(theta: PI/4)
+    .rotateY(PI/4)
 """
 
         let evaluator = Evaluator()
