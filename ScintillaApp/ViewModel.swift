@@ -16,6 +16,7 @@ class ViewModel {
     var currentEvaluatorError: Error?
     var showFileExporter: Bool = false
     var renderedImage: CGImage?
+    var renderTask: Task<ScintillaLib.Canvas, any Error>?
 
     var percentRendered: Double = 0.0
     var elapsedTime: Range<Date> = Date()..<Date()
@@ -25,8 +26,13 @@ class ViewModel {
         do {
             let world = try evaluator.interpret(source: source)
             self.showSheet = true
-            let canvas = await world.render(updateClosure: updateProgress)
+            self.renderTask = Task {
+                try await world.render(updateClosure: updateProgress)
+            }
+            let canvas = try await renderTask!.value
             self.renderedImage = canvas.toCGImage()
+        } catch is CancellationError {
+            // Do nothing!
         } catch {
             self.currentEvaluatorError = error
         }

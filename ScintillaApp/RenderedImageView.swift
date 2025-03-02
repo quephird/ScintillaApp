@@ -14,10 +14,6 @@ struct RenderedImageView: View {
         if let renderedImage = viewModel.renderedImage {
             VStack {
                 Image(nsImage: NSImage(cgImage: renderedImage, size: renderedImage.nsSize))
-                Button("Dismiss") {
-                    self.viewModel.showSheet = false
-                    self.viewModel.renderedImage = nil
-                }
             }
         } else {
             VStack {
@@ -36,6 +32,21 @@ struct RenderedImageView: View {
                 Spacer()
             }
         }
+
+        if self.viewModel.renderedImage == nil {
+            Button("Cancel") {
+                if let renderTask = self.viewModel.renderTask {
+                    renderTask.cancel()
+                }
+                self.viewModel.showSheet = false
+            }
+        } else {
+            Button("Dismiss") {
+                self.viewModel.showSheet = false
+                self.viewModel.renderedImage = nil
+            }
+        }
+
         HStack {
             Text("Elapsed time: \(viewModel.elapsedTime.formatted(.components(style: .condensedAbbreviated)))")
                 .padding(.leading, 5)
