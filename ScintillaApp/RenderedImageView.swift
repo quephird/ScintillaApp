@@ -41,6 +41,14 @@ struct RenderedImageView: View {
                 .padding(.leading, 5)
                 .padding(.bottom, 5)
             Spacer()
+            if self.viewModel.renderedImage == nil {
+                Button("Cancel") {
+                    if let renderTask = self.viewModel.renderTask {
+                        renderTask.cancel()
+                    }
+                    self.viewModel.showSheet = false
+                }
+            }
         }
     }
 }
