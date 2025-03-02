@@ -90,7 +90,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .cylinder:
             return .functionName("Cylinder", ["bottomY", "topY", "isCapped"])
         case .group:
-            return .functionName("Group", ["children"])
+            return .functionName("Group", [""])
         case .implicitSurface1:
             return .functionName("ImplicitSurface", ["bottomFrontLeft", "topBackRight", "function"])
         case .implicitSurface2:
@@ -151,17 +151,17 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .scaleMaterial:
             return .methodName(.material, "scale", ["x", "y", "z"])
         case .rotateXShape:
-            return .methodName(.shape, "rotateX", ["theta"])
+            return .methodName(.shape, "rotateX", [""])
         case .rotateXMaterial:
-            return .methodName(.material, "rotateX", ["theta"])
+            return .methodName(.material, "rotateX", [""])
         case .rotateYShape:
-            return .methodName(.shape, "rotateY", ["theta"])
+            return .methodName(.shape, "rotateY", [""])
         case .rotateYMaterial:
-            return .methodName(.material, "rotateY", ["theta"])
+            return .methodName(.material, "rotateY", [""])
         case .rotateZShape:
-            return .methodName(.shape, "rotateZ", ["theta"])
+            return .methodName(.shape, "rotateZ", [""])
         case .rotateZMaterial:
-            return .methodName(.material, "rotateZ", ["theta"])
+            return .methodName(.material, "rotateZ", [""])
         case .shearShape:
             return .methodName(.shape, "shear", ["xy", "xz", "yx", "yz", "zx", "zy"])
         case .shearMaterial:
@@ -181,11 +181,11 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         case .refractive:
             return .methodName(.material, "refractive", [""])
         case .difference:
-            return .methodName(.shape, "difference", ["shapes"])
+            return .methodName(.shape, "difference", [""])
         case .intersection:
-            return .methodName(.shape, "intersection", ["shapes"])
+            return .methodName(.shape, "intersection", [""])
         case .union:
-            return .methodName(.shape, "union", ["shapes"])
+            return .methodName(.shape, "union", [""])
         case .sinFunc:
             return .functionName("sin", [""])
         case .cosFunc:
