@@ -71,4 +71,21 @@ class AttributedTextViewDelegate: NSObject, NSTextViewDelegate {
             textView.didChangeText()
         }
     }
+
+    func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        switch commandSelector {
+        case #selector(AttributedTextView.commentLine(_:)):
+            for case let rawRange as NSRange in textView.selectedRanges {
+                let indices = textView.string.indicesOfLineStarts(range: rawRange)
+
+                for index in indices {
+                    let location = index.utf16Offset(in: textView.string)
+                    textView.insertText("//", replacementRange: NSRange(location: location, length: 0))
+                }
+            }
+            return true
+        default:
+            return false
+        }
+    }
 }
