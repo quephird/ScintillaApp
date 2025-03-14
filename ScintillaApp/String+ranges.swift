@@ -23,24 +23,13 @@ extension String {
 
 extension String {
     func indicesOfLineStarts(range: NSRange) -> [String.Index] {
-        // TODO: How to handle empty file
-//        if self.count == 0 {
-//            return []
-//        }
-//
-//        var startIndex = String.Index(utf16Offset: range.location, in: self)
-//
-//        if startIndex == self.endIndex {
-//            return [startIndex]
-//        }
-
         var startIndex = String.Index(utf16Offset: range.location, in: self)
-        if startIndex != self.endIndex && self[startIndex] == "\n" {
+        if range.location > 0 && startIndex != self.endIndex && self[startIndex] == "\n" {
             startIndex = self.index(before: startIndex)
         }
 
         var endIndex = String.Index(utf16Offset: range.location + range.length, in: self)
-        if endIndex == self.endIndex || self[endIndex] == "\n" || range.length > 0 {
+        if endIndex > startIndex && endIndex < self.endIndex && self[endIndex] == "\n" && range.length > 0 {
             endIndex = self.index(before: endIndex)
         }
 
