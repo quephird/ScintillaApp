@@ -7,7 +7,11 @@
 
 import AppKit
 
-public class AttributedTextView: NSTextView {}
+public class AttributedTextView: NSTextView {
+    @IBAction func commentLine(_ sender: Any?) {
+        self.doCommand(by: #selector(self.commentLine(_:)))
+    }
+}
 
 extension AttributedTextView: AttributedTextViewRepresentable {
     public var attributedString: NSAttributedString {
