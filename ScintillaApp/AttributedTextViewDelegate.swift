@@ -75,6 +75,12 @@ class AttributedTextViewDelegate: NSObject, NSTextViewDelegate {
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         switch commandSelector {
         case #selector(AttributedTextView.commentLine(_:)):
+            // ACHTUNG!!! We need to temporarily disable highlighting
+            // to prevent it from firing for every edit, which will
+            // cause significant performance issues for larger sets
+            // of selections.
+            attributedTextEditor.disableHighlighting()
+
             for case let rawRange as NSRange in textView.selectedRanges {
                 let indices = textView.string.indicesOfLineStarts(range: rawRange)
 
@@ -83,6 +89,10 @@ class AttributedTextViewDelegate: NSObject, NSTextViewDelegate {
                     textView.insertText("//", replacementRange: NSRange(location: location, length: 0))
                 }
             }
+
+            attributedTextEditor.reenableHighlighting()
+            attributedTextEditor.highlighter(textView.layoutManager!)
+
             return true
         default:
             return false

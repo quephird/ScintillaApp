@@ -11,6 +11,17 @@ import SwiftUI
 struct AttributedTextEditor: NSViewRepresentable {
     @Binding public var attributedString: NSAttributedString
     public var highlighter: (NSLayoutManager) -> Void
+    private var previousHighlighter: (NSLayoutManager) -> Void = { _ in }
+
+    mutating public func disableHighlighting() {
+        self.previousHighlighter = self.highlighter
+        self.highlighter = { _ in }
+    }
+
+    mutating public func reenableHighlighting() {
+        self.highlighter = self.previousHighlighter
+        self.previousHighlighter = { _ in }
+    }
 
     private static var defaultFont: NSFont = NSFont(
         descriptor: .preferredFontDescriptor(
