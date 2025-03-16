@@ -83,7 +83,15 @@ class AttributedTextViewDelegate: NSObject, NSTextViewDelegate {
             // of selections.
             attributedTextEditor.disableHighlighting()
 
-            for case let rawRange as NSRange in textView.selectedRanges {
+            let currentSelectedRanges = textView.selectedRanges
+            textView.undoManager?.registerUndo(
+                withTarget: textView,
+                handler: { targetObject in
+                    let textView = targetObject as! AttributedTextView
+                    textView.selectedRanges = currentSelectedRanges
+                })
+
+            for case let rawRange as NSRange in currentSelectedRanges {
                 let indices = textView.string.indicesOfLineStarts(range: rawRange)
 
                 var newSelectedRange: NSRange

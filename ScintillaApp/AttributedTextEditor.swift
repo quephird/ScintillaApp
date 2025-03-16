@@ -13,6 +13,8 @@ struct AttributedTextEditor: NSViewRepresentable {
     public var highlighter: (NSLayoutManager) -> Void
     private var previousHighlighter: (NSLayoutManager) -> Void = { _ in }
 
+    @SwiftUI.Environment(\.undoManager) var undoManager
+
     mutating public func disableHighlighting() {
         self.previousHighlighter = self.highlighter
         self.highlighter = { _ in }
@@ -82,6 +84,7 @@ struct AttributedTextEditor: NSViewRepresentable {
         attributedTextView.backgroundColor = NSColor(named: "EditorBackground")!
         attributedTextView.typingAttributes = defaultAttributes
         attributedTextView.drawsBackground = true
+        attributedTextView.undoManager = self.undoManager
 
         scrollView.backgroundColor = NSColor(named: "EditorBackground")!
         scrollView.drawsBackground = true
