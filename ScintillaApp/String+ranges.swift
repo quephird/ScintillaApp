@@ -5,6 +5,8 @@
 //  Created by Danielle Kefford on 1/20/25.
 //
 
+import Foundation
+
 extension String {
     func ranges(of substring: String) -> [Range<String.Index>] {
         var result: [Range<String.Index>] = []
@@ -16,5 +18,35 @@ extension String {
         }
 
         return result
+    }
+}
+
+extension String {
+    func indicesOfLineStarts(range: NSRange) -> [String.Index] {
+        var startIndex = String.Index(utf16Offset: range.location, in: self)
+        if range.location > 0 && startIndex != self.endIndex && self[startIndex] == "\n" {
+            startIndex = self.index(before: startIndex)
+        }
+
+        var endIndex = String.Index(utf16Offset: range.location + range.length, in: self)
+        if endIndex > startIndex && endIndex < self.endIndex && self[endIndex] == "\n" && range.length > 0 {
+            endIndex = self.index(before: endIndex)
+        }
+
+        // Move backwards through string until we hit the stop index
+        var newlineIndices: [String.Index] = []
+        var currentIndex = endIndex
+        repeat {
+            if let index = self[..<currentIndex].lastIndex(of: "\n") {
+                currentIndex = index
+                newlineIndices.append(self.index(after: index))
+            } else {
+                // If we got here, then we're on the first line of the string
+                newlineIndices.append(self.startIndex)
+                break
+            }
+        } while currentIndex > startIndex
+
+        return newlineIndices
     }
 }

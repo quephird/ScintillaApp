@@ -38,6 +38,13 @@ struct ScintillaApp: App {
             }
         }
         .commands {
+            CommandMenu("Editor") {
+                Button("Comment Selection") {
+                    NSApplication.shared.sendAction(#selector(AttributedTextView.commentLines(_:)), to: nil, from: self)
+                }
+                .keyboardShortcut("/")
+            }
+
             CommandGroup(after: .saveItem) {
                 Divider()
 
