@@ -40,7 +40,7 @@ struct ScintillaApp: App {
         .commands {
             CommandMenu("Editor") {
                 Button("Comment Selection") {
-                    NSApplication.shared.sendAction(#selector(AttributedTextView.commentLine(_:)), to: nil, from: self)
+                    NSApplication.shared.sendAction(#selector(AttributedTextView.commentLines(_:)), to: nil, from: self)
                 }
                 .keyboardShortcut("/")
             }
