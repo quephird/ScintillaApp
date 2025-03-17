@@ -72,68 +72,76 @@ class AttributedTextViewDelegate: NSObject, NSTextViewDelegate {
         }
     }
 
+    private func handleCommentSelections(textView: NSTextView,
+                                         oldSelectedRanges: [NSValue]) {
+        var newSelectedRanges: [NSValue] = []
+
+        textView.undoManager?.disableUndoRegistration()
+        for case let rawRange as NSRange in oldSelectedRanges {
+            let indices = textView.string.indicesOfLineStarts(range: rawRange)
+
+            var newSelectedRange: NSRange
+            if indices.allSatisfy({ index in
+                // If we're at the end of the file then return false
+                // since there can't possibly be two slash characters there.
+                if index == textView.string.endIndex {
+                    return false
+                }
+
+                let nextIndex = textView.string.index(after: index)
+                return textView.string[index...nextIndex] == "//"
+            }) {
+                // If all of the selected lines begin with '//' then uncomment them all...
+                for index in indices {
+                    let location = index.utf16Offset(in: textView.string)
+                    textView.insertText("", replacementRange: NSRange(location: location, length: 2))
+                }
+
+                newSelectedRange = NSRange(
+                    location: rawRange.location - 2,
+                    length: rawRange.length - 2*(indices.count-1))
+            } else {
+                // ... otherwise insert comment slashes
+                for index in indices {
+                    let location = index.utf16Offset(in: textView.string)
+                    textView.insertText("//", replacementRange: NSRange(location: location, length: 0))
+                }
+
+                newSelectedRange = NSRange(
+                    location: rawRange.location + 2,
+                    length: rawRange.length + 2*(indices.count-1))
+            }
+
+            newSelectedRanges.append(newSelectedRange as NSValue)
+        }
+        textView.undoManager?.enableUndoRegistration()
+
+        textView.selectedRanges = newSelectedRanges
+        textView.undoManager?.registerUndo(
+            withTarget: self,
+            handler: { delegate in
+                delegate.handleCommentSelections(textView: textView,
+                                                 oldSelectedRanges: newSelectedRanges)
+            })
+    }
+
+
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
         switch commandSelector {
         case #selector(AttributedTextView.commentLine(_:)):
-            var newSelectedRanges: [NSValue] = []
-
             // ACHTUNG!!! We need to temporarily disable highlighting
             // to prevent it from firing for every edit, which will
             // cause significant performance issues for larger sets
             // of selections.
             attributedTextEditor.disableHighlighting()
 
-            let currentSelectedRanges = textView.selectedRanges
-            textView.undoManager?.registerUndo(
-                withTarget: textView,
-                handler: { targetObject in
-                    let textView = targetObject as! AttributedTextView
-                    textView.selectedRanges = currentSelectedRanges
-                })
+            let oldSelectedRanges = textView.selectedRanges
 
-            for case let rawRange as NSRange in currentSelectedRanges {
-                let indices = textView.string.indicesOfLineStarts(range: rawRange)
-
-                var newSelectedRange: NSRange
-                if indices.allSatisfy({ index in
-                    // If we're at the end of the file then return false
-                    // since there can't possibly be two slash characters there.
-                    if index == textView.string.endIndex {
-                        return false
-                    }
-
-                    let nextIndex = textView.string.index(after: index)
-                    return textView.string[index...nextIndex] == "//"
-                }) {
-                    // If all of the selected lines begin with '//' then uncomment them all...
-                    for index in indices {
-                        let location = index.utf16Offset(in: textView.string)
-                        textView.insertText("", replacementRange: NSRange(location: location, length: 2))
-                    }
-
-                    newSelectedRange = NSRange(
-                        location: rawRange.location - 2,
-                        length: rawRange.length - 2*(indices.count-1))
-                } else {
-                    // ... otherwise insert comment slashes
-                    for index in indices {
-                        let location = index.utf16Offset(in: textView.string)
-                        textView.insertText("//", replacementRange: NSRange(location: location, length: 0))
-                    }
-
-                    newSelectedRange = NSRange(
-                        location: rawRange.location + 2,
-                        length: rawRange.length + 2*(indices.count-1))
-                }
-
-                newSelectedRanges.append(newSelectedRange as NSValue)
-            }
+            self.handleCommentSelections(textView: textView,
+                                         oldSelectedRanges: oldSelectedRanges)
 
             attributedTextEditor.reenableHighlighting()
             attributedTextEditor.highlighter(textView.layoutManager!)
-
-            textView.selectedRanges = newSelectedRanges
-
             return true
         default:
             return false
