@@ -79,6 +79,11 @@ struct AttributedTextEditor: NSViewRepresentable {
         let attributedTextView = scrollView.documentView as! AttributedTextView
         self.updateText(attributedTextView: attributedTextView)
 
+        let lineNumberView = LineNumberView(textView: attributedTextView)
+        scrollView.verticalRulerView = lineNumberView
+        scrollView.hasVerticalRuler = true
+        scrollView.rulersVisible = true
+
         attributedTextView.isAutomaticTextReplacementEnabled = false
         attributedTextView.delegate = context.coordinator
         attributedTextView.backgroundColor = NSColor(named: "EditorBackground")!
