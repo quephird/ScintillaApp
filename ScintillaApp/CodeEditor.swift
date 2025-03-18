@@ -30,6 +30,7 @@ extension CodeEditor {
             self.highlightKeywords,
             self.highlightConstructors,
             self.highlightBuiltinFunctions,
+            self.highlightBuiltinConstants,
             self.highlightParameterNames,
             self.highlightNumbers,
             self.highlightMethodNames,
@@ -69,8 +70,21 @@ extension CodeEditor {
     }
 
     private func highlightBuiltinFunctions(layoutManager: NSLayoutManager) {
-        let regex = /\b(?:sin|cos|tan|arcsin|arccos|arctan|arctan2|exp|log|min|max|abs|trunc|round)\b/
+        let textStorage = layoutManager.textStorage!
+        let methodAttributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: NSColor(named: "BuiltinFunction")!,
+        ]
+        let methodRegex = /\b(?<method>(?:sin|cos|tan|arcsin|arccos|arctan|arctan2|exp|log|min|max|abs|trunc|round)\()/
+        let methodMatches = textStorage.string.matches(of: methodRegex)
+        for match in methodMatches {
+            let swiftRange = match.method.startIndex ..< match.method.endIndex
+            let nsRange = NSRange(swiftRange, in: textStorage.string)
+            layoutManager.setTemporaryAttributes(methodAttributes, forCharacterRange: nsRange)
+        }
+    }
 
+    private func highlightBuiltinConstants(layoutManager: NSLayoutManager) {
+        let regex = /\bpi\b/
         self.highlight(layoutManager: layoutManager,
                        regex: regex,
                        color: NSColor(named: "BuiltinFunction")!)

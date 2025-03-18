@@ -20,7 +20,7 @@ World(
     camera: Camera(
         width: 400,
         height: 400,
-        viewAngle: PI/3,
+        viewAngle: pi/3,
         from: (0, 0, -5),
         to: (0, 0, 0),
         up: (0, 1, 0)),
@@ -52,6 +52,7 @@ Scintilla's text editor also has syntax highlighting with the following color sc
 * All object constructors (e.g., `Sphere()`) are in bright green
 * All methods (e.g., `translate()`) are in dark green
 * All builtin functions (e.g., `sin()`) are in orange
+* All builtin constants (at this time just `pi`) are also in orange
 * All parameter names are in cadet blue
 * All numbers are in yellow
 * All punctuation is in white
@@ -91,7 +92,7 @@ For instance, while you can directly inline the construction of all of the objec
 let camera = Camera(
     width: 600,
     height: 600,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 0, -5),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -131,8 +132,8 @@ For instance, the implicit equation for the Barth sextic is:
 
 The first large term has some repeated patterns, namely the difference of squares. You can refactor that subexpresion out into its own function and incorporate it into the main lambda like this:
 
-```
-let φ = 1.61833987
+```swift
+let φ = 1.6180339887
 
 func differenceOfSquares(a, b) {
     φ^2*x^2 - y^2
@@ -153,7 +154,7 @@ However, it should be noted that at this time declaring and using your own funct
 
 Scintilla objects, particularly shapes, can also have methods which configure their internal state. To call a method on an object, you instantiate it, followed by a `.`, then the method name, and then the argument list. For instance, to move a a sphere two units to the right, you can do the following:
 
-```
+```swift
 let ball = Sphere().translate(x: 2.0, y: 0.0, z: 0.0)
 ```
 ... where the value for the `x` parameter is `2.0`, the `y` parameter 0.0, and the `z` parameter 0.0. More detailed discussion of other methods is given below in the Shapes section.
@@ -200,12 +201,12 @@ lambda         → "{" argList "in" expression "}" ;
 
 You can also add comments to your code. They can either be at the end of a line by using two slashes like this:
 
-```
+```swift
 let answer = 42 // This is an important variable.
 ```
 ... or you can have comments span multiple lines by using `/*` and `*/` like this:
 
-```
+```swift
 /*
  * This is the golden ratio.
  */
@@ -241,11 +242,11 @@ You can also render a scene with antialiasing by passing in a `true` value to th
 
 But by setting antialiasing to `true`, we can improve its quality:
 
-```
+```swift
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 2, -5),
     to: (0, 1, 0),
     up: (0, 1, 0),
@@ -320,7 +321,7 @@ As an example, here is a scene rendered with an area light with 5 subdivisions a
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 2, -5),
     to: (0, 1, 0),
     up: (0, 1, 0))
@@ -360,7 +361,7 @@ You can also have multiple lights, which you can use to create scenes with multi
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 2, -5),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -457,7 +458,7 @@ This shape is quite useful for making shapes such as vases which have symmetry a
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 7, -10),
     to: (0, 2, 0),
     up: (0, 1, 0))
@@ -501,7 +502,7 @@ The resulting shape is the polygon defined by the `xzPoints` being extruded from
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 5, -5),
     to: (0, 1, 0),
     up: (0, 1, 0))
@@ -564,7 +565,7 @@ x² + y² + z² + sin(4x) + sin(4y) + sin(4z) = 1
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 0, -5),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -610,7 +611,7 @@ The `ParametricSurface` is a shape defined by the following parameters:
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 1, -5),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -626,8 +627,8 @@ let shapes = [
     ParametricSurface(
         bottomFrontLeft: (-1, -1, -1),
         topBackRight: (1, 1, 1),
-        uRange: (0.0, 2*PI),
-        vRange: (0.0, 2*PI),
+        uRange: (0.0, 2*pi),
+        vRange: (0.0, 2*pi),
         fx: { u, v in cos(u)*sin(2*v) },
         fy: { u, v in sin(v) },
         fz: { u, v in sin(u)*sin(2*v) })
@@ -661,7 +662,7 @@ You can chain multiple operations together in a logical manner and not have to e
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 0, -10),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -674,9 +675,9 @@ let shapes = [
     Cube()
         .shear(xy: 1, xz: 0, yx: 0, yz: 0, zx: 0, zy: 0)
         .scale(x: 1, y: 2, z: 3)
-        .rotateX(PI/8)
-        .rotateY(PI/8)
-        .rotateZ(PI/8)
+        .rotateX(pi/8)
+        .rotateY(pi/8)
+        .rotateZ(pi/8)
         .translate(x: 0, y: 1, z: 2),
     Plane()
         .translate(x: 0.0, y: -2.5, z: 0.0)
@@ -711,7 +712,7 @@ All shapes can be constructed with a default material, which among other propert
 
 A `Uniform` material takes a single parameter, the primary color, and so a red material is constructed like so:
 
-```
+```swift
 Uniform(Color(r: 1.0, g: 0.0, b: 0.0))
 ```
 
@@ -738,11 +739,11 @@ Like shapes, patterns can be transformed via method calls and their transformati
 
 Here is an example using one of each of the material types:
 
-```
+```swift
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 2, -7),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -758,13 +759,13 @@ let checkered = Checkered3D(
     firstColor: Color(r: 1, g: 1, b: 1),
     secondColor: Color(r: 0, g: 0, b: 0))
     .scale(x: 0.5, y: 0.5, z: 0.5)
-    .rotateZ(PI/8)
+    .rotateZ(pi/8)
 
 let rainbow = ColorFunction(
-    fh: { x, y, z in (arctan2(z, x)+PI)/PI/2.0 },
+    fh: { x, y, z in (arctan2(z, x)+pi)/pi/2.0 },
     fs: { x, y, z in 1.0 },
     fl: { x, y, z in 0.5 })
-    .rotateX(-PI/4)
+    .rotateX(-pi/4)
 
 let shapes = [
     Sphere()
@@ -798,11 +799,11 @@ There are three supported operations for combining various shapes:
 
 For example, you can construct a die by "subtracting" spheres from a rounded cube like this:
 
-```
+```swift
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 3, -7),
     to: (0, 1, 0),
     up: (0, 1, 0))
@@ -841,7 +842,7 @@ let die =
         .material(orange)
         .translate(x: 0.0, y: 1.0, z: 0.0)
         .difference(shapes: dimples)
-        .rotateY(PI/4)
+        .rotateY(pi/4)
 
 let plane = Plane()
 
@@ -866,7 +867,7 @@ You can also chain calls to `.union()`, `.intersection()`, and `.difference()` t
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 1.5, -3),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -898,9 +899,9 @@ let greenCylinder =
 let greenCylinders = [
     greenCylinder,
     greenCylinder
-        .rotateZ(PI/2),
+        .rotateZ(pi/2),
     greenCylinder
-        .rotateX(PI/2)
+        .rotateX(pi/2)
 ]
 
 let blue = Uniform(
@@ -911,7 +912,7 @@ let shapes = [
         .material(blue)
         .intersection(redCube)
         .difference(greenCylinders)
-        .rotateY(PI/8)
+        .rotateY(pi/8)
 ]
 
 World(
@@ -930,7 +931,7 @@ There are times when you do not necessarily want to combine shapes to make new s
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 0, -5),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -949,11 +950,11 @@ let twoSpheres = [
     Sphere()
         .material(red)
         .translate(x: -1, y: 0, z: 0)
-        .rotateZ(PI/2),
+        .rotateZ(pi/2),
     Sphere()
         .material(green)
         .translate(x: 1, y: 0, z: 0)
-        .rotateZ(PI/2)
+        .rotateZ(pi/2)
 ]
 
 World(
@@ -970,7 +971,7 @@ Notice that we have to apply the same rotation twice. We can do better than this
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 0, -5),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -994,7 +995,7 @@ let twoSpheres = [
             .material(green)
             .translate(x: 1, y: 0, z: 0)
     ])
-        .rotateZ(PI/2)
+        .rotateZ(pi/2)
 ]
 
 World(
