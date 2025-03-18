@@ -59,7 +59,7 @@ false
 
     @Test func evaluateCallOfBuiltin() async throws {
         let source = """
-sin(PI/4)
+sin(pi/4)
 """
 
         let evaluator = Evaluator()
@@ -127,7 +127,7 @@ Uniform(
 Checkered3D(
     firstColor: Color(r: 0.0, g: 0.0, b: 0.0),
     secondColor: Color(r: 1.0, g: 1.0, b: 1.0))
-    .rotateY(PI/4)
+    .rotateY(pi/4)
 """
 
         let evaluator = Evaluator()
@@ -174,7 +174,7 @@ PointLight(position: (-5.0, 0.0, 3.0))
 Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 0, 5),
     to: (0, 0, 0),
     up: (0, 1, 0))
@@ -200,7 +200,7 @@ Camera(
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 0, 5),
     to: (0, 0, 0),
     up: (0, 1, 0))

@@ -137,7 +137,7 @@ func hypotenuse(a, b) {
 let camera = Camera(
     width: 400,
     height: 400,
-    viewAngle: PI/3,
+    viewAngle: pi/3,
     from: (0, 0, 5),
     to: (0, 0, 0),
     up: (0, 1, 0))

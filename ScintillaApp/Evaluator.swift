@@ -21,7 +21,7 @@ class Evaluator {
             globalEnvironment.define(name: name, value: .builtin(builtin))
         }
 
-        globalEnvironment.define(name: .variableName("PI"), value: .double(PI))
+        globalEnvironment.define(name: .variableName("pi"), value: .double(PI))
 
         self.environment = globalEnvironment
     }

@@ -28,7 +28,7 @@ struct Resolver {
         var builtins = ScintillaBuiltin.allCases.enumerated().map{ (i, builtin) in
             (builtin.objectName, (i, true))
         }
-        builtins.append((.variableName("PI"), (builtins.count, true)))
+        builtins.append((.variableName("pi"), (builtins.count, true)))
 
         self.scopeStack = [Dictionary(uniqueKeysWithValues: builtins)]
     }
