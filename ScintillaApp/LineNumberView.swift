@@ -8,20 +8,12 @@
 import AppKit
 
 class LineNumberView: NSRulerView {
-    var font: NSFont! {
-        didSet {
-            self.needsDisplay = true
-        }
-    }
-
     init(textView: NSTextView) {
         super.init(scrollView: textView.enclosingScrollView!,
                    orientation: NSRulerView.Orientation.verticalRuler)
-        self.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
         self.clientView = textView
 
         self.ruleThickness = 40
-
         self.clipsToBounds = true
     }
 
@@ -38,7 +30,7 @@ class LineNumberView: NSRulerView {
                 let relativePoint = self.convert(NSZeroPoint, from: textView)
                 let lineNumberAttributes = [
                     NSAttributedString.Key.font: textView.font!.withSize(10.0),
-                    NSAttributedString.Key.foregroundColor: NSColor.lightGray]
+                    NSAttributedString.Key.foregroundColor: NSColor(named: "LineNumber")!]
                 as [NSAttributedString.Key : Any]
 
                 let drawLineNumber = { (lineNumberString:String, y:CGFloat) -> Void in
