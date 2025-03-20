@@ -1019,4 +1019,6 @@ It's not a huge gain in this example but if you are constructing scenes with man
 * Building a text view with syntax highlighting in SwiftUI  
   [https://medium.com/@orhanerday/building-a-swiftui-code-block-view-with-syntax-highlighting-d3d737a90a65](https://medium.com/@orhanerday/building-a-swiftui-code-block-view-with-syntax-highlighting-d3d737a90a65)
 * Apple forums thread on how to use a coordinator with a text view  
-  [https://forums.developer.apple.com/forums/thread/125920](https://forums.developer.apple.com/forums/thread/125920)  
+  [https://forums.developer.apple.com/forums/thread/125920](https://forums.developer.apple.com/forums/thread/125920)
+* GitHub repo for example project using `NSRulerView` for displaying line numbers  
+  [https://github.com/yichizhang/NSTextView-LineNumberView](https://github.com/yichizhang/NSTextView-LineNumberView)
