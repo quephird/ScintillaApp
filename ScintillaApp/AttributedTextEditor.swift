@@ -98,7 +98,9 @@ struct AttributedTextEditor: NSViewRepresentable {
     }
 
     public func updateNSView(_ view: NSView, context: Context) {
-        let attributedTextView = (view as! NSScrollView).documentView as! AttributedTextView
+        let scrollView = view as! NSScrollView
+        let attributedTextView = scrollView.documentView as! AttributedTextView
         self.updateText(attributedTextView: attributedTextView)
+        scrollView.verticalRulerView!.needsDisplay = true
     }
 }

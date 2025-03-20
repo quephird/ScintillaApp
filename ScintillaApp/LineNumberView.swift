@@ -29,7 +29,6 @@ class LineNumberView: NSRulerView {
         fatalError("init(coder:) has not been implemented")
     }
 
-
     override func drawHashMarksAndLabels(in rect: NSRect) {
         NSColor(named: "EditorBackground")!.setFill()
         self.bounds.fill()
