@@ -391,6 +391,82 @@ World(
 
 ![](./images/two_lights.png)
 
+By default, light sources produce white light but you can override that with a color of your choice. In this example, there are three lights in the scene:
+
+```
+let camera = Camera(
+    width: 400,
+    height: 400,
+    viewAngle: pi/3,
+    from: (0, 2, -5),
+    to: (0, 0, 0),
+    up: (0, 1, 0))
+
+let red = Color(r: 1.0, g: 0.0, b: 0.0)
+let green = Color(r: 0.0, g: 1.0, b: 0.0)
+let blue = Color(r: 0.0, g: 0.0, b: 1.0)
+
+let lights = [
+    PointLight(
+        position: (-5, 5, -5),
+        color: red),
+    PointLight(
+        position: (0, 5, -5),
+        color: blue),
+    PointLight(
+        position: (5, 5, -5),
+        color: green)
+]
+
+let shapes = [
+    Sphere(),
+    Plane()
+        .translate(x: 0.0, y: -1.0, z: 0.0)
+]
+
+World(
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
+```
+
+![](./images/three_colored_lights.png)
+
+Also by default, light intensity does not fade over distance, but if you want a more realistic scene you can specify a value for the `fadeDistance` parameter; larger values mean that light takes more distance to fade, smaller ones result in a sharper dropoff.
+
+```
+let camera = Camera(
+    width: 600,
+    height: 600,
+    viewAngle: pi/3,
+    from: (0, 2, 5),
+    to: (0, 0, 0),
+    up: (0, 1, 0))
+
+let lights = [
+    PointLight(
+        position: (5, 5, 5),
+        fadeDistance: 5.0)
+]
+
+let solidRed = Uniform(
+    Color(r: 1.0, g: 0.0, b: 0.0))
+
+let shapes = [
+    Sphere()
+        .material(solidRed),
+    Plane()
+        .translate(x: 0.0, y: -1.0, z: 0.0)
+]
+
+World(
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
+```
+
+![](./images/faded_light.png)
+
 ## Simple shapes
 
 The following simple geometric shapes are available:
