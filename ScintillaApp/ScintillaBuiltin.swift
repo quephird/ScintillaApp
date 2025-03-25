@@ -30,8 +30,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case world
     case camera1
     case camera2
-    case pointLight
-    case areaLight
+    case pointLight1
+    case pointLight2
+    case pointLight3
+    case pointLight4
+    case areaLight1
+    case areaLight2
+    case areaLight3
+    case areaLight4
     case uniform
     case striped
     case gradient
@@ -122,10 +128,22 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up"])
         case .camera2:
             return .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up", "antialiasing"])
-        case .pointLight:
+        case .pointLight1:
             return .functionName("PointLight", ["position"])
-        case .areaLight:
+        case .pointLight2:
+            return .functionName("PointLight", ["position", "color"])
+        case .pointLight3:
+            return .functionName("PointLight", ["position", "fadeDistance"])
+        case .pointLight4:
+            return .functionName("PointLight", ["position", "color", "fadeDistance"])
+        case .areaLight1:
             return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps"])
+        case .areaLight2:
+            return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps", "color"])
+        case .areaLight3:
+            return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps", "fadeDistance"])
+        case .areaLight4:
+            return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps", "color", "fadeDistance"])
         case .uniform:
             return .functionName("Uniform", [""])
         case .striped:
@@ -313,10 +331,22 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeCamera(argumentValues: argumentValues)
         case .camera2:
             return try makeCamera(argumentValues: argumentValues)
-        case .pointLight:
-            return try makePointLight(argumentValues: argumentValues)
-        case .areaLight:
-            return try makeAreaLight(argumentValues: argumentValues)
+        case .pointLight1:
+            return try makePointLight1(argumentValues: argumentValues)
+        case .pointLight2:
+            return try makePointLight2(argumentValues: argumentValues)
+        case .pointLight3:
+            return try makePointLight3(argumentValues: argumentValues)
+        case .pointLight4:
+            return try makePointLight4(argumentValues: argumentValues)
+        case .areaLight1:
+            return try makeAreaLight1(argumentValues: argumentValues)
+        case .areaLight2:
+            return try makeAreaLight2(argumentValues: argumentValues)
+        case .areaLight3:
+            return try makeAreaLight3(argumentValues: argumentValues)
+        case .areaLight4:
+            return try makeAreaLight4(argumentValues: argumentValues)
         case .uniform:
             return try makeUniform(argumentValues: argumentValues)
         case .gradient, .striped, .checkered2D, .checkered3D:
@@ -573,14 +603,64 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
                               antialiasing: antialiasing))
     }
 
-    private func makePointLight(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func makePointLight1(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let (x, y, z) = try extractRawTuple3(argumentValue: argumentValues[0])
 
         let point = Point(x, y, z)
         return .light(PointLight(position: point))
     }
 
-    private func makeAreaLight(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    private func makePointLight2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let (x, y, z) = try extractRawTuple3(argumentValue: argumentValues[0])
+        let point = Point(x, y, z)
+        let color = try extractRawColor(argumentValue: argumentValues[1])
+
+        return .light(PointLight(position: point, color: color))
+    }
+
+    private func makePointLight3(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let (x, y, z) = try extractRawTuple3(argumentValue: argumentValues[0])
+        let point = Point(x, y, z)
+        let fadeDistance = try extractRawDouble(argumentValue: argumentValues[1])
+
+        return .light(PointLight(position: point, fadeDistance: fadeDistance))
+    }
+
+    private func makePointLight4(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let (x, y, z) = try extractRawTuple3(argumentValue: argumentValues[0])
+        let point = Point(x, y, z)
+        let color = try extractRawColor(argumentValue: argumentValues[1])
+        let fadeDistance = try extractRawDouble(argumentValue: argumentValues[2])
+
+        let light = PointLight(position: point, color: color, fadeDistance: fadeDistance)
+        return .light(light)
+    }
+
+    private func makeAreaLight1(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        return try makeAreaLight(argumentValues: argumentValues)
+    }
+
+    private func makeAreaLight2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let color = try extractRawColor(argumentValue: argumentValues[5])
+        return try makeAreaLight(argumentValues: argumentValues, color: color)
+    }
+
+    private func makeAreaLight3(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let fadeDistance = try extractRawDouble(argumentValue: argumentValues[5])
+        return try makeAreaLight(argumentValues: argumentValues, fadeDistance: fadeDistance)
+    }
+
+    private func makeAreaLight4(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let color = try extractRawColor(argumentValue: argumentValues[5])
+        let fadeDistance = try extractRawDouble(argumentValue: argumentValues[6])
+        return try makeAreaLight(argumentValues: argumentValues,
+                                 color: color,
+                                 fadeDistance: fadeDistance)
+    }
+
+    private func makeAreaLight(argumentValues: [ScintillaValue],
+                               color: Color = .white,
+                               fadeDistance: Double? = nil) throws -> ScintillaValue {
         let (cornerX, cornerY, cornerZ) = try extractRawTuple3(argumentValue: argumentValues[0])
         let corner = Point(cornerX, cornerY, cornerZ)
         let (uVectorX, uVectorY, uVectorZ) = try extractRawTuple3(argumentValue: argumentValues[1])
@@ -590,13 +670,17 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let vVector = Vector(vVectorX, vVectorY, vVectorZ)
         let vSteps = Int(try extractRawDouble(argumentValue: argumentValues[4]))
 
-        return .light(AreaLight(
+        let light = AreaLight(
             corner: corner,
+            color: color,
             uVec: uVector,
             uSteps: uSteps,
             vVec: vVector,
-            vSteps: vSteps))
+            vSteps: vSteps,
+            fadeDistance: fadeDistance)
+        return .light(light)
     }
+
 
     private func makeUniform(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         let color = try extractRawColor(argumentValue: argumentValues[0])
