@@ -355,6 +355,56 @@ World(
 
 **NOTA BENE**: Using an `AreaLight` results in longer rendering times that are proportional to the values of the `uSteps` and `vSteps` parameters.
 
+There is also a `SpotLight` available which you can use to illuminate a focused area of the scene; it takes the following parameters:
+
+| Parameter name | Description |
+| --- | --- |
+| `position` | a tuple which represents the x, y, and z coordinates of the position of the light source |
+| `pointAt` | a tuple which represents the x, y, and z coordinates of the point that the light source is directed at |
+| `beamAngle` | a double representing the angular width (in radians) of the main beam of light |
+| `falloffAngle` | a double representing the angular width of the spotlight over which the intensity of the light falls off to zero. It needs to be greater than or equal to the `beamAngle` value |
+| `tightness` | a double which governs the way in which the intensity of the light is attentuated between the `beamAngle` and `falloffAngle`. A value of 1 results in a linear taper; less than one results in a gradual taper at first then a sharp falloff to zero; greater than one results in a rapid taper at first then a gradual falloff to zero |
+
+Below is an example of a scene with a spot light up and to the left of the red ball, which results in the ball's shadow being cast within the elliptical region on the plane illuminated by the spot light:
+
+```
+let camera = Camera(
+    width: 400,
+    height: 400,
+    viewAngle: pi/3,
+    from: (0, 2, -5),
+    to: (0, 1, 0),
+    up: (0, 1, 0))
+
+let lights = [
+    SpotLight(
+        position: (-5, 5, 0),
+        pointAt: (0, 0, 0),
+        beamAngle: pi/12,
+        falloffAngle: pi/6,
+        tightness: 1)
+]
+
+let red = Uniform(
+    Color(r: 1, g: 0, b: 0))
+
+let shapes = [
+    Sphere()
+        .material(red)
+        .translate(x: 0, y: 1, z: 0),
+    Plane()
+]
+
+World(
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
+
+```
+
+![](./images/spotlight.png)
+
+
 You can also have multiple lights, which you can use to create scenes with multiple shadows and/or give shapes more highlights. Below is a slightly different version of the scene above but with _two_ lights, a plane, and the camera moved up a little:
 
 ```swift
