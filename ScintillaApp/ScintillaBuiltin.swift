@@ -38,6 +38,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case areaLight2
     case areaLight3
     case areaLight4
+    case spotLight1
+    case spotLight2
+    case spotLight3
+    case spotLight4
     case uniform
     case striped
     case gradient
@@ -144,6 +148,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps", "fadeDistance"])
         case .areaLight4:
             return .functionName("AreaLight", ["corner", "uVector", "uSteps", "vVector", "vSteps", "color", "fadeDistance"])
+        case .spotLight1:
+            return .functionName("SpotLight", ["position", "pointAt", "beamAngle", "falloffAngle", "tightness"])
+        case .spotLight2:
+            return .functionName("SpotLight", ["position", "pointAt", "beamAngle", "falloffAngle", "tightness", "color"])
+        case .spotLight3:
+            return .functionName("SpotLight", ["position", "pointAt", "beamAngle", "falloffAngle", "tightness", "fadeDistance"])
+        case .spotLight4:
+            return .functionName("SpotLight", ["position", "pointAt", "beamAngle", "falloffAngle", "tightness", "color", "fadeDistance"])
         case .uniform:
             return .functionName("Uniform", [""])
         case .striped:
@@ -347,6 +359,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeAreaLight3(argumentValues: argumentValues)
         case .areaLight4:
             return try makeAreaLight4(argumentValues: argumentValues)
+        case .spotLight1:
+            return try makeSpotLight1(argumentValues: argumentValues)
+        case .spotLight2:
+            return try makeSpotLight2(argumentValues: argumentValues)
+        case .spotLight3:
+            return try makeSpotLight3(argumentValues: argumentValues)
+        case .spotLight4:
+            return try makeSpotLight4(argumentValues: argumentValues)
         case .uniform:
             return try makeUniform(argumentValues: argumentValues)
         case .gradient, .striped, .checkered2D, .checkered3D:
@@ -677,6 +697,50 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             uSteps: uSteps,
             vVec: vVector,
             vSteps: vSteps,
+            fadeDistance: fadeDistance)
+        return .light(light)
+    }
+
+    private func makeSpotLight1(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        return try makeSpotLight(argumentValues: argumentValues)
+    }
+
+    private func makeSpotLight2(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let color = try extractRawColor(argumentValue: argumentValues[5])
+        return try makeSpotLight(argumentValues: argumentValues, color: color)
+    }
+
+    private func makeSpotLight3(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let fadeDistance = try extractRawDouble(argumentValue: argumentValues[5])
+        return try makeSpotLight(argumentValues: argumentValues, fadeDistance: fadeDistance)
+    }
+
+    private func makeSpotLight4(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let color = try extractRawColor(argumentValue: argumentValues[5])
+        let fadeDistance = try extractRawDouble(argumentValue: argumentValues[6])
+        return try makeSpotLight(argumentValues: argumentValues,
+                                 color: color,
+                                 fadeDistance: fadeDistance)
+    }
+
+    private func makeSpotLight(argumentValues: [ScintillaValue],
+                               color: Color = .white,
+                               fadeDistance: Double? = nil) throws -> ScintillaValue {
+        let (positionX, positionY, positionZ) = try extractRawTuple3(argumentValue: argumentValues[0])
+        let position = Point(positionX, positionY, positionZ)
+        let (pointAtX, pointAtY, pointAtZ) = try extractRawTuple3(argumentValue: argumentValues[1])
+        let pointAt = Point(pointAtX, pointAtY, pointAtZ)
+        let beamAngle = try extractRawDouble(argumentValue: argumentValues[2])
+        let falloffAngle = try extractRawDouble(argumentValue: argumentValues[3])
+        let tightness = try extractRawDouble(argumentValue: argumentValues[4])
+
+        let light = SpotLight(
+            position: position,
+            pointAt: pointAt,
+            beamAngle: beamAngle,
+            falloffAngle: falloffAngle,
+            tightness: tightness,
+            color: color,
             fadeDistance: fadeDistance)
         return .light(light)
     }
