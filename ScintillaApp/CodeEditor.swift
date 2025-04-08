@@ -50,7 +50,7 @@ extension CodeEditor {
         let cameraKeyword = /\bCamera\b/
         let lightKeywords = /\b(?:AreaLight|PointLight|SpotLight)\b/
         let colorKeyword = /\bColor\b/
-        let materialKeywords = /\b(?:Uniform|Striped|Checkered2D|Checkered3D|Gradient|ColorFunction)\b/
+        let materialKeywords = /\b(?:Uniform|Striped|Checkered2D|Checkered3D|Gradient|ColorFunction|Marble|Wood)\b/
         let shapeKeywords = /\b(?:ParametricSurface|Plane|Cone|Cube|Cylinder|Group|ImplicitSurface|Prism|Sphere|Superellipsoid|SurfaceOfRevolution|Torus)\b/
 
         let regexes: [Regex<Substring>] = [

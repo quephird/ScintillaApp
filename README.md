@@ -1148,3 +1148,5 @@ It's not a huge gain in this example but if you are constructing scenes with man
   [https://forums.developer.apple.com/forums/thread/125920](https://forums.developer.apple.com/forums/thread/125920)
 * GitHub repo for example project using `NSRulerView` for displaying line numbers  
   [https://github.com/yichizhang/NSTextView-LineNumberView](https://github.com/yichizhang/NSTextView-LineNumberView)
+* Detailed explanation of implementation for Perlin noise  
+  [https://adrianb.io/2014/08/09/perlinnoise.html](https://adrianb.io/2014/08/09/perlinnoise.html)

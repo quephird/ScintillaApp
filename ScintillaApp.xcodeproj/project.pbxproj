@@ -584,7 +584,7 @@
 			repositoryURL = "https://github.com/quephird/ScintillaLib";
 			requirement = {
 				kind = exactVersion;
-				version = 0.2.0;
+				version = 0.2.1;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
