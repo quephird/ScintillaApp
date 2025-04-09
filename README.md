@@ -378,10 +378,10 @@ let camera = Camera(
 
 let lights = [
     SpotLight(
-        position: (-5, 5, 0),
+        position: (-5, 5, -5),
         pointAt: (0, 0, 0),
-        beamAngle: pi/12,
-        falloffAngle: pi/6,
+        beamAngle: pi/24,
+        falloffAngle: pi/12,
         tightness: 1)
 ]
 
@@ -842,12 +842,14 @@ A `Uniform` material takes a single parameter, the primary color, and so a red m
 Uniform(Color(r: 1.0, g: 0.0, b: 0.0))
 ```
 
-There are a few patterns included with Scintilla, each of which takes two colors in their respective constructors:
+There are several patterns included with Scintilla, each of which takes two colors in their respective constructors:
 
 * `Striped(firstColor: Color, secondColor: Color)`
 * `Checkered2D(firstColor: Color, secondColor: Color)`
 * `Checkered3D(firstColor: Color, secondColor: Color)`
 * `Gradient(firstColor: Color, secondColor: Color)`
+* `Marble(firstColor: Color, secondColor: Color)`
+* `Wood(firstColor: Color, secondColor: Color)`
 
 The `ColorFunction` material has two constructors, both of which take three lambda functions, one for each of either the RGB or HSL components of the output color:
 
@@ -863,14 +865,14 @@ Like shapes, patterns can be transformed via method calls and their transformati
 * `rotateZ(Double)`: rotates the _pattern_ about the z-axis
 * `shear(xy: Double, xz: Double, yx: Double, yz: Double, zx: Double, zy: Double)`: deforms the _pattern_ by altering the proportion of x with respect to y, proportion of x with respect to z, etc. 
 
-Here is an example using one of each of the material types:
+Here is an example using most of the material types:
 
 ```swift
 let camera = Camera(
     width: 400,
     height: 400,
     viewAngle: pi/3,
-    from: (0, 2, -7),
+    from: (0, 4, -7),
     to: (0, 0, 0),
     up: (0, 1, 0))
 
@@ -891,17 +893,32 @@ let rainbow = ColorFunction(
     fh: { x, y, z in (arctan2(z, x)+pi)/pi/2.0 },
     fs: { x, y, z in 1.0 },
     fl: { x, y, z in 0.5 })
-    .rotateX(-pi/4)
+
+let pinkMarble = Marble(
+    firstColor: Color(r: 1.0, g: 0.75, b: 0.8),
+    secondColor: Color(r: 0.2, g: 0.2, b: 0.2))
+
+let brownWood = Wood(
+    firstColor: Color(h: 0.08, s: 1.0, l: 0.3),
+    secondColor: Color(h: 0.08, s: 1.0, l: 0.1))
+    .scale(x: 0.8, y: 0.8, z: 0.8)
 
 let shapes = [
     Sphere()
         .material(solidPurple)
-        .translate(x: -2.5, y: 0.0, z: 0.0),
+        .translate(x: -3.0, y: 0.0, z: 0.5),
     Sphere()
-        .material(checkered),
+        .material(checkered)
+        .translate(x: 0.0, y: 0.0, z: 2.5),
     Sphere()
         .material(rainbow)
-        .translate(x: 2.5, y: 0.0, z: 0.0),
+        .translate(x: 3.0, y: 0.0, z: 0.5),
+    Sphere()
+        .material(pinkMarble)
+        .translate(x: 1.5, y: 0.0, z: -2.0),
+    Sphere()
+        .material(brownWood)
+        .translate(x: -1.5, y: 0.0, z: -2.0),
     Plane()
         .translate(x: 0.0, y: -1.0, z: 0.0)
 ]
@@ -912,7 +929,7 @@ World(
     shapes: shapes)
 ```
 
-![](./images/three_materials.png)
+![](./images/materials.png)
 
 
 ## Constructive solid geometry
@@ -1148,3 +1165,5 @@ It's not a huge gain in this example but if you are constructing scenes with man
   [https://forums.developer.apple.com/forums/thread/125920](https://forums.developer.apple.com/forums/thread/125920)
 * GitHub repo for example project using `NSRulerView` for displaying line numbers  
   [https://github.com/yichizhang/NSTextView-LineNumberView](https://github.com/yichizhang/NSTextView-LineNumberView)
+* Detailed explanation of implementation for Perlin noise  
+  [https://adrianb.io/2014/08/09/perlinnoise.html](https://adrianb.io/2014/08/09/perlinnoise.html)

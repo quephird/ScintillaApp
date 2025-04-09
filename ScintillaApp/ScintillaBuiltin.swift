@@ -49,6 +49,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case checkered3D
     case colorfunctionRgb
     case colorfunctionHsl
+    case marble
+    case wood
     case materialMethodCall
     case translateShape
     case translateMaterial
@@ -170,6 +172,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("ColorFunction", ["fr", "fg", "fb"])
         case .colorfunctionHsl:
             return .functionName("ColorFunction", ["fh", "fs", "fl"])
+        case .marble:
+            return .functionName("Marble", ["firstColor", "secondColor"])
+        case .wood:
+            return .functionName("Wood", ["firstColor", "secondColor"])
         case .materialMethodCall:
             return .methodName(.shape, "material", [""])
         case .translateShape:
@@ -369,7 +375,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeSpotLight4(argumentValues: argumentValues)
         case .uniform:
             return try makeUniform(argumentValues: argumentValues)
-        case .gradient, .striped, .checkered2D, .checkered3D:
+        case .gradient, .striped, .checkered2D, .checkered3D, .marble, .wood:
             return try makePattern(argumentValues: argumentValues)
         case .colorfunctionRgb:
             return try makeColorFunctionRgb(evaluator: evaluator, argumentValues: argumentValues)
@@ -766,6 +772,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             pattern = Checkered2D(firstColor, secondColor, .identity)
         case .checkered3D:
             pattern = Checkered3D(firstColor, secondColor, .identity)
+        case .marble:
+            pattern = Marble(firstColor, secondColor, .identity)
+        case .wood:
+            pattern = Wood(firstColor, secondColor, .identity)
         default:
             fatalError("Unable to make a pattern object: \(self)")
         }
