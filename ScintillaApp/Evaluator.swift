@@ -138,7 +138,9 @@ class Evaluator {
         case .call(let calleeExpr, _, let arguments):
             return try handleCall(calleeExpr: calleeExpr,
                                   arguments: arguments)
-        case .doubleLiteral, .unary, .binary:
+        case .binary(let leftExpr, let oper, let rightExpr):
+            return try handleBinaryExpression(leftExpr: leftExpr, oper: oper, rightExpr: rightExpr)
+        case .doubleLiteral, .unary:
             let result = try evaluateDouble(expr: expr)
             return .double(result)
         }
@@ -150,8 +152,6 @@ class Evaluator {
             return value
         case .unary(let oper, let expr):
             return try handleUnaryExpression(oper: oper, expr: expr)
-        case .binary(let leftExpr, let oper, let rightExpr):
-            return try handleBinaryExpression(leftExpr: leftExpr, oper: oper, rightExpr: rightExpr)
         case .call(let calleeExpr, _, let arguments):
             return try handleCallDouble(calleeExpr: calleeExpr, arguments: arguments)
         case .variable(let name, let location):
@@ -180,23 +180,35 @@ class Evaluator {
 
     private func handleBinaryExpression(leftExpr: Expression<ResolvedLocation>,
                                         oper: Token,
-                                        rightExpr: Expression<ResolvedLocation>) throws -> Double {
-        let leftNumber = try evaluateDouble(expr: leftExpr)
-        let rightNumber = try evaluateDouble(expr: rightExpr)
+                                        rightExpr: Expression<ResolvedLocation>) throws -> ScintillaValue {
+        let leftValue = try evaluate(expr: leftExpr)
+        let rightValue = try evaluate(expr: rightExpr)
 
-        switch oper.type {
-        case .plus:
-            return leftNumber + rightNumber
-        case .minus:
-            return leftNumber - rightNumber
-        case .star:
-            return leftNumber * rightNumber
-        case .slash:
-            return leftNumber / rightNumber
-        case .caret:
-            return pow(leftNumber, rightNumber)
+        switch (leftValue, rightValue) {
+        case (.double(let leftNumber), .double(let rightNumber)):
+            switch oper.type {
+            case .plus:
+                return .double(leftNumber + rightNumber)
+            case .minus:
+                return .double(leftNumber - rightNumber)
+            case .star:
+                return .double(leftNumber * rightNumber)
+            case .slash:
+                return .double(leftNumber / rightNumber)
+            case .caret:
+                return .double(pow(leftNumber, rightNumber))
+            default:
+                throw RuntimeError.unsupportedBinaryOperator(oper.location, oper.lexeme)
+            }
+        case (.list(let leftList), .list(let rightList)):
+            switch oper.type {
+            case .plus:
+                return .list(leftList + rightList)
+            default:
+                throw RuntimeError.unsupportedBinaryOperator(oper.location, oper.lexeme)
+            }
         default:
-            throw RuntimeError.unsupportedBinaryOperator(oper.location, oper.lexeme)
+            throw RuntimeError.binaryOperandsMustBeNumbersOrLists(oper.location, oper.lexeme)
         }
     }
 
