@@ -260,7 +260,9 @@ class Evaluator {
         }
 
         if case .boundMethod(let callee, let builtin) = callee {
-            return try builtin.callMethod(object: callee, argumentValues: argumentValues)
+            return try builtin.callMethod(evaluator: self,
+                                          object: callee,
+                                          argumentValues: argumentValues)
         }
 
         if case .userDefinedFunction(let userDefinedFunction) = callee {
