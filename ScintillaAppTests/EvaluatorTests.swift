@@ -195,6 +195,83 @@ Camera(
         #expect(actualCamera == expectedCamera)
     }
 
+    @Test func evaluateListConcatenation() throws {
+        let source = """
+let foo = [1, 2, 3]
+let bar = [4, 5, 6]
+foo + bar
+"""
+
+        let evaluator = Evaluator()
+        let actualResult = try evaluator.interpretRaw(source: source)
+        let actualList = try #require(actualResult.getList())
+        let expectedList: [ScintillaValue] = [
+            .double(Double(1)),
+            .double(Double(2)),
+            .double(Double(3)),
+            .double(Double(4)),
+            .double(Double(5)),
+            .double(Double(6))
+        ]
+
+        #expect(actualList == expectedList)
+    }
+
+    @Test func evaluateListIteration() throws {
+        let source = """
+let red = Uniform(Color(r: 1.0, g: 0.0, b: 0.0))
+let green = Uniform(Color(r: 0.0, g: 1.0, b: 0.0))
+let blue = Uniform(Color(r: 0.0, g: 0.0, b: 1.0))
+
+let colors = [red, green, blue]
+
+colors.each({i, color in
+    Sphere()
+        .material(color)
+        .translate(x: i-1, y: 0.0, z: 0.0)
+})
+"""
+
+        let evaluator = Evaluator()
+        let result = try evaluator.interpretRaw(source: source)
+        let list = try #require(result.getList())
+
+        let actualColors = try list.map { element in
+            let sphere = try #require(element.getShape(shapeType: Sphere.self))
+            return sphere.sharedProperties.material as! Uniform
+        }
+        let expectedColors = [
+            Uniform(Color(1.0, 0.0, 0.0)),
+            Uniform(Color(0.0, 1.0, 0.0)),
+            Uniform(Color(0.0, 0.0, 1.0)),
+        ]
+        #expect(actualColors == expectedColors)
+
+        let actualTransforms = try list.map { element in
+            let sphere = try #require(element.getShape(shapeType: Sphere.self))
+            return sphere.sharedProperties.transform
+        }
+        let expectedTransforms: [Matrix4] = [
+            .translation(-1.0, 0.0, 0.0),
+            .translation(0.0, 0.0, 0.0),
+            .translation(1.0, 0.0, 0.0),
+        ]
+        #expect(actualTransforms == expectedTransforms)
+    }
+
+    @Test func evaluateBadBinaryExpression() async throws {
+        let source = """
+[1, 2, 3] + 4
+"""
+
+        let evaluator = Evaluator()
+        let expectedError = RuntimeError.binaryOperandsMustBeNumbersOrLists(
+            SourceLocation(line: 1, column: 11), "+")
+        #expect(throws: expectedError) {
+            try evaluator.interpret(source: source)
+        }
+    }
+
     @Test func evaluateMinimalProgram() async throws {
         let source = """
 let camera = Camera(
