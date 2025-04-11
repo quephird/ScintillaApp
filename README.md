@@ -159,9 +159,25 @@ let ball = Sphere().translate(x: 2.0, y: 0.0, z: 0.0)
 ```
 ... where the value for the `x` parameter is `2.0`, the `y` parameter 0.0, and the `z` parameter 0.0. More detailed discussion of other methods is given below in the Shapes section.
 
+Lists also have two methods for iterating over them, `each()` and `eachWithIndex()`, each of which take a closure to transform each element of the list, the latter of which also includes the index as one of its parameters. As an example, in this code snippet we construct a list of materials representing the solid colors red, green, and blue, then iterate over them to produce a list of `Sphere`s each assigned to a color and also translated a distinct number of units along the x-axis:
+
+```
+let red = Uniform(Color(r: 1.0, g: 0.0, b: 0.0))
+let green = Uniform(Color(r: 0.0, g: 1.0, b: 0.0))
+let blue = Uniform(Color(r: 0.0, g: 0.0, b: 1.0))
+
+let colors = [red, green, blue]
+
+let shapes = colors.eachWithIndex({i, color in
+    Sphere()
+        .material(color)
+        .translate(x: i-1, y: 0.0, z: 0.0)
+})
+```
+
 The language supports most of the primitive types, operators and means of constructing expressions that many other programming languages have, including:
 
-* a boolean type for the few shapes that take them as parameters, whosw possible values are `true` and `false`
+* a boolean type for the few shapes that take them as parameters, whose possible values are `true` and `false`
 * a double numeric type; integer literals are cast as doubles
 * lists of values, bounded by `[` and `]` with `,` as the delimiter
 * tuples of values, bounded by `(` and `)` with `,` as the delimiter
@@ -367,7 +383,7 @@ There is also a `SpotLight` available which you can use to illuminate a focused 
 
 Below is an example of a scene with a spot light up and to the left of the red ball, which results in the ball's shadow being cast within the elliptical region on the plane illuminated by the spot light:
 
-```
+```swift
 let camera = Camera(
     width: 400,
     height: 400,
@@ -443,7 +459,7 @@ World(
 
 By default, light sources produce white light but you can override that with a color of your choice. In this example, there are three lights in the scene:
 
-```
+```swift
 let camera = Camera(
     width: 400,
     height: 400,
@@ -484,7 +500,7 @@ World(
 
 Also by default, light intensity does not fade over distance, but if you want a more realistic scene you can specify a value for the `fadeDistance` parameter; larger values mean that light takes more distance to fade, smaller ones result in a sharper dropoff.
 
-```
+```swift
 let camera = Camera(
     width: 600,
     height: 600,
