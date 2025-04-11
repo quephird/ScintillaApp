@@ -39,6 +39,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
     case couldNotEvaluateFunction(Token)
     case couldNotConstructLambda(Token)
     case notAPureMathFunction(ObjectName)
+    case closureHasWrongArity(Int, Int)
 
     var description: String {
         switch self {
@@ -102,6 +103,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
             return "[\(exprToken.location)] Error: could not construct lambda, \(exprToken.lexeme)"
         case .notAPureMathFunction(let objectName):
             return "[\(objectName.location())] Error: not a pure mathematical function, \(objectName)"
+        case .closureHasWrongArity(let expectedArity, let actualArity):
+            return "[] Error: closure has wrong arity; expected \(expectedArity) arguments, got \(actualArity)"
         }
     }
 }

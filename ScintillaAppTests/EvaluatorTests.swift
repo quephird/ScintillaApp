@@ -225,7 +225,7 @@ let blue = Uniform(Color(r: 0.0, g: 0.0, b: 1.0))
 
 let colors = [red, green, blue]
 
-colors.each({i, color in
+colors.eachWithIndex({i, color in
     Sphere()
         .material(color)
         .translate(x: i-1, y: 0.0, z: 0.0)
