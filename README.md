@@ -13,28 +13,38 @@ I _really_ wanted to be able to make something like POV-Ray which is both an edi
 # Quick start
 
 * Open Scintilla
-* Create a new file and add the following code:
+* Click on the button that says New Document to create a new file, and you should see something like this:
+
+![](./images/quick_start.png)
+
+* Fill in the template like the following:
 
 ```swift
+let camera = Camera(
+    width: 400,
+    height: 400,
+    viewAngle: pi/3,
+    from: (0, 0, -5),
+    to: (0, 0, 0),
+    up: (0, 1, 0))
+
+let lights = [
+    PointLight(position: (-10, 10, -10))
+]
+
+let shapes = [
+    Sphere()
+]
+
 World(
-    camera: Camera(
-        width: 400,
-        height: 400,
-        viewAngle: pi/3,
-        from: (0, 0, -5),
-        to: (0, 0, 0),
-        up: (0, 1, 0)),
-    lights: [
-        PointLight(position: (-10, 10, -10))
-    ],
-    shapes: [
-        Sphere()
-    ])
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
 ```
 
 * Go to File... -> Render Scene..., or hit ⌘-R, and wait for the following image to appear:
 
-![](./images/quick_start.png)
+![](./images/rendered.png)
 
 * Note that you can then go to File -> Export Image..., or hit ⌘-E, to save the image to a local .png file.
 
@@ -84,34 +94,7 @@ Scintilla is basically a tiny programming language, where a valid program contai
 
 ... and the final `World` expression is the one that is actually rendered.
 
-`let` statements allow you to assign a value to a variable that can be used in another expression, and often allow you to break up a single large expressions into multiple smaller ones.
-
-For instance, while you can directly inline the construction of all of the objects listed inside a `World` initializer, like the scene in the "Quick start" section above, it can also be expressed like the following:
-
-```swift
-let camera = Camera(
-    width: 600,
-    height: 600,
-    viewAngle: pi/3,
-    from: (0, 0, -5),
-    to: (0, 0, 0),
-    up: (0, 1, 0))
-
-let lights = [
-    PointLight(position: (-10, 10, -10))
-]
-
-let shapes = [
-    Sphere()
-]
-
-World(
-    camera: camera,
-    lights: lights,
-    shapes: shapes)
-```
-
-As you build more complex scenes, you will find using `let` statements immensely easier to compose and reuse objects, and make your Scintilla programs significantly more readable.
+`let` statements allow you to assign a value to a variable that can be used in another expression, and often allow you to break up a single large expressions into multiple smaller ones. While you can directly inline the construction of camera, lights, and shapes inside the `World` initializer, as you build more complex scenes, you will find using `let` statements immensely easier to compose and reuse objects, and make your Scintilla programs significantly more readable.
 
 You can also define your own functions for when you find yourself repeating certain code patterns and you want to centralize that logic. A function declaration has the following structure:
 
