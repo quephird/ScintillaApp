@@ -10,11 +10,33 @@ import UniformTypeIdentifiers
 
 struct ScintillaDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.scintillaDocument] }
+    static var sceneTemplate = """
+let camera = Camera(
+    width: <<enter integer value here>>,
+    height: <<enter integer value here>>,
+    viewAngle: <<enter double value here>>,
+    from: <<enter tuple here>>,
+    to: <<enter tuple here>>,
+    up: <<enter tuple here>>)
+
+let lights = [
+    <<enter at least one light here>>
+]
+
+let shapes = [
+    <<enter at least one shape here>>
+]
+
+World(
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
+"""
 
     var text: String
 
-    init(text: String = "") {
-        self.text = text
+    init() {
+        self.text = Self.sceneTemplate
     }
 
     init(configuration: ReadConfiguration) throws {
