@@ -14,7 +14,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
     case unsupportedUnaryOperator(SourceLocation, Substring)
     case unaryOperandMustBeNumber(SourceLocation, Substring)
     case unsupportedBinaryOperator(SourceLocation, Substring)
-    case binaryOperandsMustBeNumbers(SourceLocation, Substring)
+    case binaryOperandsMustBeNumbersOrLists(SourceLocation, Substring)
     case notAFunction(SourceLocation, Substring)
     case notCallable(SourceLocation, Substring)
     // TODO: Need to capture location and lexemes for the following three error cases
@@ -39,6 +39,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
     case couldNotEvaluateFunction(Token)
     case couldNotConstructLambda(Token)
     case notAPureMathFunction(ObjectName)
+    case closureHasWrongArity(Int, Int)
 
     var description: String {
         switch self {
@@ -54,7 +55,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
             return "[\(location)] Error: unary operand must be number, \(badOperator)"
         case .unsupportedBinaryOperator(let location, let badOperator):
             return "[\(location)] Error: unsupported binary operator, \(badOperator)"
-        case .binaryOperandsMustBeNumbers(let location, let badOperator):
+        case .binaryOperandsMustBeNumbersOrLists(let location, let badOperator):
             return "[\(location)] Error: binary operands must be numbers, \(badOperator)"
         case .notAFunction(let location, let badFunction):
             return "[\(location)] Error: not a function, \(badFunction)"
@@ -102,6 +103,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
             return "[\(exprToken.location)] Error: could not construct lambda, \(exprToken.lexeme)"
         case .notAPureMathFunction(let objectName):
             return "[\(objectName.location())] Error: not a pure mathematical function, \(objectName)"
+        case .closureHasWrongArity(let expectedArity, let actualArity):
+            return "[] Error: closure has wrong arity; expected \(expectedArity) arguments, got \(actualArity)"
         }
     }
 }

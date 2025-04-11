@@ -88,6 +88,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case absFunc
     case truncFunc
     case roundFunc
+    case each
+    case eachWithIndex
 
     var objectName: ObjectName {
         switch self {
@@ -250,6 +252,10 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("trunc", [""])
         case .roundFunc:
             return .functionName("round", [""])
+        case .each:
+            return .methodName(.list, "each", [""])
+        case .eachWithIndex:
+            return .methodName(.list, "eachWithIndex", [""])
         }
     }
 
@@ -392,7 +398,9 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         }
     }
 
-    public func callMethod(object: ScintillaValue, argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+    public func callMethod(evaluator: Evaluator,
+                           object: ScintillaValue,
+                           argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
         case .materialMethodCall:
             return try makeMaterialMethodCall(object: object, argumentValues: argumentValues)
@@ -446,6 +454,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeCSG(object: object,
                                argumentValues: argumentValues,
                                operation: .union)
+        case .each:
+            return try handleEach(evaluator: evaluator,
+                                  object: object,
+                                  argumentValues: argumentValues)
+        case .eachWithIndex:
+            return try handleEachWithIndex(evaluator: evaluator,
+                                           object: object,
+                                           argumentValues: argumentValues)
         default:
             fatalError("Internal error: only method calls should ever get here")
         }
@@ -1028,6 +1044,52 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let n = try extractRawDouble(argumentValue: argumentValues[0])
 
         return .material(material.refractive(n))
+    }
+
+    private func handleEach(evaluator: Evaluator,
+                            object: ScintillaValue,
+                            argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        guard case .list(let elements) = object else {
+            throw RuntimeError.incorrectObject
+        }
+
+        guard case .lambda(let lambda) = argumentValues[0] else {
+            throw RuntimeError.expectedLambda
+        }
+
+        guard lambda.argumentNames.count == 1 else {
+            throw RuntimeError.closureHasWrongArity(1, lambda.argumentNames.count)
+        }
+
+        let results: [ScintillaValue] = try elements.map { element in
+            let argumentValues: [ScintillaValue] = [element]
+            return try lambda.call(evaluator: evaluator, argumentValues: argumentValues)
+        }
+
+        return .list(results)
+    }
+
+    private func handleEachWithIndex(evaluator: Evaluator,
+                                     object: ScintillaValue,
+                                     argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        guard case .list(let elements) = object else {
+            throw RuntimeError.incorrectObject
+        }
+
+        guard case .lambda(let lambda) = argumentValues[0] else {
+            throw RuntimeError.expectedLambda
+        }
+
+        guard lambda.argumentNames.count == 2 else {
+            throw RuntimeError.closureHasWrongArity(2, lambda.argumentNames.count)
+        }
+
+        let results: [ScintillaValue] = try elements.enumerated().map { index, element in
+            let argumentValues: [ScintillaValue] = [.double(Double(index)), element]
+            return try lambda.call(evaluator: evaluator, argumentValues: argumentValues)
+        }
+
+        return .list(results)
     }
 
     private func handleUnaryFunction(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
