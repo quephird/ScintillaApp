@@ -28,8 +28,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case surfaceOfRevolution
     case torus
     case world
-    case camera1
-    case camera2
+    case camera
     case pointLight1
     case pointLight2
     case pointLight3
@@ -51,6 +50,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case colorfunctionHsl
     case marble
     case wood
+    case antialiasing
     case materialMethodCall
     case translateShape
     case translateMaterial
@@ -132,10 +132,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Torus", ["majorRadius", "minorRadius"])
         case .world:
             return .functionName("World", ["camera", "lights", "shapes"])
-        case .camera1:
+        case .camera:
             return .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up"])
-        case .camera2:
-            return .functionName("Camera", ["width", "height", "viewAngle", "from", "to", "up", "antialiasing"])
         case .pointLight1:
             return .functionName("PointLight", ["position"])
         case .pointLight2:
@@ -178,6 +176,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Marble", ["firstColor", "secondColor"])
         case .wood:
             return .functionName("Wood", ["firstColor", "secondColor"])
+        case .antialiasing:
+            return .methodName(.camera, "antialiasing", [])
         case .materialMethodCall:
             return .methodName(.shape, "material", [""])
         case .translateShape:
@@ -351,9 +351,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return try makeSurfaceOfRevolution(argumentValues: argumentValues)
         case .torus:
             return try makeTorus(argumentValues: argumentValues)
-        case .camera1:
-            return try makeCamera(argumentValues: argumentValues)
-        case .camera2:
+        case .camera:
             return try makeCamera(argumentValues: argumentValues)
         case .pointLight1:
             return try makePointLight1(argumentValues: argumentValues)
@@ -402,6 +400,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
                            object: ScintillaValue,
                            argumentValues: [ScintillaValue]) throws -> ScintillaValue {
         switch self {
+        case .antialiasing:
+            return try makeAntialiasing(object: object, argumentValues: argumentValues)
         case .materialMethodCall:
             return try makeMaterialMethodCall(object: object, argumentValues: argumentValues)
         case .translateShape:
@@ -631,18 +631,13 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let (fromX, fromY, fromZ) = try extractRawTuple3(argumentValue: argumentValues[3])
         let (toX, toY, toZ) = try extractRawTuple3(argumentValue: argumentValues[4])
         let (upX, upY, upZ) = try extractRawTuple3(argumentValue: argumentValues[5])
-        var antialiasing = false
-        if argumentValues.count > 6 {
-            antialiasing = try extractRawBoolean(argumentValue: argumentValues[6])
-        }
 
         return .camera(Camera(width: Int(width),
                               height: Int(height),
                               viewAngle: viewAngle,
                               from: Point(fromX, fromY, fromZ),
                               to: Point(toX, toY, toZ),
-                              up: Vector(upX, upY, upZ),
-                              antialiasing: antialiasing))
+                              up: Vector(upX, upY, upZ)))
     }
 
     private func makePointLight1(argumentValues: [ScintillaValue]) throws -> ScintillaValue {
@@ -824,6 +819,14 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         let colorFunction = { x, y, z in (fh(x, y, z), fs(x, y, z), fl(x, y, z))}
         let colorFunctionHsl = ColorFunction(.hsl, colorFunction)
         return .material(colorFunctionHsl)
+    }
+
+    private func makeAntialiasing(object: ScintillaValue,
+                                  argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let camera = try extractRawCamera(argumentValue: object)
+
+        // NOTA BENE: For now, this method takes no arguments
+        return .camera(camera.antialiasing())
     }
 
     private func makeMaterialMethodCall(object: ScintillaValue,
