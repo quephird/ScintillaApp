@@ -51,6 +51,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
     case marble
     case wood
     case antialiasing
+    case focalBlur
     case materialMethodCall
     case translateShape
     case translateMaterial
@@ -178,6 +179,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             return .functionName("Wood", ["firstColor", "secondColor"])
         case .antialiasing:
             return .methodName(.camera, "antialiasing", [])
+        case .focalBlur:
+            return .methodName(.camera, "focalBlur", ["focalDistance", "aperture", "samples"])
         case .materialMethodCall:
             return .methodName(.shape, "material", [""])
         case .translateShape:
@@ -402,6 +405,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
         switch self {
         case .antialiasing:
             return try makeAntialiasing(object: object, argumentValues: argumentValues)
+        case .focalBlur:
+            return try makeFocalBlur(object: object, argumentValues: argumentValues)
         case .materialMethodCall:
             return try makeMaterialMethodCall(object: object, argumentValues: argumentValues)
         case .translateShape:
@@ -827,6 +832,18 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
 
         // NOTA BENE: For now, this method takes no arguments
         return .camera(camera.antialiasing())
+    }
+
+    private func makeFocalBlur(object: ScintillaValue,
+                               argumentValues: [ScintillaValue]) throws -> ScintillaValue {
+        let camera = try extractRawCamera(argumentValue: object)
+        let focalDistance = try extractRawDouble(argumentValue: argumentValues[0])
+        let aperture = try extractRawDouble(argumentValue: argumentValues[1])
+        let samples = try extractRawDouble(argumentValue: argumentValues[2])
+
+        return .camera(camera.focalBlur(focalDistance: focalDistance,
+                                        aperture: aperture,
+                                        samples: Int(samples)))
     }
 
     private func makeMaterialMethodCall(object: ScintillaValue,
