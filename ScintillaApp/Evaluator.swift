@@ -75,8 +75,10 @@ class Evaluator {
 
     func execute(statement: Statement<ResolvedLocation>) throws {
         switch statement {
-        case .letDeclaration(let nameToken, let expr):
-            try handleLetDeclaration(nameToken: nameToken, expr: expr)
+        case .letDeclaration(let lhsPattern, let equalsToken, let rhsExpr):
+            try handleLetDeclaration(lhsPattern: lhsPattern,
+                                     equalsToken: equalsToken,
+                                     rhsExpr: rhsExpr)
         case .functionDeclaration(let nameToken, let argumentNames, let letDecls, let returnExpr):
             try handleFunctionDeclaration(nameToken: nameToken,
                                           argumentNames: argumentNames,
@@ -87,11 +89,18 @@ class Evaluator {
         }
     }
 
-    private func handleLetDeclaration(nameToken: Token, expr: Expression<ResolvedLocation>) throws {
-        let value = try evaluate(expr: expr)
+    private func handleLetDeclaration(lhsPattern: AssignmentPattern,
+                                      equalsToken: Token,
+                                      rhsExpr: Expression<ResolvedLocation>) throws {
+        switch lhsPattern {
+        case .variable(let nameToken):
+            let value = try evaluate(expr: rhsExpr)
 
-        let name: ObjectName = .variableName(nameToken.lexeme)
-        environment.define(name: name, value: value)
+            let name: ObjectName = .variableName(nameToken.lexeme)
+            environment.define(name: name, value: value)
+        default:
+            fatalError("Not handled yet!!!")
+        }
     }
 
     private func handleFunctionDeclaration(nameToken: Token,

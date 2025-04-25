@@ -142,8 +142,10 @@ extension Resolver {
 
     mutating public func resolve(statement: Statement<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
         switch statement {
-        case .letDeclaration(let nameToken, let initializeExpr):
-            return try handleLetDeclaration(nameToken: nameToken, initializeExpr: initializeExpr)
+        case .letDeclaration(let lhsPattern, let equalsToken, let rhsExpr):
+            return try handleLetDeclaration(lhsPattern: lhsPattern,
+                                            equalsToken: equalsToken,
+                                            rhsExpr: rhsExpr)
         case .functionDeclaration(let nameToken, let argumentNames, let letDecls, let returnExpr):
             return try handleFunctionDeclaration(nameToken: nameToken,
                                                  argumentNames: argumentNames,
@@ -154,14 +156,21 @@ extension Resolver {
         }
     }
 
-    mutating private func handleLetDeclaration(nameToken: Token,
-                                               initializeExpr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
-        try declareVariable(variableToken: nameToken)
+    mutating private func handleLetDeclaration(lhsPattern: AssignmentPattern,
+                                               equalsToken: Token,
+                                               rhsExpr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
+        switch lhsPattern {
+        case .variable(let nameToken):
+            try declareVariable(variableToken: nameToken)
 
-        let resolvedInitializerExpr = try resolve(expression: initializeExpr)
+            let resolvedRhsExpr = try resolve(expression: rhsExpr)
 
-        defineVariable(variableToken: nameToken)
-        return .letDeclaration(nameToken, resolvedInitializerExpr)
+            defineVariable(variableToken: nameToken)
+
+            return .letDeclaration(lhsPattern, equalsToken, resolvedRhsExpr)
+        default:
+            fatalError("Not handled right now!!!")
+        }
     }
 
     mutating private func handleFunctionDeclaration(nameToken: Token,

@@ -119,17 +119,58 @@ extension Parser {
             return nil
         }
 
-        guard let varName = consumeToken(type: .identifier) else {
-            throw ParseError.missingVariableName(currentToken)
+        guard let lhsPattern = try parsePattern() else {
+            throw ParseError.missingPattern(currentToken)
         }
 
-        guard currentTokenMatchesAny(types: [.equal]) else {
+        guard let equalsToken = consumeToken(type: .equal) else {
             throw ParseError.missingEquals(currentToken)
         }
 
-        let letExpr = try parseExpression()
+        let rhsExpr = try parseExpression()
 
-        return .letDeclaration(varName, letExpr);
+        return .letDeclaration(lhsPattern, equalsToken, rhsExpr);
+    }
+
+    mutating private func parsePattern() throws -> AssignmentPattern? {
+        if currentTokenMatchesAny(types: [.leftParen]) {
+            guard let pattern1 = try parsePattern() else {
+                throw ParseError.missingPattern(currentToken)
+            }
+
+            guard currentTokenMatchesAny(types: [.comma]) else {
+                throw ParseError.missingComma(currentToken)
+            }
+
+            guard let pattern2 = try parsePattern() else {
+                throw ParseError.missingPattern(currentToken)
+            }
+
+            if currentTokenMatches(type: .rightParen) {
+                let _ = consumeToken(type: .rightParen)
+                return .tuple2(pattern1, pattern2)
+            }
+
+            guard currentTokenMatchesAny(types: [.comma]) else {
+                throw ParseError.missingComma(currentToken)
+            }
+
+            guard let pattern3 = try parsePattern() else {
+                throw ParseError.missingPattern(currentToken)
+            }
+
+            guard currentTokenMatchesAny(types: [.rightParen]) else {
+                throw ParseError.missingRightParen(currentToken)
+            }
+
+            return .tuple3(pattern1, pattern2, pattern3)
+        } else {
+            guard let varName = consumeToken(type: .identifier) else {
+                throw ParseError.missingVariableName(currentToken)
+            }
+
+            return .variable(varName)
+        }
     }
 
     mutating private func parseFunctionDeclaration() throws -> Statement<UnresolvedLocation>? {
