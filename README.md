@@ -235,11 +235,11 @@ The construction of a camera requires six pieces of information:
 | `to` | a tuple of `Double`s representing the point in the xyz coordinate system that the camera is looking at |
 | `up` | a tuple of `Double`s representing the _vector_ in the xyz coordinate system designating which way is "up" |
 
-You can also render a scene with antialiasing by passing in a `true` value to the optional `antialiasing` parameter. In the image below, you can see that the various edges of the object and its shadow are pretty jagged:
+There are also two blurring effects possible with the camera in Scintilla. You can turn on antialiasing to smooth out images. For instance, in the image below, you can see that the various edges of the sphere and its shadow are pretty jagged:
 
 ![](./images/antialiasing_off.png)
 
-But by setting antialiasing to `true`, we can improve its quality:
+But by using the `antialiasing()` modifier, we can improve its quality:
 
 ```swift
 let camera = Camera(
@@ -248,8 +248,8 @@ let camera = Camera(
     viewAngle: pi/3,
     from: (0, 2, -5),
     to: (0, 1, 0),
-    up: (0, 1, 0),
-    antialiasing: true)
+    up: (0, 1, 0))
+    .antialiasing()
 
 let lights = [
     PointLight(position: (-5, 5, -5))
@@ -274,7 +274,108 @@ World(
 
 ![](./images/antialiasing_on.png)
 
-**NOTA BENE** Rendering times are significantly slower with antialiasing turned on.
+You can also render images that simulate the effect of an actual camera lens wherein a specific point is in focus and objects that are away from that point are _out_ of focus, being more blurred the further away they are. You can accoomplish this using the `focalBlur()` modifier for `Camera`, which takes three parameters:
+
+* `focalDistance`: the number of units along the ray formed from the `from` and `to` points originally specified in the `Camera` instance. That point along that ray is where the focal point is.
+* `aperture`: The radius of the aperture. The larger the size, the more dramatic the blurring effect.
+* `samples`: The number of rays cast per pixel from random points on the aperture. The larger the value for `aperture`, the larger the value for `samples` should be in order to minimize the graininess of the effect.
+
+Here is a scene with three spheres with no effect at all:
+
+```swift
+let camera = Camera(
+    width: 400,
+    height: 400,
+    viewAngle: pi/3,
+    from: (0, 0, -5),
+    to: (0, 0, 0),
+    up: (0, 1, 0))
+
+let lights = [
+    PointLight(position: (-10, 10, -10))
+]
+
+let red = Uniform(
+    Color(r: 1, g: 0, b: 0))
+
+let green = Uniform(
+    Color(r: 0, g: 1, b: 0))
+
+let blue = Uniform(
+    Color(r: 0, g: 0, b: 1))
+
+let shapes = [
+    Sphere()
+        .material(red),
+    Sphere()
+        .material(green)
+        .translate(x: -2.0, y: 0.0, z: 2.0),
+    Sphere()
+        .material(blue)
+        .translate(x: 2.0, y: 0.0, z: 2.0),
+    Plane()
+        .translate(x: 0, y: -1, z: 0)
+]
+
+World(
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
+```
+
+![](./images/no_focal_blur.png)
+
+... and here is the same scene with focal blur enabled:
+
+```swift
+let camera = Camera(
+    width: 400,
+    height: 400,
+    viewAngle: pi/3,
+    from: (0, 0, -5),
+    to: (0, 0, 0),
+    up: (0, 1, 0))
+    .focalBlur(focalDistance: 5.0,
+               aperture: 0.2,
+               samples: 50)
+
+let lights = [
+    PointLight(position: (-10, 10, -10))
+]
+
+let red = Uniform(
+    Color(r: 1, g: 0, b: 0))
+
+let green = Uniform(
+    Color(r: 0, g: 1, b: 0))
+
+let blue = Uniform(
+    Color(r: 0, g: 0, b: 1))
+
+let shapes = [
+    Sphere()
+        .material(red),
+    Sphere()
+        .material(green)
+        .translate(x: -2.0, y: 0.0, z: 2.0),
+    Sphere()
+        .material(blue)
+        .translate(x: 2.0, y: 0.0, z: 2.0),
+    Plane()
+        .translate(x: 0, y: -1, z: 0)
+]
+
+World(
+    camera: camera,
+    lights: lights,
+    shapes: shapes)
+```
+
+It should be noted that antialiasing is incorporated into the inplementation for focal blur, so there is no need to use both modifiers.
+
+![](./images/focal_blur.png)
+
+**NOTA BENE** Rendering times are significantly slower with antialiasing or focal blur turned on.
 
 ## Lights
 
