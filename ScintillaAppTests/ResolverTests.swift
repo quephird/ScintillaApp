@@ -34,9 +34,13 @@ struct ResolverTests {
         let actual = try resolveStatement(source: source)
         let expected: Statement<ResolvedLocation> =
             .letDeclaration(
+                .variable(
+                    Token(
+                        type: .identifier,
+                        lexeme: makeLexeme(source: source, offset: 4, length: 6))),
                 Token(
-                    type: .identifier,
-                    lexeme: makeLexeme(source: source, offset: 4, length: 6)),
+                    type: .equal,
+                    lexeme: makeLexeme(source: source, offset: 11, length: 1)),
                 .doubleLiteral(
                     Token(
                         type: .double,
@@ -163,9 +167,13 @@ World(
         let expected = Program(
             statements: [
                 .letDeclaration(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 4, length: 6))),
                     Token(
-                        type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 4, length: 6)),
+                        type: .equal,
+                        lexeme: makeLexeme(source: source, offset: 11, length: 1)),
                     .call(
                         .function(
                             Token(
@@ -303,9 +311,13 @@ World(
                                         0))),
                         ])),
                 .letDeclaration(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 139, length: 6))),
                     Token(
-                        type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 139, length: 6)),
+                        type: .equal,
+                        lexeme: makeLexeme(source: source, offset: 146, length: 1)),
                     .list(
                         Token(
                             type: .leftBracket,
@@ -352,9 +364,13 @@ World(
                                 ])
                         ])),
                 .letDeclaration(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 196, length: 9))),
                     Token(
-                        type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 196, length: 9)),
+                        type: .equal,
+                        lexeme: makeLexeme(source: source, offset: 206, length: 1)),
                     .call(
                         .function(
                             Token(
@@ -419,9 +435,13 @@ World(
                                     ]))
                         ])),
                 .letDeclaration(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 257, length: 6))),
                     Token(
-                        type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 257, length: 6)),
+                        type: .equal,
+                        lexeme: makeLexeme(source: source, offset: 264, length: 1)),
                     .list(
                         Token(
                             type: .leftBracket,
