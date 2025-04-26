@@ -92,14 +92,35 @@ class Evaluator {
     private func handleLetDeclaration(lhsPattern: AssignmentPattern,
                                       equalsToken: Token,
                                       rhsExpr: Expression<ResolvedLocation>) throws {
-        switch lhsPattern {
-        case .variable(let nameToken):
-            let value = try evaluate(expr: rhsExpr)
+        let value = try evaluate(expr: rhsExpr)
 
+        try handlePattern(pattern: lhsPattern, value: value)
+    }
+
+    private func handlePattern(pattern: AssignmentPattern, value: ScintillaValue) throws {
+        switch pattern {
+        case .variable(let nameToken):
             let name: ObjectName = .variableName(nameToken.lexeme)
             environment.define(name: name, value: value)
-        default:
-            fatalError("Not handled yet!!!")
+        case .tuple2(let pattern1, let pattern2):
+            guard case .tuple2((let value1, let value2)) = value else {
+                throw RuntimeError.expectedTuplePattern(2)
+            }
+
+            for (pattern, value) in [(pattern1, value1),
+                                     (pattern2, value2)] {
+                try handlePattern(pattern: pattern, value: value)
+            }
+        case .tuple3(let pattern1, let pattern2, let pattern3):
+            guard case .tuple3((let value1, let value2, let value3)) = value else {
+                throw RuntimeError.expectedTuplePattern(3)
+            }
+
+            for (pattern, value) in [(pattern1, value1),
+                                     (pattern2, value2),
+                                     (pattern3, value3)] {
+                try handlePattern(pattern: pattern, value: value)
+            }
         }
     }
 

@@ -159,17 +159,26 @@ extension Resolver {
     mutating private func handleLetDeclaration(lhsPattern: AssignmentPattern,
                                                equalsToken: Token,
                                                rhsExpr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
-        switch lhsPattern {
+        let resolvedRhsExpr = try resolve(expression: rhsExpr)
+
+        try handlePattern(pattern: lhsPattern)
+
+        return .letDeclaration(lhsPattern, equalsToken, resolvedRhsExpr)
+    }
+
+    mutating private func handlePattern(pattern: AssignmentPattern) throws {
+        switch pattern {
         case .variable(let nameToken):
             try declareVariable(variableToken: nameToken)
-
-            let resolvedRhsExpr = try resolve(expression: rhsExpr)
-
             defineVariable(variableToken: nameToken)
-
-            return .letDeclaration(lhsPattern, equalsToken, resolvedRhsExpr)
-        default:
-            fatalError("Not handled right now!!!")
+        case .tuple2(let pattern1, let pattern2):
+            for pattern in [pattern1, pattern2] {
+                try handlePattern(pattern: pattern)
+            }
+        case .tuple3(let pattern1, let pattern2, let pattern3):
+            for pattern in [pattern1, pattern2, pattern3] {
+                try handlePattern(pattern: pattern)
+            }
         }
     }
 
