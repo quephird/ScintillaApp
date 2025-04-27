@@ -101,6 +101,7 @@ func hypotenuse(a, b) {
                     Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 5, length: 1)),
                     Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 8, length: 1)),
                 ],
+                [],
                 .binary(
                     .binary(
                         .binary(

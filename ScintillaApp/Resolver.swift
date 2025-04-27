@@ -240,9 +240,10 @@ extension Resolver {
         case .function(let calleeName, let argumentNames, _):
             return try handleFunction(calleeToken: calleeName,
                                       argumentNameTokens: argumentNames)
-        case .lambda(let leftBraceToken, let argumentNames, let expression):
+        case .lambda(let leftBraceToken, let argumentNames, let letDecls, let expression):
             return try handleLambda(leftBraceToken: leftBraceToken,
                                     argumentNames: argumentNames,
+                                    letDecls: letDecls,
                                     expression: expression)
         case .method(let calleeExpr, let methodName, let argumentNameTokens):
             return try handleMethod(calleeExpr: calleeExpr,
@@ -357,6 +358,7 @@ extension Resolver {
 
     mutating private func handleLambda(leftBraceToken: Token,
                                        argumentNames: [Token],
+                                       letDecls: [Statement<UnresolvedLocation>],
                                        expression: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
         beginScope()
         let previousFunctionType = currentFunctionType
@@ -371,9 +373,13 @@ extension Resolver {
             defineVariable(variableToken: argumentName)
         }
 
+        let resolvedLetDecls = try letDecls.map { letDecl in
+            try resolve(statement: letDecl)
+        }
+
         let resolvedExpr = try resolve(expression: expression)
 
-        return .lambda(leftBraceToken, argumentNames, resolvedExpr)
+        return .lambda(leftBraceToken, argumentNames, resolvedLetDecls, resolvedExpr)
     }
 
     mutating private func handleMethod(calleeExpr: Expression<UnresolvedLocation>,

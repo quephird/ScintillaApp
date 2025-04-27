@@ -421,13 +421,18 @@ extension Parser {
             throw ParseError.missingIn(currentToken)
         }
 
+        var letDecls: [Statement<UnresolvedLocation>] = []
+        while let letDecl = try parseLetDeclaration() {
+            letDecls.append(letDecl)
+        }
+
         let expression = try parseExpression()
 
         guard currentTokenMatchesAny(types: [.rightBrace]) else {
             throw ParseError.missingRightBrace(currentToken)
         }
 
-        return .lambda(leftBrace, argumentNames, expression)
+        return .lambda(leftBrace, argumentNames, letDecls, expression)
     }
 
     mutating private func parseArguments() throws -> [Expression<UnresolvedLocation>.Argument] {

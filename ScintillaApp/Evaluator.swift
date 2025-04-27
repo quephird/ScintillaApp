@@ -158,8 +158,9 @@ class Evaluator {
             return try handleFunction(calleeToken: calleeName,
                                       argumentNameTokens: argumentNames,
                                       location: location)
-        case .lambda(_, let argumentNames, let expression):
+        case .lambda(_, let argumentNames, let letDecls, let expression):
             return try handleLambda(argumentNames: argumentNames,
+                                    letDecls: letDecls,
                                     expression: expression)
         case .method(let calleeExpr, let methodToken, let argumentNameTokens):
             return try handleMethod(calleeExpr: calleeExpr,
@@ -351,11 +352,12 @@ class Evaluator {
     }
 
     private func handleLambda(argumentNames: [Token],
+                              letDecls: [Statement<ResolvedLocation>],
                               expression: Expression<ResolvedLocation>) throws -> ScintillaValue {
         let udf = UserDefinedFunction(name: "",
                                       argumentNames: argumentNames,
                                       enclosingEnvironment: self.environment,
-                                      letDecls: [],
+                                      letDecls: letDecls,
                                       returnExpr: expression)
 
         return .lambda(udf)
