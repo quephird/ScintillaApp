@@ -283,6 +283,53 @@ struct ParserTests {
         #expect(actual == expected)
     }
 
+    @Test func parseLetDeclarationWithDestructuring() throws {
+        let source = "let (a, b, c) = (1, 2, 3)"
+        var tokenizer = Tokenizer(source: source)
+        let tokens = try! tokenizer.scanTokens()
+        var parser = Parser(tokens: tokens)
+
+        let actual = try parser.parseStatement()!
+        let expected: Statement<UnresolvedLocation> =
+            .letDeclaration(
+                .tuple3(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 5, length: 1))),
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 8, length: 1))),
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 11, length: 1)))),
+                Token(
+                    type: .equal,
+                    lexeme: makeLexeme(source: source, offset: 14, length: 1)),
+                .tuple3(
+                    Token(
+                        type: .leftParen,
+                        lexeme: makeLexeme(source: source, offset: 16, length: 1)),
+                    .doubleLiteral(
+                        Token(
+                            type: .double,
+                            lexeme: makeLexeme(source: source, offset: 17, length: 1)),
+                        1),
+                    .doubleLiteral(
+                        Token(
+                            type: .double,
+                            lexeme: makeLexeme(source: source, offset: 20, length: 1)),
+                        2),
+                    .doubleLiteral(
+                        Token(
+                            type: .double,
+                            lexeme: makeLexeme(source: source, offset: 23, length: 1)),
+                        3)))
+        #expect(actual == expected)
+    }
+
     @Test func parseFunctionDeclaration() throws {
         let source = """
 func hypotenuse(a, b) {
@@ -320,36 +367,143 @@ func hypotenuse(a, b) {
         let actual = try parser.parseStatement()!
         let expected: Statement<UnresolvedLocation> =
             .functionDeclaration(
-                Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 5, length: 10)),
+                Token(
+                    type: .identifier,
+                    lexeme: makeLexeme(source: source, offset: 5, length: 10)),
                 [
-                    Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 16, length: 1)),
-                    Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 19, length: 1)),
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 16, length: 1)),
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 16, length: 1)))),
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 19, length: 1)),
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 19, length: 1)))),
                 ],
                 [],
                 .binary(
                     .binary(
                         .binary(
                             .variable(
-                                Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 29, length: 1)),
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 29, length: 1)),
                                 UnresolvedLocation()),
-                            Token(type: .caret, lexeme: makeLexeme(source: source, offset: 30, length: 1)),
+                            Token(
+                                type: .caret,
+                                lexeme: makeLexeme(source: source, offset: 30, length: 1)),
                             .doubleLiteral(
-                                Token(type: .double, lexeme: makeLexeme(source: source, offset: 31, length: 1)),
+                                Token(
+                                    type: .double,
+                                    lexeme: makeLexeme(source: source, offset: 31, length: 1)),
                                 2)),
-                        Token(type: .plus, lexeme: makeLexeme(source: source, offset: 33, length: 1)),
+                        Token(
+                            type: .plus,
+                            lexeme: makeLexeme(source: source, offset: 33, length: 1)),
                         .binary(
                             .variable(
-                                Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 35, length: 1)),
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 35, length: 1)),
                                 UnresolvedLocation()),
-                            Token(type: .caret, lexeme: makeLexeme(source: source, offset: 36, length: 1)),
+                            Token(
+                                type: .caret,
+                                lexeme: makeLexeme(source: source, offset: 36, length: 1)),
                             .doubleLiteral(
-                                Token(type: .double, lexeme: makeLexeme(source: source, offset: 37, length: 1)),
+                                Token(
+                                    type: .double,
+                                    lexeme: makeLexeme(source: source, offset: 37, length: 1)),
                                 2))),
-                    Token(type: .caret, lexeme: makeLexeme(source: source, offset: 39, length: 1)),
+                    Token(
+                        type: .caret,
+                        lexeme: makeLexeme(source: source, offset: 39, length: 1)),
                     .doubleLiteral(
-                        Token(type: .double, lexeme: makeLexeme(source: source, offset: 40, length: 3)),
+                        Token(
+                            type: .double,
+                            lexeme: makeLexeme(source: source, offset: 40, length: 3)),
                         0.5)))
         #expect(actual == expected)
+    }
+
+    @Test func parseFunctionDeclarationWithDestructuring() throws {
+        let source = """
+func foo(a, (b, c) as d) {
+    a + b
+}
+"""
+
+        var tokenizer = Tokenizer(source: source)
+        let tokens = try! tokenizer.scanTokens()
+        var parser = Parser(tokens: tokens)
+        let actual = try parser.parseStatement()!
+        let expected: Statement<UnresolvedLocation> =
+            .functionDeclaration(
+                Token(
+                    type: .identifier,
+                    lexeme: makeLexeme(source: source, offset: 5, length: 3)),
+                [
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 9, length: 1)),
+                        pattern: .variable(
+                            Token(type: .identifier,
+                                  lexeme: makeLexeme(source: source, offset: 9, length: 1)))),
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 22, length: 1)),
+                        pattern: .tuple2(
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 13, length: 1))),
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 16, length: 1))))),
+                ],
+                [],
+                .binary(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 31, length: 1)),
+                        UnresolvedLocation()),
+                    Token(
+                        type: .plus,
+                        lexeme: makeLexeme(source: source, offset: 33, length: 1)),
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 35, length: 1)),
+                        UnresolvedLocation())))
+        #expect(actual == expected)
+    }
+
+    @Test func parseFunctionDeclarationWithMissingAs() throws {
+        let source = """
+func foo(a, (b, c)) {
+    a + b
+}
+"""
+
+        var tokenizer = Tokenizer(source: source)
+        let tokens = try! tokenizer.scanTokens()
+        var parser = Parser(tokens: tokens)
+
+        let locToken = Token(type: .rightParen, lexeme: ")")
+        #expect(throws: ParseError.missingAs(locToken)) {
+            try parser.parseStatement()
+        }
     }
 
     @Test func parseFunctionCall() throws {
@@ -458,10 +612,22 @@ func hypotenuse(a, b) {
         let actual = try parser.parseExpression()
         let expected: Expression<UnresolvedLocation> =
             .lambda(
-                Token(type: .leftBrace, lexeme: makeLexeme(source: source, offset: 0, length: 1)),
+                Token(
+                    type: .leftBrace,
+                    lexeme: makeLexeme(source: source, offset: 0, length: 1)),
                 [
-                    Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 2, length: 1)),
-                    Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 5, length: 1)),
+                    Parameter(
+                        name: nil,
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 2, length: 1)))),
+                    Parameter(
+                        name: nil,
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 5, length: 1)))),
                 ],
                 [],
                 .binary(
@@ -483,7 +649,9 @@ func hypotenuse(a, b) {
                                         lexeme: makeLexeme(source: source, offset: 14, length: 1)),
                                     UnresolvedLocation()))
                         ]),
-                    Token(type: .star, lexeme: makeLexeme(source: source, offset: 15, length: 3)),
+                    Token(
+                        type: .star,
+                        lexeme: makeLexeme(source: source, offset: 15, length: 3)),
                     .call(
                         .variable(
                             Token(
@@ -502,6 +670,64 @@ func hypotenuse(a, b) {
                                         lexeme: makeLexeme(source: source, offset: 20, length: 1)),
                                     UnresolvedLocation()))
                         ])))
+        #expect(actual == expected)
+    }
+
+    @Test func parseLambdaExpressionWithDestructuring() throws {
+        let source = "{ a, (b, c) in a + b + c }"
+
+        var tokenizer = Tokenizer(source: source)
+        let tokens = try! tokenizer.scanTokens()
+        var parser = Parser(tokens: tokens)
+
+        let actual = try parser.parseExpression()
+        let expected: Expression<UnresolvedLocation> =
+            .lambda(
+                Token(
+                    type: .leftBrace,
+                    lexeme: makeLexeme(source: source, offset: 0, length: 1)),
+                [
+                    Parameter(
+                        name: nil,
+                        pattern: .variable(
+                            Token(type: .identifier,
+                                  lexeme: makeLexeme(source: source, offset: 2, length: 1)))),
+                    Parameter(
+                        name: nil,
+                        pattern: .tuple2(
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 6, length: 1))),
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 9, length: 1))))),
+                ],
+                [],
+                .binary(
+                    .binary(
+                        .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 15, length: 1)),
+                            UnresolvedLocation()),
+                        Token(
+                            type: .plus,
+                            lexeme: makeLexeme(source: source, offset: 17, length: 1)),
+                        .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 19, length: 1)),
+                            UnresolvedLocation())),
+                    Token(
+                        type: .plus,
+                        lexeme: makeLexeme(source: source, offset: 21, length: 1)),
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 23, length: 1)),
+                        UnresolvedLocation())))
         #expect(actual == expected)
     }
 
