@@ -52,7 +52,7 @@ struct TokenizerTests {
     }
 
     @Test func scanningOfKeywords() throws {
-        let source = "let in func true false"
+        let source = "let in func true false as"
         var tokenizer = Tokenizer(source: source)
 
         let actual = try! tokenizer.scanTokens()
@@ -62,7 +62,8 @@ struct TokenizerTests {
             Token(type: .func, lexeme: makeLexeme(source: source, offset: 7, length: 4)),
             Token(type: .true, lexeme: makeLexeme(source: source, offset: 12, length: 4)),
             Token(type: .false, lexeme: makeLexeme(source: source, offset: 17, length: 5)),
-            Token(type: .eof, lexeme: makeLexeme(source: source, offset: 18, length: 0)),
+            Token(type: .as, lexeme: makeLexeme(source: source, offset: 23, length: 2)),
+            Token(type: .eof, lexeme: makeLexeme(source: source, offset: 24, length: 0)),
         ]
 
         #expect(actual == expected)
