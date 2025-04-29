@@ -18,6 +18,7 @@ struct Tokenizer {
         "in": .in,
         "let": .let,
         "true": .true,
+        "as": .as
     ]
 
     init(source: String) {

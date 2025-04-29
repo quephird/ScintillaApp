@@ -9,7 +9,9 @@ import Foundation
 
 enum ParseError: CustomStringConvertible, Equatable, LocalizedError {
     case missingVariableName(Token)
+    case missingParameterName(Token)
     case missingPattern(Token)
+    case missingAs(Token)
     case missingFunctionName(Token)
     case missingEquals(Token)
     case missingLeftParen(Token)
@@ -27,8 +29,12 @@ enum ParseError: CustomStringConvertible, Equatable, LocalizedError {
         switch self {
         case .missingVariableName(let token):
             return "[\(token.location)] Error: expected variable name"
+        case .missingParameterName(let token):
+            return "[\(token.location)] Error: expected parameter name"
         case .missingPattern(let token):
             return "[\(token.location)] Error: expected variable or tuple pattern"
+        case .missingAs(let token):
+            return "[\(token.location)] Error: expected keyword `as`"
         case .missingFunctionName(let token):
             return "[\(token.location)] Error: expected function name"
         case .missingEquals(let token):

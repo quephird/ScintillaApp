@@ -18,6 +18,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
     case notAFunction(SourceLocation, Substring)
     case notCallable(SourceLocation, Substring)
     // TODO: Need to capture location and lexemes for the following three error cases
+    case missingParameterName(Token)
     case missingArgumentName(Token)
     case incorrectArgument
     case incorrectObject
@@ -62,6 +63,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
             return "[\(location)] Error: not a function, \(badFunction)"
         case .notCallable(let location, let badObject):
             return "[\(location)] Error: not a function, \(badObject)"
+        case .missingParameterName(let token):
+            return "[\(token.location)] Error: missing parameter name for function"
         case .missingArgumentName(let token):
             return "[\(token.location)] Error: missing argument for method, \(token.lexeme)"
         case .incorrectArgument:

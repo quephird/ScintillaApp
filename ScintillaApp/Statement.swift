@@ -7,7 +7,7 @@
 
 enum Statement<Location: Equatable>: Equatable {
     case letDeclaration(AssignmentPattern, Token, Expression<Location>)
-    case functionDeclaration(Token, [Token], [Statement<Location>], Expression<Location>)
+    case functionDeclaration(Token, [Parameter], [Statement<Location>], Expression<Location>)
     case expression(Expression<Location>)
 
     var locationToken: Token {

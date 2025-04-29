@@ -79,9 +79,9 @@ class Evaluator {
             try handleLetDeclaration(lhsPattern: lhsPattern,
                                      equalsToken: equalsToken,
                                      rhsExpr: rhsExpr)
-        case .functionDeclaration(let nameToken, let argumentNames, let letDecls, let returnExpr):
+        case .functionDeclaration(let nameToken, let parameters, let letDecls, let returnExpr):
             try handleFunctionDeclaration(nameToken: nameToken,
-                                          argumentNames: argumentNames,
+                                          parameters: parameters,
                                           letDecls: letDecls,
                                           returnExpr: returnExpr)
         case .expression(let expr):
@@ -94,10 +94,12 @@ class Evaluator {
                                       rhsExpr: Expression<ResolvedLocation>) throws {
         let value = try evaluate(expr: rhsExpr)
 
-        try handlePattern(pattern: lhsPattern, value: value)
+        try handlePattern(pattern: lhsPattern, value: value, environment: self.environment)
     }
 
-    private func handlePattern(pattern: AssignmentPattern, value: ScintillaValue) throws {
+    public func handlePattern(pattern: AssignmentPattern,
+                              value: ScintillaValue,
+                              environment: Environment) throws {
         switch pattern {
         case .variable(let nameToken):
             let name: ObjectName = .variableName(nameToken.lexeme)
@@ -109,7 +111,7 @@ class Evaluator {
 
             for (pattern, value) in [(pattern1, value1),
                                      (pattern2, value2)] {
-                try handlePattern(pattern: pattern, value: value)
+                try handlePattern(pattern: pattern, value: value, environment: environment)
             }
         case .tuple3(let pattern1, let pattern2, let pattern3):
             guard case .tuple3((let value1, let value2, let value3)) = value else {
@@ -119,23 +121,31 @@ class Evaluator {
             for (pattern, value) in [(pattern1, value1),
                                      (pattern2, value2),
                                      (pattern3, value3)] {
-                try handlePattern(pattern: pattern, value: value)
+                try handlePattern(pattern: pattern, value: value, environment: environment)
             }
         }
     }
 
     private func handleFunctionDeclaration(nameToken: Token,
-                                           argumentNames: [Token],
+                                           parameters: [Parameter],
                                            letDecls: [Statement<ResolvedLocation>],
                                            returnExpr: Expression<ResolvedLocation>) throws {
         let environmentWhenDeclared = self.environment
         let function = UserDefinedFunction(name: String(nameToken.lexeme),
-                                           argumentNames: argumentNames,
+                                           parameters: parameters,
                                            enclosingEnvironment: environmentWhenDeclared,
                                            letDecls: letDecls,
                                            returnExpr: returnExpr)
-        let argumentNames = argumentNames.map { $0.lexeme }
-        let name: ObjectName = .functionName(nameToken.lexeme, argumentNames)
+
+        let parameterNames = try parameters.map { parameter in
+            guard let parameterName = parameter.name else {
+                throw RuntimeError.missingParameterName(nameToken)
+            }
+
+            return parameterName.lexeme
+        }
+
+        let name: ObjectName = .functionName(nameToken.lexeme, parameterNames)
         environment.define(name: name, value: .userDefinedFunction(function))
     }
 
@@ -158,8 +168,8 @@ class Evaluator {
             return try handleFunction(calleeToken: calleeName,
                                       argumentNameTokens: argumentNames,
                                       location: location)
-        case .lambda(_, let argumentNames, let letDecls, let expression):
-            return try handleLambda(argumentNames: argumentNames,
+        case .lambda(_, let parameters, let letDecls, let expression):
+            return try handleLambda(parameters: parameters,
                                     letDecls: letDecls,
                                     expression: expression)
         case .method(let calleeExpr, let methodToken, let argumentNameTokens):
@@ -351,11 +361,11 @@ class Evaluator {
         }
     }
 
-    private func handleLambda(argumentNames: [Token],
+    private func handleLambda(parameters: [Parameter],
                               letDecls: [Statement<ResolvedLocation>],
                               expression: Expression<ResolvedLocation>) throws -> ScintillaValue {
         let udf = UserDefinedFunction(name: "",
-                                      argumentNames: argumentNames,
+                                      parameters: parameters,
                                       enclosingEnvironment: self.environment,
                                       letDecls: letDecls,
                                       returnExpr: expression)

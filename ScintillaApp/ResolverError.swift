@@ -10,6 +10,7 @@ import Foundation
 enum ResolverError: LocalizedError, CustomStringConvertible {
     case undefinedVariable(Token)
     case undefinedFunction(Token)
+    case missingParameterName(Token)
     case incorrectArgumentsForFunction(Token)
     case variableAccessedBeforeInitialization(Token)
     case variableAlreadyDefined(ObjectName)
@@ -20,6 +21,8 @@ enum ResolverError: LocalizedError, CustomStringConvertible {
             return "[\(token.location)] Error: undefined variable, \(token.lexeme)"
         case .undefinedFunction(let token):
             return "[\(token.location)] Error: undefined function, \(token.lexeme)"
+        case .missingParameterName(let token):
+            return "[\(token.location)] Error: user-defined functions must have parameter names"
         case .incorrectArgumentsForFunction(let token):
             return "[\(token.location)] Error: incorrect arguments for function, \(token.lexeme)"
         case .variableAccessedBeforeInitialization(let token):

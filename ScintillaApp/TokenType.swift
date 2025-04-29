@@ -33,6 +33,7 @@ enum TokenType: Equatable {
     case `in`
     case `let`
     case `true`
+    case `as`
 
     // Used for bad tokens
     case unknown

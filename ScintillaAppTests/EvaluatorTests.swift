@@ -272,6 +272,22 @@ colors.eachWithIndex({i, color in
         }
     }
 
+    @Test func testFunctionWithDestructuredParameter() async throws {
+        let source = """
+func foo(a, (b, c) as d) {
+    a + b + c
+}
+
+foo(a: 1, d: (2, 3))
+"""
+
+        let evaluator = Evaluator()
+        let actualResult = try evaluator.interpretRaw(source: source)
+        let expectedResult: ScintillaValue = .double(Double(6))
+
+        #expect(actualResult == expectedResult)
+    }
+
     @Test func evaluateMinimalProgram() async throws {
         let source = """
 let camera = Camera(

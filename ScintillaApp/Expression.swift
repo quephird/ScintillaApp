@@ -29,7 +29,7 @@ indirect enum Expression<Location: Equatable>: Equatable {
     //
     // * Builtin methods of Scintilla objects, such as `Shape.translate()`, `Shape.rotateX()`, etc.
     case method(Expression, Token, [Token?])
-    case lambda(Token, [Token], [Statement<Location>], Expression)
+    case lambda(Token, [Parameter], [Statement<Location>], Expression)
     case call(Expression, Token, [Argument])
 
     var locationToken: Token {
