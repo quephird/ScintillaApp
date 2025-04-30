@@ -101,6 +101,8 @@ class Evaluator {
                               value: ScintillaValue,
                               environment: Environment) throws {
         switch pattern {
+        case .wildcard:
+            break
         case .variable(let nameToken):
             let name: ObjectName = .variableName(nameToken.lexeme)
             environment.define(name: name, value: value)

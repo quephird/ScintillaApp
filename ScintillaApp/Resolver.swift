@@ -168,6 +168,8 @@ extension Resolver {
 
     mutating private func handlePattern(pattern: AssignmentPattern) throws {
         switch pattern {
+        case .wildcard:
+            break
         case .variable(let nameToken):
             try declareVariable(variableToken: nameToken)
             defineVariable(variableToken: nameToken)

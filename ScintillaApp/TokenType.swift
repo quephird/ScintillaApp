@@ -23,6 +23,9 @@ enum TokenType: Equatable {
     case slash
     case caret
 
+    // Special case
+    case underscore
+
     // Literals
     case identifier
     case double

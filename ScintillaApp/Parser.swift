@@ -164,6 +164,8 @@ extension Parser {
             }
 
             return .tuple3(pattern1, pattern2, pattern3)
+        } else if currentTokenMatchesAny(types: [.underscore]) {
+            return .wildcard(previousToken)
         } else {
             guard let varName = consumeToken(type: .identifier) else {
                 throw ParseError.missingVariableName(currentToken)
@@ -194,6 +196,8 @@ extension Parser {
 
             let parameter: Parameter
             switch pattern {
+            case .wildcard(let wildToken):
+                parameter = Parameter(name: wildToken, pattern: pattern)
             case .variable(let nameToken):
                 parameter = Parameter(name: nameToken, pattern: pattern)
             case .tuple2, .tuple3:

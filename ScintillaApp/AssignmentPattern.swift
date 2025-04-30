@@ -6,8 +6,8 @@
 //
 
 enum AssignmentPattern: Equatable {
+    case wildcard(Token)
     case variable(Token)
     indirect case tuple2(AssignmentPattern, AssignmentPattern)
     indirect case tuple3(AssignmentPattern, AssignmentPattern, AssignmentPattern)
-    // TODO FROM BECCA: Support underscore placeholders
 }
