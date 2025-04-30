@@ -272,7 +272,21 @@ colors.eachWithIndex({i, color in
         }
     }
 
-    @Test func testFunctionWithDestructuredParameter() async throws {
+    @Test func testLetStatementWithDestructuring() async throws {
+        let source = """
+let (a, (b, (c, d))) = (1, (2, (3, 4)))
+
+a + b + c
+"""
+
+        let evaluator = Evaluator()
+        let actualResult = try evaluator.interpretRaw(source: source)
+        let expectedResult: ScintillaValue = .double(Double(6))
+
+        #expect(actualResult == expectedResult)
+    }
+
+    @Test func testFunctionWithDestructuring() async throws {
         let source = """
 func foo(a, (b, c) as d) {
     a + b + c
@@ -285,6 +299,48 @@ foo(a: 1, d: (2, 3))
         let actualResult = try evaluator.interpretRaw(source: source)
         let expectedResult: ScintillaValue = .double(Double(6))
 
+        #expect(actualResult == expectedResult)
+    }
+
+    @Test func testFunctionWithNestedDestructuring() async throws {
+        let source = """
+func foo(a, (b, (c, d)) as e) {
+    a + b + c
+}
+
+foo(a: 1, e: (2, (3, 4)))
+"""
+
+        let evaluator = Evaluator()
+        let actualResult = try evaluator.interpretRaw(source: source)
+        let expectedResult: ScintillaValue = .double(Double(6))
+
+        #expect(actualResult == expectedResult)
+    }
+
+    @Test func testLambdaWithDestructuring() async throws {
+        let source = """
+let argeebees = [
+    (1, 0, 0),
+    (0, 1, 0),
+    (0, 0, 1)
+]
+
+let colors = argeebees.each({ (r, g, b) in
+   Uniform(Color(r: r, g: g, b: b))
+})
+
+colors
+"""
+
+        let evaluator = Evaluator()
+        let result = try evaluator.interpretRaw(source: source)
+        let actualResult = try #require(result.getList())
+        let expectedResult: [ScintillaValue] = [
+            .material(Uniform(Color(1, 0, 0))),
+            .material(Uniform(Color(0, 1, 0))),
+            .material(Uniform(Color(0, 0, 1))),
+        ]
         #expect(actualResult == expectedResult)
     }
 
