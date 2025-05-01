@@ -330,6 +330,53 @@ struct ParserTests {
         #expect(actual == expected)
     }
 
+    @Test func parseLetDeclarationWithWildcard() throws {
+        let source = "let (a, _, c) = (1, 2, 3)"
+        var tokenizer = Tokenizer(source: source)
+        let tokens = try! tokenizer.scanTokens()
+        var parser = Parser(tokens: tokens)
+
+        let actual = try parser.parseStatement()!
+        let expected: Statement<UnresolvedLocation> =
+            .letDeclaration(
+                .tuple3(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 5, length: 1))),
+                    .wildcard(
+                        Token(
+                            type: .underscore,
+                            lexeme: makeLexeme(source: source, offset: 8, length: 1))),
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 11, length: 1)))),
+                Token(
+                    type: .equal,
+                    lexeme: makeLexeme(source: source, offset: 14, length: 1)),
+                .tuple3(
+                    Token(
+                        type: .leftParen,
+                        lexeme: makeLexeme(source: source, offset: 16, length: 1)),
+                    .doubleLiteral(
+                        Token(
+                            type: .double,
+                            lexeme: makeLexeme(source: source, offset: 17, length: 1)),
+                        1),
+                    .doubleLiteral(
+                        Token(
+                            type: .double,
+                            lexeme: makeLexeme(source: source, offset: 20, length: 1)),
+                        2),
+                    .doubleLiteral(
+                        Token(
+                            type: .double,
+                            lexeme: makeLexeme(source: source, offset: 23, length: 1)),
+                        3)))
+        #expect(actual == expected)
+    }
+
     @Test func parseFunctionDeclaration() throws {
         let source = """
 func hypotenuse(a, b) {
