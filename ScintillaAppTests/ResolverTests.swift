@@ -159,6 +159,59 @@ func foo(a, (b, c) as d) {
         #expect(actual == expected)
     }
 
+    @Test func resolveFunctionDeclarationWithWildcard() throws {
+        let source = """
+func foo(a, (b, _) as d) {
+    a + b
+}
+"""
+        let actual = try resolveStatement(source: source)
+        let expected: Statement<ResolvedLocation> =
+            .functionDeclaration(
+                Token(
+                    type: .identifier,
+                    lexeme: makeLexeme(source: source, offset: 5, length: 3)),
+                [
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 9, length: 1)),
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 9, length: 1)))),
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 22, length: 1)),
+                        pattern: .tuple2(
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 13, length: 1))),
+                            .wildcard(
+                                Token(
+                                    type: .underscore,
+                                    lexeme: makeLexeme(source: source, offset: 16, length: 1))))),
+                ],
+                [],
+                .binary(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 31, length: 1)),
+                        ResolvedLocation(depth: 0, index: 0)),
+                    Token(
+                        type: .plus,
+                        lexeme: makeLexeme(source: source, offset: 33, length: 1)),
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 35, length: 1)),
+                        ResolvedLocation(depth: 0, index: 2))))
+        #expect(actual == expected)
+    }
+
     @Test func resolveLambdaExpression() throws {
         let source = "{ x, y, z in x + y + z - 1 }"
         let actual = try resolveExpression(source: source)
