@@ -161,4 +161,32 @@ let shape = Sphere()
 
         #expect(actual == expected)
     }
+
+    @Test func scanningOfLetDeclarationWithWildcard() throws {
+        let source = "let (r, _, b) = (1.0, 0.5, 0.0)"
+        var tokenizer = Tokenizer(source: source)
+
+        let actual = try! tokenizer.scanTokens()
+        let expected: [Token] = [
+            Token(type: .let, lexeme: makeLexeme(source: source, offset: 0, length: 3)),
+            Token(type: .leftParen, lexeme: makeLexeme(source: source, offset: 4, length: 1)),
+            Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 5, length: 1)),
+            Token(type: .comma, lexeme: makeLexeme(source: source, offset: 6, length: 1)),
+            Token(type: .underscore, lexeme: makeLexeme(source: source, offset: 8, length: 1)),
+            Token(type: .comma, lexeme: makeLexeme(source: source, offset: 9, length: 1)),
+            Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 11, length: 1)),
+            Token(type: .rightParen, lexeme: makeLexeme(source: source, offset: 12, length: 1)),
+            Token(type: .equal, lexeme: makeLexeme(source: source, offset: 14, length: 1)),
+            Token(type: .leftParen, lexeme: makeLexeme(source: source, offset: 16, length: 1)),
+            Token(type: .double, lexeme: makeLexeme(source: source, offset: 17, length: 3)),
+            Token(type: .comma, lexeme: makeLexeme(source: source, offset: 20, length: 1)),
+            Token(type: .double, lexeme: makeLexeme(source: source, offset: 22, length: 3)),
+            Token(type: .comma, lexeme: makeLexeme(source: source, offset: 25, length: 1)),
+            Token(type: .double, lexeme: makeLexeme(source: source, offset: 27, length: 3)),
+            Token(type: .rightParen, lexeme: makeLexeme(source: source, offset: 30, length: 1)),
+            Token(type: .eof, lexeme: makeLexeme(source: source, offset: 31, length: 0)),
+        ]
+
+        #expect(actual == expected)
+    }
 }
