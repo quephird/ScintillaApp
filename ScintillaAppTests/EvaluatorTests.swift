@@ -318,6 +318,22 @@ foo(a: 1, e: (2, (3, 4)))
         #expect(actualResult == expectedResult)
     }
 
+    @Test func testFunctionWithWildcard() async throws {
+        let source = """
+func foo(a, (b, (_, c)) as e) {
+    a + b + c
+}
+
+foo(a: 1, e: (2, (3, 4)))
+"""
+
+        let evaluator = Evaluator()
+        let actualResult = try evaluator.interpretRaw(source: source)
+        let expectedResult: ScintillaValue = .double(Double(7))
+
+        #expect(actualResult == expectedResult)
+    }
+
     @Test func testLambdaWithDestructuring() async throws {
         let source = """
 let argeebees = [
