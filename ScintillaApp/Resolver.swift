@@ -142,11 +142,13 @@ extension Resolver {
 
     mutating public func resolve(statement: Statement<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
         switch statement {
-        case .letDeclaration(let nameToken, let initializeExpr):
-            return try handleLetDeclaration(nameToken: nameToken, initializeExpr: initializeExpr)
-        case .functionDeclaration(let nameToken, let argumentNames, let letDecls, let returnExpr):
+        case .letDeclaration(let lhsPattern, let equalsToken, let rhsExpr):
+            return try handleLetDeclaration(lhsPattern: lhsPattern,
+                                            equalsToken: equalsToken,
+                                            rhsExpr: rhsExpr)
+        case .functionDeclaration(let nameToken, let parameters, let letDecls, let returnExpr):
             return try handleFunctionDeclaration(nameToken: nameToken,
-                                                 argumentNames: argumentNames,
+                                                 parameters: parameters,
                                                  letDecls: letDecls,
                                                  returnExpr: returnExpr)
         case .expression(let expr):
@@ -154,22 +156,48 @@ extension Resolver {
         }
     }
 
-    mutating private func handleLetDeclaration(nameToken: Token,
-                                               initializeExpr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
-        try declareVariable(variableToken: nameToken)
+    mutating private func handleLetDeclaration(lhsPattern: AssignmentPattern,
+                                               equalsToken: Token,
+                                               rhsExpr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
+        let resolvedRhsExpr = try resolve(expression: rhsExpr)
 
-        let resolvedInitializerExpr = try resolve(expression: initializeExpr)
+        try handlePattern(pattern: lhsPattern)
 
-        defineVariable(variableToken: nameToken)
-        return .letDeclaration(nameToken, resolvedInitializerExpr)
+        return .letDeclaration(lhsPattern, equalsToken, resolvedRhsExpr)
+    }
+
+    mutating private func handlePattern(pattern: AssignmentPattern) throws {
+        switch pattern {
+        case .wildcard:
+            break
+        case .variable(let nameToken):
+            try declareVariable(variableToken: nameToken)
+            defineVariable(variableToken: nameToken)
+        case .tuple2(let pattern1, let pattern2):
+            for pattern in [pattern1, pattern2] {
+                try handlePattern(pattern: pattern)
+            }
+        case .tuple3(let pattern1, let pattern2, let pattern3):
+            for pattern in [pattern1, pattern2, pattern3] {
+                try handlePattern(pattern: pattern)
+            }
+        }
     }
 
     mutating private func handleFunctionDeclaration(nameToken: Token,
-                                                    argumentNames: [Token],
+                                                    parameters: [Parameter],
                                                     letDecls: [Statement<UnresolvedLocation>],
                                                     returnExpr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
-        try declareFunction(nameToken: nameToken, argumentNameTokens: argumentNames)
-        defineFunction(nameToken: nameToken, argumentNameTokens: argumentNames)
+        let parameterNameTokens = try parameters.map { parameter in
+            guard let paramNameToken = parameter.name else {
+                throw ResolverError.missingParameterName(nameToken)
+            }
+
+            return paramNameToken
+        }
+
+        try declareFunction(nameToken: nameToken, argumentNameTokens: parameterNameTokens)
+        defineFunction(nameToken: nameToken, argumentNameTokens: parameterNameTokens)
 
         beginScope()
         let previousFunctionType = currentFunctionType
@@ -179,15 +207,22 @@ extension Resolver {
             currentFunctionType = previousFunctionType
         }
 
-        for argumentName in argumentNames {
-            try declareVariable(variableToken: argumentName)
-            defineVariable(variableToken: argumentName)
+        for parameter in parameters {
+            try declareVariable(variableToken: parameter.name!)
+            defineVariable(variableToken: parameter.name!)
+
+            switch parameter.pattern {
+            case .tuple2, .tuple3:
+                try handlePattern(pattern: parameter.pattern)
+            default:
+                break
+            }
         }
 
         let resolvedLetDecls = try letDecls.map { try resolve(statement: $0) }
         let resolvedReturnExpr = try resolve(expression: returnExpr)
 
-        return .functionDeclaration(nameToken, argumentNames, resolvedLetDecls, resolvedReturnExpr)
+        return .functionDeclaration(nameToken, parameters, resolvedLetDecls, resolvedReturnExpr)
     }
 
     mutating private func handleExpressionStatement(expr: Expression<UnresolvedLocation>) throws -> Statement<ResolvedLocation> {
@@ -222,9 +257,10 @@ extension Resolver {
         case .function(let calleeName, let argumentNames, _):
             return try handleFunction(calleeToken: calleeName,
                                       argumentNameTokens: argumentNames)
-        case .lambda(let leftBraceToken, let argumentNames, let expression):
+        case .lambda(let leftBraceToken, let parameters, let letDecls, let expression):
             return try handleLambda(leftBraceToken: leftBraceToken,
-                                    argumentNames: argumentNames,
+                                    parameters: parameters,
+                                    letDecls: letDecls,
                                     expression: expression)
         case .method(let calleeExpr, let methodName, let argumentNameTokens):
             return try handleMethod(calleeExpr: calleeExpr,
@@ -338,7 +374,8 @@ extension Resolver {
     }
 
     mutating private func handleLambda(leftBraceToken: Token,
-                                       argumentNames: [Token],
+                                       parameters: [Parameter],
+                                       letDecls: [Statement<UnresolvedLocation>],
                                        expression: Expression<UnresolvedLocation>) throws -> Expression<ResolvedLocation> {
         beginScope()
         let previousFunctionType = currentFunctionType
@@ -348,14 +385,17 @@ extension Resolver {
             currentFunctionType = previousFunctionType
         }
 
-        for argumentName in argumentNames {
-            try declareVariable(variableToken: argumentName)
-            defineVariable(variableToken: argumentName)
+        for parameter in parameters {
+            try handlePattern(pattern: parameter.pattern)
+        }
+
+        let resolvedLetDecls = try letDecls.map { letDecl in
+            try resolve(statement: letDecl)
         }
 
         let resolvedExpr = try resolve(expression: expression)
 
-        return .lambda(leftBraceToken, argumentNames, resolvedExpr)
+        return .lambda(leftBraceToken, parameters, resolvedLetDecls, resolvedExpr)
     }
 
     mutating private func handleMethod(calleeExpr: Expression<UnresolvedLocation>,

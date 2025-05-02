@@ -34,9 +34,13 @@ struct ResolverTests {
         let actual = try resolveStatement(source: source)
         let expected: Statement<ResolvedLocation> =
             .letDeclaration(
+                .variable(
+                    Token(
+                        type: .identifier,
+                        lexeme: makeLexeme(source: source, offset: 4, length: 6))),
                 Token(
-                    type: .identifier,
-                    lexeme: makeLexeme(source: source, offset: 4, length: 6)),
+                    type: .equal,
+                    lexeme: makeLexeme(source: source, offset: 11, length: 1)),
                 .doubleLiteral(
                     Token(
                         type: .double,
@@ -54,10 +58,26 @@ func hypotenuse(a, b) {
         let actual = try resolveStatement(source: source)
         let expected: Statement<ResolvedLocation> =
             .functionDeclaration(
-                Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 5, length: 10)),
+                Token(
+                    type: .identifier,
+                    lexeme: makeLexeme(source: source, offset: 5, length: 10)),
                 [
-                    Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 16, length: 1)),
-                    Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 19, length: 1)),
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 16, length: 1)),
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 16, length: 1)))),
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 19, length: 1)),
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 19, length: 1)))),
                 ],
                 [],
                 .binary(
@@ -86,6 +106,112 @@ func hypotenuse(a, b) {
         #expect(actual == expected)
     }
 
+    @Test func resolveFunctionDeclarationWithDestructuring() throws {
+        let source = """
+func foo(a, (b, c) as d) {
+    a + b
+}
+"""
+        let actual = try resolveStatement(source: source)
+        let expected: Statement<ResolvedLocation> =
+            .functionDeclaration(
+                Token(
+                    type: .identifier,
+                    lexeme: makeLexeme(source: source, offset: 5, length: 3)),
+                [
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 9, length: 1)),
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 9, length: 1)))),
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 22, length: 1)),
+                        pattern: .tuple2(
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 13, length: 1))),
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 16, length: 1))))),
+                ],
+                [],
+                .binary(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 31, length: 1)),
+                        ResolvedLocation(depth: 0, index: 0)),
+                    Token(
+                        type: .plus,
+                        lexeme: makeLexeme(source: source, offset: 33, length: 1)),
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 35, length: 1)),
+                        ResolvedLocation(depth: 0, index: 2))))
+        #expect(actual == expected)
+    }
+
+    @Test func resolveFunctionDeclarationWithWildcard() throws {
+        let source = """
+func foo(a, (b, _) as d) {
+    a + b
+}
+"""
+        let actual = try resolveStatement(source: source)
+        let expected: Statement<ResolvedLocation> =
+            .functionDeclaration(
+                Token(
+                    type: .identifier,
+                    lexeme: makeLexeme(source: source, offset: 5, length: 3)),
+                [
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 9, length: 1)),
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 9, length: 1)))),
+                    Parameter(
+                        name: Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 22, length: 1)),
+                        pattern: .tuple2(
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 13, length: 1))),
+                            .wildcard(
+                                Token(
+                                    type: .underscore,
+                                    lexeme: makeLexeme(source: source, offset: 16, length: 1))))),
+                ],
+                [],
+                .binary(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 31, length: 1)),
+                        ResolvedLocation(depth: 0, index: 0)),
+                    Token(
+                        type: .plus,
+                        lexeme: makeLexeme(source: source, offset: 33, length: 1)),
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 35, length: 1)),
+                        ResolvedLocation(depth: 0, index: 2))))
+        #expect(actual == expected)
+    }
+
     @Test func resolveLambdaExpression() throws {
         let source = "{ x, y, z in x + y + z - 1 }"
         let actual = try resolveExpression(source: source)
@@ -93,10 +219,26 @@ func hypotenuse(a, b) {
             .lambda(
                 Token(type: .leftBrace, lexeme: makeLexeme(source: source, offset: 0, length: 1)),
                 [
-                    Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 2, length: 1)),
-                    Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 5, length: 1)),
-                    Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 8, length: 1)),
+                    Parameter(
+                        name: nil,
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 2, length: 1)))),
+                    Parameter(
+                        name: nil,
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 5, length: 1)))),
+                    Parameter(
+                        name: nil,
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 8, length: 1)))),
                 ],
+                [],
                 .binary(
                     .binary(
                         .binary(
@@ -132,6 +274,58 @@ func hypotenuse(a, b) {
         #expect(actual == expected)
     }
 
+    @Test func resolveLambdaExpressionWithDestructuring() throws {
+        let source = "{ a, (b, c) in a + b + c }"
+        let actual = try resolveExpression(source: source)
+        let expected: Expression<ResolvedLocation> =
+            .lambda(
+                Token(type: .leftBrace, lexeme: makeLexeme(source: source, offset: 0, length: 1)),
+                [
+                    Parameter(
+                        name: nil,
+                        pattern: .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 2, length: 1)))),
+                    Parameter(
+                        name: nil,
+                        pattern: .tuple2(
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 6, length: 1))),
+                            .variable(
+                                Token(
+                                    type: .identifier,
+                                    lexeme: makeLexeme(source: source, offset: 9, length: 1)))))
+                ],
+                [],
+                .binary(
+                    .binary(
+                        .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 15, length: 1)),
+                            ResolvedLocation(depth: 0, index: 0)),
+                        Token(
+                            type: .plus,
+                            lexeme: makeLexeme(source: source, offset: 17, length: 1)),
+                        .variable(
+                            Token(
+                                type: .identifier,
+                                lexeme: makeLexeme(source: source, offset: 19, length: 1)),
+                            ResolvedLocation(depth: 0, index: 1))),
+                    Token(
+                        type: .plus,
+                        lexeme: makeLexeme(source: source, offset: 21, length: 1)),
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 23, length: 1)),
+                        ResolvedLocation(depth: 0, index: 2))))
+        #expect(actual == expected)
+    }
+
     @Test func resolveMinimalProgram() throws {
         let source = """
 let camera = Camera(
@@ -163,9 +357,13 @@ World(
         let expected = Program(
             statements: [
                 .letDeclaration(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 4, length: 6))),
                     Token(
-                        type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 4, length: 6)),
+                        type: .equal,
+                        lexeme: makeLexeme(source: source, offset: 11, length: 1)),
                     .call(
                         .function(
                             Token(
@@ -303,9 +501,13 @@ World(
                                         0))),
                         ])),
                 .letDeclaration(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 139, length: 6))),
                     Token(
-                        type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 139, length: 6)),
+                        type: .equal,
+                        lexeme: makeLexeme(source: source, offset: 146, length: 1)),
                     .list(
                         Token(
                             type: .leftBracket,
@@ -352,9 +554,13 @@ World(
                                 ])
                         ])),
                 .letDeclaration(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 196, length: 9))),
                     Token(
-                        type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 196, length: 9)),
+                        type: .equal,
+                        lexeme: makeLexeme(source: source, offset: 206, length: 1)),
                     .call(
                         .function(
                             Token(
@@ -419,9 +625,13 @@ World(
                                     ]))
                         ])),
                 .letDeclaration(
+                    .variable(
+                        Token(
+                            type: .identifier,
+                            lexeme: makeLexeme(source: source, offset: 257, length: 6))),
                     Token(
-                        type: .identifier,
-                        lexeme: makeLexeme(source: source, offset: 257, length: 6)),
+                        type: .equal,
+                        lexeme: makeLexeme(source: source, offset: 264, length: 1)),
                     .list(
                         Token(
                             type: .leftBracket,

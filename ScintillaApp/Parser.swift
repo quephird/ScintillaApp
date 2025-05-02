@@ -119,17 +119,60 @@ extension Parser {
             return nil
         }
 
-        guard let varName = consumeToken(type: .identifier) else {
-            throw ParseError.missingVariableName(currentToken)
+        guard let lhsPattern = try parsePattern() else {
+            throw ParseError.missingPattern(currentToken)
         }
 
-        guard currentTokenMatchesAny(types: [.equal]) else {
+        guard let equalsToken = consumeToken(type: .equal) else {
             throw ParseError.missingEquals(currentToken)
         }
 
-        let letExpr = try parseExpression()
+        let rhsExpr = try parseExpression()
 
-        return .letDeclaration(varName, letExpr);
+        return .letDeclaration(lhsPattern, equalsToken, rhsExpr);
+    }
+
+    mutating private func parsePattern() throws -> AssignmentPattern? {
+        if currentTokenMatchesAny(types: [.leftParen]) {
+            guard let pattern1 = try parsePattern() else {
+                throw ParseError.missingPattern(currentToken)
+            }
+
+            guard currentTokenMatchesAny(types: [.comma]) else {
+                throw ParseError.missingComma(currentToken)
+            }
+
+            guard let pattern2 = try parsePattern() else {
+                throw ParseError.missingPattern(currentToken)
+            }
+
+            if currentTokenMatches(type: .rightParen) {
+                let _ = consumeToken(type: .rightParen)
+                return .tuple2(pattern1, pattern2)
+            }
+
+            guard currentTokenMatchesAny(types: [.comma]) else {
+                throw ParseError.missingComma(currentToken)
+            }
+
+            guard let pattern3 = try parsePattern() else {
+                throw ParseError.missingPattern(currentToken)
+            }
+
+            guard currentTokenMatchesAny(types: [.rightParen]) else {
+                throw ParseError.missingRightParen(currentToken)
+            }
+
+            return .tuple3(pattern1, pattern2, pattern3)
+        } else if currentTokenMatchesAny(types: [.underscore]) {
+            return .wildcard(previousToken)
+        } else {
+            guard let varName = consumeToken(type: .identifier) else {
+                throw ParseError.missingVariableName(currentToken)
+            }
+
+            return .variable(varName)
+        }
     }
 
     mutating private func parseFunctionDeclaration() throws -> Statement<UnresolvedLocation>? {
@@ -145,13 +188,31 @@ extension Parser {
             throw ParseError.missingLeftParen(currentToken)
         }
 
-        var argumentNames: [Token] = []
+        var parameters: [Parameter] = []
         repeat {
-            guard let argumentName = consumeToken(type: .identifier) else {
-                throw ParseError.missingIdentifier(currentToken)
+            guard let pattern = try parsePattern() else {
+                throw ParseError.missingPattern(currentToken)
             }
 
-            argumentNames.append(argumentName)
+            let parameter: Parameter
+            switch pattern {
+            case .wildcard(let wildToken):
+                parameter = Parameter(name: wildToken, pattern: pattern)
+            case .variable(let nameToken):
+                parameter = Parameter(name: nameToken, pattern: pattern)
+            case .tuple2, .tuple3:
+                guard currentTokenMatchesAny(types: [.as]) else {
+                    throw ParseError.missingAs(currentToken)
+                }
+
+                guard let paramNameToken = consumeToken(type: .identifier) else {
+                    throw ParseError.missingParameterName(currentToken)
+                }
+
+                parameter = Parameter(name: paramNameToken, pattern: pattern)
+            }
+
+            parameters.append(parameter)
         } while currentTokenMatchesAny(types: [.comma])
 
         guard currentTokenMatchesAny(types: [.rightParen]) else {
@@ -173,7 +234,7 @@ extension Parser {
             throw ParseError.missingRightBrace(currentToken)
         }
 
-        return .functionDeclaration(funcName, argumentNames, letDecls, returnExpr)
+        return .functionDeclaration(funcName, parameters, letDecls, returnExpr)
     }
 
     mutating func parseExpression() throws -> Expression<UnresolvedLocation> {
@@ -367,17 +428,23 @@ extension Parser {
             return nil
         }
 
-        var argumentNames: [Token] = []
+        var parameters: [Parameter] = []
         repeat {
-            guard let argumentName = consumeToken(type: .identifier) else {
-                throw ParseError.missingIdentifier(currentToken)
+            guard let pattern = try parsePattern() else {
+                throw ParseError.missingPattern(currentToken)
             }
 
-            argumentNames.append(argumentName)
+            let parameter = Parameter(pattern: pattern)
+            parameters.append(parameter)
         } while currentTokenMatchesAny(types: [.comma])
 
         guard currentTokenMatchesAny(types: [.in]) else {
             throw ParseError.missingIn(currentToken)
+        }
+
+        var letDecls: [Statement<UnresolvedLocation>] = []
+        while let letDecl = try parseLetDeclaration() {
+            letDecls.append(letDecl)
         }
 
         let expression = try parseExpression()
@@ -386,7 +453,7 @@ extension Parser {
             throw ParseError.missingRightBrace(currentToken)
         }
 
-        return .lambda(leftBrace, argumentNames, expression)
+        return .lambda(leftBrace, parameters, letDecls, expression)
     }
 
     mutating private func parseArguments() throws -> [Expression<UnresolvedLocation>.Argument] {

@@ -18,6 +18,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
     case notAFunction(SourceLocation, Substring)
     case notCallable(SourceLocation, Substring)
     // TODO: Need to capture location and lexemes for the following three error cases
+    case missingParameterName(Token)
     case missingArgumentName(Token)
     case incorrectArgument
     case incorrectObject
@@ -40,6 +41,7 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
     case couldNotConstructLambda(Token)
     case notAPureMathFunction(ObjectName)
     case closureHasWrongArity(Int, Int)
+    case expectedTuplePattern(Int)
 
     var description: String {
         switch self {
@@ -61,6 +63,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
             return "[\(location)] Error: not a function, \(badFunction)"
         case .notCallable(let location, let badObject):
             return "[\(location)] Error: not a function, \(badObject)"
+        case .missingParameterName(let token):
+            return "[\(token.location)] Error: missing parameter name for function"
         case .missingArgumentName(let token):
             return "[\(token.location)] Error: missing argument for method, \(token.lexeme)"
         case .incorrectArgument:
@@ -105,6 +109,8 @@ enum RuntimeError: LocalizedError, CustomStringConvertible, Equatable {
             return "[\(objectName.location())] Error: not a pure mathematical function, \(objectName)"
         case .closureHasWrongArity(let expectedArity, let actualArity):
             return "[] Error: closure has wrong arity; expected \(expectedArity) arguments, got \(actualArity)"
+        case .expectedTuplePattern(let elementCount):
+            return "[] Error: expected a \(elementCount)-tuple on the right hand side of let statement"
         }
     }
 }

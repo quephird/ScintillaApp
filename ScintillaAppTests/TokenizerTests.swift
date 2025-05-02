@@ -52,7 +52,7 @@ struct TokenizerTests {
     }
 
     @Test func scanningOfKeywords() throws {
-        let source = "let in func true false"
+        let source = "let in func true false as"
         var tokenizer = Tokenizer(source: source)
 
         let actual = try! tokenizer.scanTokens()
@@ -62,7 +62,8 @@ struct TokenizerTests {
             Token(type: .func, lexeme: makeLexeme(source: source, offset: 7, length: 4)),
             Token(type: .true, lexeme: makeLexeme(source: source, offset: 12, length: 4)),
             Token(type: .false, lexeme: makeLexeme(source: source, offset: 17, length: 5)),
-            Token(type: .eof, lexeme: makeLexeme(source: source, offset: 18, length: 0)),
+            Token(type: .as, lexeme: makeLexeme(source: source, offset: 23, length: 2)),
+            Token(type: .eof, lexeme: makeLexeme(source: source, offset: 24, length: 0)),
         ]
 
         #expect(actual == expected)
@@ -156,6 +157,34 @@ let shape = Sphere()
             Token(type: .double, lexeme: makeLexeme(source: source, offset: 55, length: 3)),
             Token(type: .rightParen, lexeme: makeLexeme(source: source, offset: 58, length: 1)),
             Token(type: .eof, lexeme: makeLexeme(source: source, offset: 59, length: 0)),
+        ]
+
+        #expect(actual == expected)
+    }
+
+    @Test func scanningOfLetDeclarationWithWildcard() throws {
+        let source = "let (r, _, b) = (1.0, 0.5, 0.0)"
+        var tokenizer = Tokenizer(source: source)
+
+        let actual = try! tokenizer.scanTokens()
+        let expected: [Token] = [
+            Token(type: .let, lexeme: makeLexeme(source: source, offset: 0, length: 3)),
+            Token(type: .leftParen, lexeme: makeLexeme(source: source, offset: 4, length: 1)),
+            Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 5, length: 1)),
+            Token(type: .comma, lexeme: makeLexeme(source: source, offset: 6, length: 1)),
+            Token(type: .underscore, lexeme: makeLexeme(source: source, offset: 8, length: 1)),
+            Token(type: .comma, lexeme: makeLexeme(source: source, offset: 9, length: 1)),
+            Token(type: .identifier, lexeme: makeLexeme(source: source, offset: 11, length: 1)),
+            Token(type: .rightParen, lexeme: makeLexeme(source: source, offset: 12, length: 1)),
+            Token(type: .equal, lexeme: makeLexeme(source: source, offset: 14, length: 1)),
+            Token(type: .leftParen, lexeme: makeLexeme(source: source, offset: 16, length: 1)),
+            Token(type: .double, lexeme: makeLexeme(source: source, offset: 17, length: 3)),
+            Token(type: .comma, lexeme: makeLexeme(source: source, offset: 20, length: 1)),
+            Token(type: .double, lexeme: makeLexeme(source: source, offset: 22, length: 3)),
+            Token(type: .comma, lexeme: makeLexeme(source: source, offset: 25, length: 1)),
+            Token(type: .double, lexeme: makeLexeme(source: source, offset: 27, length: 3)),
+            Token(type: .rightParen, lexeme: makeLexeme(source: source, offset: 30, length: 1)),
+            Token(type: .eof, lexeme: makeLexeme(source: source, offset: 31, length: 0)),
         ]
 
         #expect(actual == expected)

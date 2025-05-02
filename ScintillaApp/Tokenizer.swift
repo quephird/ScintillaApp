@@ -18,6 +18,7 @@ struct Tokenizer {
         "in": .in,
         "let": .let,
         "true": .true,
+        "as": .as
     ]
 
     init(source: String) {
@@ -125,6 +126,10 @@ struct Tokenizer {
             return try handleSlash()
         }
 
+        if tryScan("_") {
+            return try handleUnderscore()
+        }
+
         if tryScan(" ", "\r", "\t") {
             return
         }
@@ -137,7 +142,7 @@ struct Tokenizer {
             return try handleNumber()
         }
 
-        if tryScan(where: { $0.isLetter || $0 == "_" }) {
+        if tryScan(where: { $0.isLetter }) {
             return try handleIdentifier()
         }
 
@@ -162,6 +167,14 @@ struct Tokenizer {
         } else {
             handleSingleCharacterLexeme(type: .slash)
         }
+    }
+
+    mutating private func handleUnderscore() throws {
+        if tryScan(where: { $0.isLetter }) {
+            return try handleIdentifier()
+        }
+
+        addToken(type: .underscore)
     }
 
     mutating private func handleNumber() throws {

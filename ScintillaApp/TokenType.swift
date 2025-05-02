@@ -23,6 +23,9 @@ enum TokenType: Equatable {
     case slash
     case caret
 
+    // Special case
+    case underscore
+
     // Literals
     case identifier
     case double
@@ -33,6 +36,7 @@ enum TokenType: Equatable {
     case `in`
     case `let`
     case `true`
+    case `as`
 
     // Used for bad tokens
     case unknown

@@ -1077,8 +1077,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             throw RuntimeError.expectedLambda
         }
 
-        guard lambda.argumentNames.count == 1 else {
-            throw RuntimeError.closureHasWrongArity(1, lambda.argumentNames.count)
+        guard lambda.parameters.count == 1 else {
+            throw RuntimeError.closureHasWrongArity(1, lambda.parameters.count)
         }
 
         let results: [ScintillaValue] = try elements.map { element in
@@ -1100,8 +1100,8 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             throw RuntimeError.expectedLambda
         }
 
-        guard lambda.argumentNames.count == 2 else {
-            throw RuntimeError.closureHasWrongArity(2, lambda.argumentNames.count)
+        guard lambda.parameters.count == 2 else {
+            throw RuntimeError.closureHasWrongArity(2, lambda.parameters.count)
         }
 
         let results: [ScintillaValue] = try elements.enumerated().map { index, element in
@@ -1250,7 +1250,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             throw RuntimeError.expectedUserDefinedFunction
         }
 
-        guard udf.argumentNames.count == 3 else {
+        guard udf.parameters.count == 3 else {
             throw RuntimeError.implicitSurfaceLambdaWrongArity
         }
 
@@ -1264,7 +1264,7 @@ enum ScintillaBuiltin: CaseIterable, Equatable {
             throw RuntimeError.expectedUserDefinedFunction
         }
 
-        guard udf.argumentNames.count == 2 else {
+        guard udf.parameters.count == 2 else {
             throw RuntimeError.parametricSurfaceLambdaWrongArity
         }
 

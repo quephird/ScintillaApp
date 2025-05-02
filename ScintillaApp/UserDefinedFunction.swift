@@ -9,14 +9,14 @@ import Foundation
 
 struct UserDefinedFunction: Equatable {
     var name: String
-    var argumentNames: [Token]
+    var parameters: [Parameter]
     var enclosingEnvironment: Environment
     var letDecls: [Statement<ResolvedLocation>]
     var returnExpr: Expression<ResolvedLocation>
     var objectId: UUID = UUID()
 
     var expectedCapacity: Int {
-        return letDecls.count + argumentNames.count
+        return letDecls.count + parameters.count
     }
 
     // General case
@@ -24,10 +24,27 @@ struct UserDefinedFunction: Equatable {
         let newEnvironment = evaluator.recycleEnvironment(enclosingEnvironment: self.enclosingEnvironment)
         newEnvironment.reserveCapacity(capacity: self.expectedCapacity)
 
-        for (i, argumentName) in argumentNames.enumerated() {
+        for (i, parameter) in parameters.enumerated() {
             let argumentValue = argumentValues[i]
-            let name: ObjectName = .variableName(argumentName.lexeme)
-            newEnvironment.define(name: name, value: argumentValue)
+
+            // NOTA BENE: This is to ensure that if a function parameter
+            // has a top-level name associated with it that we define
+            // that name in the new environment with its top-level value.
+            // We only have to do that for tuples since they are the only
+            // parameter types that take an alias.
+            switch parameter.pattern {
+            case .tuple2, .tuple3:
+                if let fullParameterName = parameter.name {
+                    let name: ObjectName = .variableName(fullParameterName.lexeme)
+                    newEnvironment.define(name: name, value: argumentValue)
+                }
+            default:
+                break
+            }
+
+            try evaluator.handlePattern(pattern: parameter.pattern,
+                                        value: argumentValue,
+                                        environment: newEnvironment)
         }
 
         let previousEnvironment = evaluator.environment
@@ -48,17 +65,18 @@ struct UserDefinedFunction: Equatable {
         let newEnvironment = evaluator.recycleEnvironment(enclosingEnvironment: self.enclosingEnvironment)
         newEnvironment.reserveCapacity(capacity: self.expectedCapacity)
 
-        func setArgument(_ index: Int, _ value: Double) {
-            guard index < argumentNames.count else { return }
+        func setArgument(_ index: Int, _ value: Double) throws {
+            guard index < parameters.count else { return }
 
-            let argumentName = self.argumentNames[index]
-            let name: ObjectName = .variableName(argumentName.lexeme)
-            newEnvironment.define(name: name, value: .double(value))
+            let parameter = self.parameters[index]
+            try evaluator.handlePattern(pattern: parameter.pattern,
+                                        value: .double(value),
+                                        environment: newEnvironment)
         }
 
-        setArgument(0, a1)
-        setArgument(1, a2)
-        setArgument(2, a3)
+        try setArgument(0, a1)
+        try setArgument(1, a2)
+        try setArgument(2, a3)
 
         let previousEnvironment = evaluator.environment
         evaluator.environment = newEnvironment

@@ -94,48 +94,54 @@ Scintilla is basically a tiny programming language, where a valid program contai
 
 ... and the final `World` expression is the one that is actually rendered.
 
-`let` statements allow you to assign a value to a variable that can be used in another expression, and often allow you to break up a single large expressions into multiple smaller ones. While you can directly inline the construction of camera, lights, and shapes inside the `World` initializer, as you build more complex scenes, you will find using `let` statements immensely easier to compose and reuse objects, and make your Scintilla programs significantly more readable.
+`let` statements allow you to assign a value to a variable that can be used in another expression, and often allow you to break up a single large expressions into multiple smaller ones. 
+
+```swift
+let ball = Sphere()
+```
 
 You can also define your own functions for when you find yourself repeating certain code patterns and you want to centralize that logic. A function declaration has the following structure:
 
 * declared with the `func` keyword
 * a list of parameter names
 * an open brace
-* zero or more local `let` statement
+* zero or more local `let` statements
 * a terminal expression
 * a closing brace
 
-User-defined functions are called by passing values for each parameter following the parameter name, so if the function is called `square` and takes a single parameter `n`, then you call it using `square(n: 42)`.
-
-For instance, the implicit equation for the Barth sextic is:
-
-<p align="center">
-4(φ²x² - y²)(φ²y² - z²)(φ²z² - x²) - (1 + 2φ)(x² + y² + z² - 1)² = 0
-</p>
-
-The first large term has some repeated patterns, namely the difference of squares. You can refactor that subexpresion out into its own function and incorporate it into the main lambda like this:
+For example, the following function takes two parameters, `a` and `b`, and returns their sum:
 
 ```swift
-let φ = 1.6180339887
-
-func differenceOfSquares(a, b) {
-    φ^2*x^2 - y^2
+func add(a, b) {
+    a + b
 }
-
-let shapes = [
-    ImplicitSurface(
-        center: (0.0, 0.0, 0.0),
-        radius: 2.0,
-        function: { x, y, z in
-            4.0* differenceOfSquares(a: x, b: y)*differenceOfSquares(a: y, b: z)*differenceOfSquares(a: z, b: x) -
-            (1.0 + 2.0*φ) * (x^2 + y^2 + z^2 - 1.0)^2
-        })
-]
 ```
 
-However, it should be noted that at this time declaring and using your own functions can sometimes significantly slow down rendering times, and so you will need to decide what the balance is between performance and readability of your code. This is an open issue that I hope to resolve in the near future.
+User-defined functions can then be invoked by passing values for each parameter following the parameter name, so to call the function above with values 1 and 2, you use `add(a: 1, b: 2)`.
 
-Scintilla objects, particularly shapes, can also have methods which configure their internal state. To call a method on an object, you instantiate it, followed by a `.`, then the method name, and then the argument list. For instance, to move a a sphere two units to the right, you can do the following:
+Some Scintilla objects take functions without a name as parameters, called lambdas. They have a similar structure to Scintilla functions:
+
+* an open brace
+* a list of parameter names
+* the keyword `in`
+* zero or more local `let` statements
+* a terminal expression
+* a closing brace
+
+The `ImplicitSurface` shape is one shape that takes a lambda; this example results in a sphere:
+
+```swift
+let ball = ImplicitSurface(
+    bottomFrontLeft: (-1, -1, -1),
+    topBackRight: (1, 1, 1),
+    function: { x, y, z in
+        x^2 + y^2 + z^2 - 1
+    })
+```
+
+It should be noted that at this time declaring and using your own functions can sometimes significantly slow down rendering times, and so you will need to decide what the balance is between performance and readability of your code. This is an open issue that I hope to resolve in the near future.
+
+Scintilla objects, particularly shapes, can also have built-in methods which configure their internal state. To call a method on an object, you instantiate it, followed by a `.`, then the method name, and then the argument list. For instance, to move a a sphere two units to the right, you can do the following:
 
 ```swift
 let ball = Sphere().translate(x: 2.0, y: 0.0, z: 0.0)
@@ -144,7 +150,7 @@ let ball = Sphere().translate(x: 2.0, y: 0.0, z: 0.0)
 
 Lists also have two methods for iterating over them, `each()` and `eachWithIndex()`, each of which take a closure to transform each element of the list, the latter of which also includes the index as one of its parameters. As an example, in this code snippet we construct a list of materials representing the solid colors red, green, and blue, then iterate over them to produce a list of `Sphere`s each assigned to a color and also translated a distinct number of units along the x-axis:
 
-```
+```swift
 let red = Uniform(Color(r: 1.0, g: 0.0, b: 0.0))
 let green = Uniform(Color(r: 0.0, g: 1.0, b: 0.0))
 let blue = Uniform(Color(r: 0.0, g: 0.0, b: 1.0))
@@ -158,6 +164,44 @@ let shapes = colors.eachWithIndex({i, color in
 })
 ```
 
+Scintilla also has support for destructuring of tuples. For example, in the following `let` statement, `a` is assigned to the value 1, `b` to the value 2, and `c` to the value 3:
+
+```swift
+let (a, b, c) = (1, 2, 3)
+```
+
+You can also destructure nested tuples, like in the following:
+
+```swift
+let (a, (b, (c, d))) = (1, (2, (3, 4)))
+```
+
+... as well as use wildcard patterns to ignore binding a variable to part of a value:
+
+```swift
+let (a, _, c) = (1, 2, 3)
+```
+
+In this case, the value 2 is ignored, while `a` and `c` are assigned 1 and 3, respectively.
+
+Function declarations also support destructuring, such as in the following:
+
+```swift
+func foo(a, (b, c) as d) {
+    a + b + c
+}
+```
+
+Note that destructured parameters _must_ be aliased at the top level using the `as` keyword.
+
+Lambda expressions also support destructuring but there is no need to alias parameters at the top level.
+
+```swift
+someList.each({ (a, b, c) in
+    a + b + c
+})
+```
+
 The language supports most of the primitive types, operators and means of constructing expressions that many other programming languages have, including:
 
 * a boolean type for the few shapes that take them as parameters, whose possible values are `true` and `false`
@@ -167,6 +211,20 @@ The language supports most of the primitive types, operators and means of constr
 * groupings of subexpressions, bounded by `(` and `)`
 * the standard mathematical binary operators, `+`, `-`, `*`, `/`, and `^`
 * the unary operator `-` for denoting negative numbers
+
+You can also add comments to your code. They can either be at the end of a line by using two slashes like this:
+
+```swift
+let answer = 42 // This is an important variable.
+```
+... or you can have comments span multiple lines by using `/*` and `*/` like this:
+
+```swift
+/*
+ * This is the golden ratio.
+ */
+let φ = 1.61833987
+```
 
 For those who are curious, the following is the complete grammar for Scintilla:
 
@@ -196,20 +254,6 @@ tuple          → "(" expression ( "," expression )* ")" ;
 grouping       → "(" expression ")" ;
 list           → "[" expression ( "," expression )* "]" ;
 lambda         → "{" argList "in" expression "}" ;
-```
-
-You can also add comments to your code. They can either be at the end of a line by using two slashes like this:
-
-```swift
-let answer = 42 // This is an important variable.
-```
-... or you can have comments span multiple lines by using `/*` and `*/` like this:
-
-```swift
-/*
- * This is the golden ratio.
- */
-let φ = 1.61833987
 ```
 
 # Constructing a scene
@@ -379,9 +423,15 @@ It should be noted that antialiasing is incorporated into the inplementation for
 
 ## Lights
 
-Scintilla currently supports two kinds of `Light`s, namely `PointLight` and `AreaLight`. `PointLight` only requires a position, namely a tuple of `Double`s representing the point in the xyz coordinate system where the light source is located, in order to be constructed. Light rays emanate from that single point, and are cast onto the world.
+Scintilla currently has supports three kinds of lights, each of which is discussed below:
 
-The examples above all use `PointLight`, which you can see results in shadows with sharp edges, like the image above. For more realistic shadows, you can use an `AreaLight`. `AreaLight`s require more information in order to be constructed:
+#### `PointLight`
+
+`PointLight` only requires a position, namely a tuple of `Double`s representing the point in the xyz coordinate system where the light source is located, in order to be constructed. Light rays emanate from that single point, and are cast onto the world.
+
+#### `AreaLight`
+
+All of the examples above use `PointLight`, which you can see result in shadows with sharp edges, like the image above. For more realistic shadows, you can use an `AreaLight`. `AreaLight`s require more information in order to be constructed:
 
 | Parameter name | Description |
 | --- | --- |
@@ -454,6 +504,8 @@ World(
 ![](./images/area_light.png)
 
 **NOTA BENE**: Using an `AreaLight` results in longer rendering times that are proportional to the values of the `uSteps` and `vSteps` parameters.
+
+#### `SpotLight`
 
 There is also a `SpotLight` available which you can use to illuminate a focused area of the scene; it takes the following parameters:
 
@@ -621,20 +673,20 @@ World(
 
 The following simple geometric shapes are available:
 
-#### Plane
+#### `Plane`
 
 The default `Plane` shape lies entirely in the xz-plane. It does not require any parameters in its constructor.
 
-#### Sphere
+#### `Sphere`
 
 The default `Sphere` is centered at the origin and has radius of one unit. It does not require any parameters in its constructor.
 
 
-#### Cube
+#### `Cube`
 
 The default `Cube` is also entered at the origin and has "radius" of one unit. It does not require any parameters in its constructor.
 
-#### Cone
+#### `Cone`
 
 The default `Cone` is centered at the origin, has radius of one unit and infinite length along the y-axis, and has an exposed cap. It also has another constructor which takes three parameters:
 
@@ -642,7 +694,7 @@ The default `Cone` is centered at the origin, has radius of one unit and infinit
 * `topY`: the value along the y-axis where the cone stops
 * `isCapped`: a boolean value turning cap on or off
 
-#### Cylinder
+#### `Cylinder`
 
 Similar to the `Cone`, `Cylinder` is also entered at the origin, has radius of one unit, has infinite length along the y-axis, and has exposed caps. And like the former shape, it can also take the same three parameters in its constructor:
 
@@ -650,14 +702,14 @@ Similar to the `Cone`, `Cylinder` is also entered at the origin, has radius of o
 * `topY`: the value along the y-axis where the cylinder stops
 * `isCapped`: a boolean value turning caps on or off
 
-#### Torus
+#### `Torus`
 
 The `Torus` is by default centered at the origin, lies in the xz-plane, and has a major radius of two and a minor radius of one. It also takes parameters to override those defaults:
 
 * `majorRadius`: the radius of the circle about which the minor circle is rotated
 * `minorRadius`: the radius of the circle rotated about the y-axis
 
-#### Superellipsoid
+#### `Superellipsoid`
 
 The `Superellipsoid` is centered at the origin, and parameterized by two exponents, `e` and `n` in the equation which governs its shape:
 
@@ -671,7 +723,7 @@ The shape of the resultant superellipsoid can vary wildly from a rounded cube to
 
 There are also several more shapes which are a little bit more complex.
 
-#### Surface of revolution
+#### `SurfaceOfRevolution`
 
 The `SurfaceOfRevolution` is centered at the origin by default and takes the following parameters in its constructor
 
@@ -714,7 +766,7 @@ World(
 
 ![](./images/vase.png)
 
-#### Prism
+#### `Prism`
 
 The `Prism` is somewhat similar to the cylinder in the way that it is constucted; its parameters are:
 
@@ -761,7 +813,7 @@ World(
 
 ![](./images/prism.png)
 
-#### Implicit surface
+#### `ImplicitSurface`
 
 The `ImplicitSurface` shape is defined by the following equation 
 
@@ -821,7 +873,7 @@ World(
 
 ![](./images/blob.png)
 
-#### Parametric surface
+#### `ParametricSurface`
 
 The `ParametricSurface` is a shape defined by the following parameters:
 
@@ -1267,3 +1319,5 @@ It's not a huge gain in this example but if you are constructing scenes with man
   [https://github.com/yichizhang/NSTextView-LineNumberView](https://github.com/yichizhang/NSTextView-LineNumberView)
 * Detailed explanation of implementation for Perlin noise  
   [https://adrianb.io/2014/08/09/perlinnoise.html](https://adrianb.io/2014/08/09/perlinnoise.html)
+* Nice blog post on how to implement focal blur  
+  [https://pathtracing.home.blog/depth-of-field/](https://pathtracing.home.blog/depth-of-field/)
